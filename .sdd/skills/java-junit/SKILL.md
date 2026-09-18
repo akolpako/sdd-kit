@@ -1,13 +1,13 @@
 ---
 name: java-junit
-description: 'Unit-test rules for JUnit 5, Mockito and AssertJ. Use when writing, reviewing or refactoring unit tests under src/test/java — never for Spring slice or Testcontainers tests.'
+description: 'Unit-test rules for JUnit 5, Mockito and AssertJ: test structure, naming, fixtures, fakes vs mocks, stubbing, assertions, parameterized and async tests. Use when writing, reviewing or refactoring Java unit tests under src/test/java — never for Spring slice or Testcontainers tests.'
 ---
 
 # Java JUnit Guidelines
 
 > **Scope:** Unit tests only. Do **not** apply these rules to integration tests — `@SpringBootTest`, `@DataJpaTest`, `@WebMvcTest`, `@WebFluxTest`, `@JsonTest`, `@RestClientTest`, any other Spring slice annotation, or files using Testcontainers.
 
-> **Precedence:** 🤝 marks a stylistic default that an **established** project convention overrides — established meaning recorded in `_docs/code-style.md`, not incidental code that violates the rule. Every other rule applies unconditionally; existing violations are refactoring targets, not precedent.
+> **Precedence:** 🤝 marks a stylistic default that an **established** project convention overrides — established meaning written down in the project's code-style document (`_docs/code-style.md`, `CONTRIBUTING.md`, `AGENTS.md` or similar), not incidental code that violates the rule. Every other rule applies unconditionally; existing violations are refactoring targets, not precedent.
 
 ⛔ marks a rule that is **not** summarized here: read the linked file before writing that code. Every other rule is complete as stated; its link holds extra examples only. `✗ x → y` lines are anti-pattern and replacement.
 
