@@ -1,0 +1,3 @@
+# One task blocked and one done: the run goes on, and the blocked task is
+# reported rather than skipped silently.
+FEATURE=Cart

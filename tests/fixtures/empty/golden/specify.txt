@@ -1,0 +1,30 @@
+GATE=stop
+FEATURE=Cart
+FOLDER=Cart
+STAGE=
+RAW=
+REQUIREMENTS=
+DESIGN=
+TASKS=
+STATUS_REQUIREMENTS=
+STATUS_DESIGN=
+STATUS_TASKS=
+COMPILATION=
+NEXT_REQ=
+MODE=draft
+
+REQ_DOMAINS:
+
+REQ_DUPLICATES:
+
+STOP:
+The project has no _docs/ yet — there is nothing to specify. Run /sdd-init, then /sdd-next-story Cart.
+
+ASK:
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=2

@@ -1,0 +1,3 @@
+### exit=2
+### stderr
+ERROR=no template .sdd/prompts/implement-no-such-scope.md: /sdd-implement has no assignment called no-such-scope

@@ -1,0 +1,24 @@
+GATE=done
+FEATURE=Cart
+FOLDER=Cart
+STAGE=actualized
+TASKS_DONE=4
+TASKS_TOTAL=4
+TASKS_BLOCKED=0
+ROLE_ORDER=backend
+BUILD_ROOT=mvn -q verify
+BUILD_BACKEND=mvn -q verify
+BUILD_FRONTEND=
+BASELINE=mvn -q verify
+BUILD_FILES=1
+
+STOP:
+
+ASK:
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=0

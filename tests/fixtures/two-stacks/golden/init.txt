@@ -1,0 +1,25 @@
+GATE=ok
+PROJECT=brownfield
+TEMPLATES=ok
+EXISTING=code-style.md,requirements.md,architecture.index.md
+BUILD_ROOT=
+BUILD_BACKEND=mvn clean verify
+BUILD_FRONTEND=cd web && npm run build && npm test
+
+SPAWN:
+architect|.sdd/protocols/project-baseline.md,.sdd/protocols/docs-format.md|baseline-from-codebase
+
+DETECTED:
+.|pom.xml|mvn clean verify|backend
+web|package.json|cd web && npm run build && npm test|frontend
+
+STOP:
+
+ASK:
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=0

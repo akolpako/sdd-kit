@@ -1,0 +1,6 @@
+# --for never gets to mean nothing: mandatory where the host is a choice,
+# refused where the registry already holds the answer. Nothing is written in
+# any of the three.
+sdd --target "$TARGET"
+sdd --sync --for claude
+sdd --uninstall "$TARGET" --for claude

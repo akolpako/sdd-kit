@@ -1,0 +1,13 @@
+SCAFFOLD=init
+MODE=mono
+
+COPIED:
+
+UNTOUCHED:
+
+SKIPPED:
+_docs/code-style.md
+_docs/requirements.md
+_docs/architecture.md
+### exit=0
+### tree

@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=REQ-002 is carried by 2 entries — the duplicate is the human's call, and no entry is edited until it is gone
+### tree

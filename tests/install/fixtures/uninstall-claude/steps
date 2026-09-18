@@ -1,0 +1,9 @@
+# What an uninstall leaves: no link into the engine, no block in either file
+# that carried one, the project's own instructions still there, and the
+# .gitignore that held nothing but the block gone with it.
+sdd --target "$TARGET" --for claude
+sdd --uninstall "$TARGET"
+
+expect "no engine link is left" no_engine_links
+expect "the project's own instructions survive" test -f CLAUDE.md
+expect "the .gitignore that held nothing but the block is gone" test ! -e .gitignore

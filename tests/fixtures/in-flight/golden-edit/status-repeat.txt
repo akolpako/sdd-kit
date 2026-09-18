@@ -1,0 +1,21 @@
+STATUS=ready
+
+UPDATED:
+_docs/Wishlist/new-requirements.md
+
+UNCHANGED:
+_docs/Wishlist/new-requirements.md
+### exit=0
+### tree
+diff -ru -x .git <tmp>/in-flight/_docs/Wishlist/new-requirements.md <tmp>/edit/_docs/Wishlist/new-requirements.md
+--- <tmp>/in-flight/_docs/Wishlist/new-requirements.md
++++ <tmp>/edit/_docs/Wishlist/new-requirements.md
+@@ -1,7 +1,7 @@
+ ---
+ type: requirements
+ feature: Wishlist
+-status: draft
++status: ready
+ tags:
+   - sdd/requirements
+ ---

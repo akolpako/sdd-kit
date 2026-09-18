@@ -1,0 +1,6 @@
+### exit=2
+### stderr
+ERROR=no JIRA_URL — a bare key needs the instance; set JIRA_URL in <tmp>/jira-home/.config/sdd-kit/tokens.env or in .sdd/sdd.conf, or pass the browse URL instead
+### specs
+### file _docs/ABC-12345/raw.md
+not written

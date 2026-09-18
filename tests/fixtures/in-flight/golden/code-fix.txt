@@ -1,0 +1,26 @@
+GATE=stop
+FEATURE=Wishlist
+FOLDER=Wishlist
+STAGE=specified
+REVIEW=missing
+REVIEW_PATH=_docs/Wishlist/review.md
+REVIEW_DATE=
+REVIEW_ROOT=
+REVIEW_VERDICT=absent
+ROOT=
+BUILD_ROOT=mvn -q verify
+BUILD_BACKEND=mvn -q verify
+BUILD_FRONTEND=
+
+STOP:
+_docs/Wishlist/review.md is missing — there is no report to act on. /sdd-code-review Wishlist writes one.
+
+ASK:
+
+WARN:
+Not a git repository — whether the report still describes the current code cannot be checked. A finding may be about a line that has since moved.
+
+ANOMALIES:
+
+NOTES:
+### exit=0

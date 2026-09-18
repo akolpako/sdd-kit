@@ -1,0 +1,8 @@
+# The same claim on the other host, where the file is renamed on the way in:
+# an engine edit reaches .github/agents/architect.agent.md through --sync.
+sdd --target "$TARGET" --for copilot
+printf '\nAn edit made in the engine after the install.\n' >> "$ENGINE/.sdd/agents/architect.md"
+sdd --sync --all
+
+expect "the project carries the engine's new content" cmp -s .github/agents/architect.agent.md "$ENGINE/.sdd/agents/architect.md"
+expect "and the file is still the installer's own" grep -q '\.github/agents/architect\.agent\.md' .sdd/.sdd-manifest

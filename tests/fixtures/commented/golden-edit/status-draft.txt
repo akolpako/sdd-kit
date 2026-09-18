@@ -1,0 +1,20 @@
+STATUS=draft
+
+UPDATED:
+_docs/Cart/new-requirements.md
+
+UNCHANGED:
+### exit=0
+### tree
+diff -ru -x .git <tmp>/commented/_docs/Cart/new-requirements.md <tmp>/edit/_docs/Cart/new-requirements.md
+--- <tmp>/commented/_docs/Cart/new-requirements.md
++++ <tmp>/edit/_docs/Cart/new-requirements.md
+@@ -2,7 +2,7 @@
+ 
+ <!-- > Status: draft — what this file said before /sdd-spec-review -->
+ > Status:
+-> Status: ready
++> Status: draft
+ 
+ ## Requirements
+ 

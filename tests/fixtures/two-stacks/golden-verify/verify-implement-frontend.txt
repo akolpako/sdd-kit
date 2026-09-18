@@ -1,0 +1,5 @@
+VERIFY=fail
+
+FAIL:
+Still open after the frontend role returned: TASK-003 Cart page, TASK-004 Cart total display. A task is marked by the role that owns the loop — one left open is reported by name, never marked here on its behalf.
+### exit=2

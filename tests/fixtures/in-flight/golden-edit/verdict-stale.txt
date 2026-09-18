@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=no such file: _docs/Wishlist/review.md — there is no report to invalidate
+### tree

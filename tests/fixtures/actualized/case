@@ -1,0 +1,4 @@
+# A feature that is finished: reviewed specs, every task [x], an approved code
+# review, and no draft left in the compilation. It is what a --verify passes on,
+# and the only fixture where /sdd-implement has nothing left to do.
+FEATURE=Cart

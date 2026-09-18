@@ -1,0 +1,11 @@
+# The one real file the installer deletes and the one it must keep, in the same
+# tree. .sdd/log/ is the engine's own output and goes out with the engine;
+# .sdd/sdd.conf was written by hand and stays — which leaves .sdd/ standing,
+# holding that one file.
+sdd --target "$TARGET" --for claude
+mkdir -p "$TARGET/.sdd/log"
+printf '== 20260101-000000 run exit=0 sdd 1 next-req.sh\n' > "$TARGET/.sdd/log/sdd.log"
+sdd --uninstall "$TARGET"
+
+expect "the log went out with the engine" test ! -e .sdd/log
+expect "the config the human wrote stayed" test -f .sdd/sdd.conf

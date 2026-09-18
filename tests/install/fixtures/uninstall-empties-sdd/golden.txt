@@ -1,0 +1,7 @@
+### sdd --target <tmp>/uninstall-empties-sdd/project --for claude
+exit=0
+### sdd --uninstall <tmp>/uninstall-empties-sdd/project
+exit=0
+### expect nothing of .sdd/ is left — pass
+### tree
+### registry

@@ -1,0 +1,24 @@
+GATE=stop
+FEATURE=Wishlist
+FOLDER=Wishlist
+STAGE=specified
+BASE=
+ROOT=
+DIFF=
+CHANGED=0
+REVIEW_PATH=_docs/Wishlist/review.md
+REVIEW_PREVIOUS=
+
+STOP:
+Not a git repository: /sdd-code-review needs git to tell what this feature changed. Nothing here is worked out by reading the tree by hand.
+
+ASK:
+
+WARN:
+Not reviewed: new-requirements.md (draft), design.md (draft), tasks.md (draft). The yardstick of this review is an unreviewed spec, and the report says so. /sdd-spec-review Wishlist is what promotes a spec to ready.
+No task is marked [x]. Whatever the working tree holds is reviewed all the same, but the feature is not implemented — check that /sdd-implement Wishlist actually ran.
+
+ANOMALIES:
+
+NOTES:
+### exit=0

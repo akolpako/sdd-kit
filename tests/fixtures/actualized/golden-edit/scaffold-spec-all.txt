@@ -1,0 +1,241 @@
+SCAFFOLD=spec
+FOLDER=Cart
+
+COPIED:
+_docs/Cart/new-requirements.md
+_docs/Cart/design.md
+_docs/Cart/tasks.md
+### exit=0
+### tree
+diff -ru -x .git <tmp>/actualized/_docs/Cart/design.md <tmp>/edit/_docs/Cart/design.md
+--- <tmp>/actualized/_docs/Cart/design.md
++++ <tmp>/edit/_docs/Cart/design.md
+@@ -1,7 +1,107 @@
++---
++type: design
++feature: Cart
++status: draft
++tags:
++  - sdd/design
++---
++
+ # Design — Cart
+ 
+-> Status: ready
++<!-- The `status` property above is `draft` or `ready` — the only record on
++disk of whether the spec was reviewed. -->
+ 
++<!-- A section this feature does not touch is deleted, not filled with an
++example or a placeholder. A section the feature is bound by but does not
++change is one line pointing at the architecture baseline — the section file, or
++the `## ` section, that holds it — never a retelling of it. -->
++
++<!-- Budget — the size of this file follows the size of the feature, counted
++in the tasks of `tasks.md`:
++  * 5 tasks or fewer — about 150 lines, one diagram;
++  * 6 to 15 tasks — about 300 lines;
++  * more — no ceiling, but every diagram earns its place.
++A diagram, a section, or an assumption written only to fill the template is
++waste: the file is read again by every role that implements or reviews the
++feature. -->
++
+ ## Overview
+ 
+-A cart service over a cart table, reached through one REST controller.
++<!-- What this feature adds to the system and how it fits what already
++exists. The architecture baseline holds the architecture of the project — this
++file never repeats it, it only says where this feature attaches to it. -->
++
++## Architecture
++
++### System Context
++
++<!-- C4 L1 as a `mermaid C4Context` block: who uses the feature and which
++external systems it talks to; every `Rel` carries the protocol and, where it
++matters, the auth. Then C4 L2 as a `mermaid C4Container` block — only the
++containers this feature runs in or changes, a diagram of the whole system
++belongs in the architecture baseline. Under **Key external dependencies:**, one
++line per external system: its protocol, its auth, and what happens when it is
++unavailable. -->
++
++**Key external dependencies:**
++
++### Module Structure
++
++<!-- Which modules this feature adds or changes, and why each is placed where
++it is. Purpose and rationale, not file lists. An arrow that crosses a layer
++boundary the architecture baseline fixes is named here explicitly, with the
++reason. The module dependencies follow as a `mermaid graph TD` block. -->
++
++## Data Model
++
++<!-- The entities this feature adds or changes, their fields, and the
++relations between them as a `mermaid erDiagram` block. Unchanged entities
++appear only where a relation needs them. -->
++
++## API Contracts
++
++<!-- The base path, then one row per endpoint: the endpoint, its method, what
++it does or returns, and the notes that bind it — auth, idempotency, rate
++limit. Conventions — versioning, paging, naming — come from the architecture
++baseline's API section and are not restated. Then a JSON request and response
++example, and a JSON error example in the shape the baseline fixes for the whole
++project. -->
++
++**Base path:**
++
++| Endpoint | Method | Purpose | Notes |
++|----------|--------|---------|-------|
++
++**Request / response:**
++
++**Error response:**
++
++## Business Logic
++
++<!-- One `### <workflow name>` block per workflow: the flow as a
++`mermaid sequenceDiagram` with responses coming back dotted, then
++**Key rules:** — the business rules the flow enforces and what it rejects —
++then a table of what happens when a step fails: one row per component with its
++failure classification (transient / permanent), its retry policy, and the
++recovery, meaning what the user sees and what the system does. -->
++
++## Security Considerations
++
++<!-- What this feature adds to the attack surface: new inputs, new
++permissions, new data at rest. The project-wide model stays in the
++architecture baseline's security section. -->
++
++## Non-Functional Requirements
++
++<!-- Only the ones this feature changes or is bound by: latency budget,
++throughput, data volume, availability. Each with the number that decides it. -->
++
++## Assumptions
++
++<!-- Everything decided without confirmation, one line each — format in
++`.sdd/protocols/spec-modes.md`. -->
++
++## Open Questions
++
++<!-- Points only the human can settle, one line each — see
++`.sdd/protocols/spec-modes.md`. -->
+diff -ru -x .git <tmp>/actualized/_docs/Cart/new-requirements.md <tmp>/edit/_docs/Cart/new-requirements.md
+--- <tmp>/actualized/_docs/Cart/new-requirements.md
++++ <tmp>/edit/_docs/Cart/new-requirements.md
+@@ -1,15 +1,51 @@
++---
++type: requirements
++feature: Cart
++status: draft
++tags:
++  - sdd/requirements
++---
++
+ # Requirements — Cart
+ 
+-> Status: ready
++<!-- The `status` property above is `draft` or `ready` — the only record on
++disk of whether the spec was reviewed. -->
+ 
++## Overview
++
++<!-- What this feature is for, in two or three sentences: the need it answers
++and whose it is. Detail belongs in the requirements below, not here. -->
++
+ ## Requirements
+ 
+-### REQ-002 — Cart holds items
++<!-- Each requirement follows this structure:
+ 
+-A shopper keeps picked items until checkout.
++### REQ-### — <short title>
++- **Description:** <what is required, from the business/user perspective> ^req-###
++- **Conditions of satisfaction:**
++  - <happy path: given <state>, when <action>, then <observable outcome>>
++  - Error: when <invalid input or failure>, then <error response>
++  - Edge: when <boundary case>, then <expected behaviour>
+ 
+-- Error: an item that is out of stock is refused.
++Requirements describe *what* and *why*, never *how*.
++One behaviour per condition — "and" inside a condition means it should be split.
++At least two conditions per requirement, one of them an `Error:` condition.
+ 
+-### REQ-003 — Cart totals
++The `^req-###` at the end of the description line is the requirement's anchor,
++the id in lower case — `REQ-ACC-003` gives `^req-acc-003`. It is what
++`design.md` and `tasks.md` link to, so it is written even where nothing points
++at it yet. A term this feature defines is marked ==like this== where it is
++defined, once, and used plainly everywhere after.
++-->
+ 
+-A cart shows the sum of its items.
++## Assumptions
++
++<!-- Everything decided without confirmation, one line each — format in
++`.sdd/protocols/spec-modes.md`. -->
++
++## Open Questions
++
++<!-- Points only the human can settle, one line each — see
++`.sdd/protocols/spec-modes.md`. -->
++
++## Out of Scope
+diff -ru -x .git <tmp>/actualized/_docs/Cart/tasks.md <tmp>/edit/_docs/Cart/tasks.md
+--- <tmp>/actualized/_docs/Cart/tasks.md
++++ <tmp>/edit/_docs/Cart/tasks.md
+@@ -1,29 +1,36 @@
++---
++type: tasks
++feature: Cart
++status: draft
++tags:
++  - sdd/tasks
++---
++
+ # Tasks — Cart
+ 
+-> Status: ready
++<!-- The `status` property above is `draft` or `ready` — the only record on
++disk of whether the spec was reviewed. -->
+ 
+ ## Overview
+ 
+-Cart storage, totals, and the REST endpoints over them.
++<!-- What implementing this feature involves, in two or three sentences: the
++main pieces of work and which parts of the system they touch. -->
+ 
+ ## Tasks
+ 
+-- [x] **TASK-001** — Cart table and entity
+-  - **Requires:** REQ-002
+-  - **Type:** backend
+-  - **Description:** The cart table, its entity, and the repository over it.
++<!-- Each task follows this structure:
+ 
+-- [x] **TASK-002** — Add and remove items
+-  - **Requires:** REQ-002
+-  - **Type:** backend
+-  - **Description:** The service methods behind the two endpoints.
++- [ ] **TASK-001** — <short title>
++  - **Requires:** [REQ-001](new-requirements.md#^req-001), [REQ-003](new-requirements.md#^req-003)
++  - **Type:** backend | frontend
++  - **Description:** <what to implement, technical details, acceptance criteria>
+ 
+-- [x] **TASK-003** — Cart totals
+-  - **Requires:** REQ-003
+-  - **Type:** backend
+-  - **Description:** The sum of the items, refreshed on every change.
++The order of the list is the order of execution. A requirement is written as a
++link to its anchor in `new-requirements.md` — the id itself stays in the link
++text, so a reader with no vault open still reads `REQ-001`.
+ 
+-- [x] **TASK-004** — Cart REST endpoints
+-  - **Requires:** REQ-002, REQ-003
+-  - **Type:** backend
+-  - **Description:** The controller over the service methods.
++A done task is `- [x]`. A blocked task stays unchecked, keeps its ID and its
++title, and carries the reason at the end of the line:
++
++- [ ] **TASK-007** — <short title> — BLOCKED: <one-line reason>
++-->

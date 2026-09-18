@@ -1,0 +1,10 @@
+# The same --sync on the other host. The file the engine dropped goes exactly
+# as it does under .claude/, and the directory it empties stays standing: .github/ is
+# shared with the project, and an empty directory removed there is somebody
+# else's directory gone with nothing saying which run did it.
+sdd --target "$TARGET" --for copilot
+rm "$ENGINE/.sdd/commands/sdd-status.md"
+sdd --sync
+
+expect "the file the engine dropped is gone" test ! -e .github/skills/sdd-status/SKILL.md
+expect "the directory it emptied is still standing" test -d .github/skills/sdd-status

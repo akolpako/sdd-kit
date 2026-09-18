@@ -1,0 +1,5 @@
+VERIFY=fail
+
+FAIL:
+No feature folder for 'ABC-12345' under _docs/ — nothing this run was to write is on disk.
+### exit=2

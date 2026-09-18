@@ -1,0 +1,10 @@
+# Uninstalling from a .github/ the project also keeps its own things in. The
+# workflow survives, so does an empty directory the project made, and so do the
+# two the installer filled — a shared directory is filled, never removed.
+sdd --target "$TARGET" --for copilot
+sdd --uninstall "$TARGET"
+
+expect "the project's workflow survives" test -f .github/workflows/ci.yml
+expect "so does an empty directory of the project's own" test -d .github/ISSUE_TEMPLATE
+expect "and the two the installer filled stand empty" test -d .github/skills -a -d .github/agents
+expect "no engine link is left anywhere" no_engine_links

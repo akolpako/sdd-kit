@@ -1,0 +1,4 @@
+# A project GNU make builds: no build file detection knows, and the architecture
+# names the command. The baseline is the command, not the file — implement
+# starts here without asking whether the first task is a bootstrap.
+FEATURE=Cart

@@ -1,0 +1,7 @@
+VERIFY=fail
+
+FAIL:
+_docs/Cart/new-requirements.md is not on disk — the role it was assigned to did not write it.
+_docs/Cart/design.md is not on disk — the role it was assigned to did not write it.
+_docs/Cart/tasks.md is not on disk — the role it was assigned to did not write it.
+### exit=2

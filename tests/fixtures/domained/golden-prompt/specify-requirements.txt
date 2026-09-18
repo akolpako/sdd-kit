@@ -1,0 +1,43 @@
+Working directory: <tmp>/domained
+Every `.sdd/...` and `_docs/...` path below and in the protocols it names is
+relative to it.
+
+# Assignment: the requirements of Cart
+
+Follow these protocols, in this order:
+
+.sdd/protocols/spec-modes.md
+.sdd/protocols/requirements-writing.md
+.sdd/protocols/docs-format.md
+
+MODE=draft
+FEATURE=Cart
+
+Files of this run:
+
+_docs/Cart/raw.md
+_docs/Cart/new-requirements.md
+_docs/Cart/design.md
+_docs/Cart/tasks.md
+_docs/architecture.index.md
+_docs/requirements.md
+
+Kept by the human from an earlier run — input to read, never rewritten:
+
+none
+
+Write `_docs/Cart/new-requirements.md` from `_docs/Cart/raw.md`, with
+`status: draft` among its properties. That file is already on disk, holding nothing
+but the template it was copied from: the structure to keep is the one already in
+it, and no template has to be found.
+
+REQ-002 is the first free number of the ungrouped sequence. Which sequence
+this feature writes into — that one, or a domain of its own — is settled as the
+numbering protocol fixes it, and a domain's own next number comes from
+`.sdd/scripts/next-req.sh . <DOMAIN>`. Number upward from the one that answers.
+Declaring the number in `new-requirements.md` is what takes it;
+`_docs/requirements.md` is not written in this run.
+
+Return: the requirements you wrote, the numbers you gave them, and what `raw.md`
+left unsettled.
+### exit=0

@@ -1,0 +1,6 @@
+# A feature branch with a history around it: `main`, a `develop` carrying
+# another team's commit, and this feature branched off develop and pushed once.
+# The review set is what this branch added, and neither the other team's commit
+# nor the work already pushed may fall out of it.
+FEATURE=Cart
+GIT=yes

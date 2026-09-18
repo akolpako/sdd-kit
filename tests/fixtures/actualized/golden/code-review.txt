@@ -1,0 +1,22 @@
+GATE=stop
+FEATURE=Cart
+FOLDER=Cart
+STAGE=actualized
+BASE=
+ROOT=
+DIFF=
+CHANGED=0
+REVIEW_PATH=_docs/Cart/review.md
+REVIEW_PREVIOUS=2026-01-15
+
+STOP:
+Not a git repository: /sdd-code-review needs git to tell what this feature changed. Nothing here is worked out by reading the tree by hand.
+
+ASK:
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=0

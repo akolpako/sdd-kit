@@ -1,0 +1,32 @@
+### sdd --target <tmp>/installed-skills-copilot/project --for copilot
+exit=0
+### expect the installed skill lands where Copilot reads skills — pass
+### expect a skill for the other host does not arrive — pass
+### expect a command of the same name stays the engine's — pass
+### expect the clash is named — pass
+### sdd --uninstall <tmp>/installed-skills-copilot/project
+exit=0
+### expect uninstall removes it with the rest — pass
+### tree
+d  .github/
+d  .github/agents/
+d  .github/skills/
+d  .github/skills/angular-practices/
+d  .github/skills/java-core/
+d  .github/skills/java-jpa/
+d  .github/skills/java-junit/
+d  .github/skills/java-junit/references/
+d  .github/skills/maven-lib-source/
+d  .github/skills/maven-lib-source/scripts/
+d  .github/skills/java-springboot/
+d  .github/skills/probe/
+d  .github/skills/sdd-actualize/
+d  .github/skills/sdd-code-fix/
+d  .github/skills/sdd-code-review/
+d  .github/skills/sdd-implement/
+d  .github/skills/sdd-init/
+d  .github/skills/sdd-next-story/
+d  .github/skills/sdd-spec-review/
+d  .github/skills/sdd-specify/
+d  .github/skills/sdd-status/
+### registry

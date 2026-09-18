@@ -1,0 +1,3 @@
+### exit=2
+### stderr
+ERROR=the gate says GATE=stop for /sdd-specify: nothing is spawned from this run, so no prompt is rendered

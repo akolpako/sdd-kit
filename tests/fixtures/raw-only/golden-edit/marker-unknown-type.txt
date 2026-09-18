@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=no such file: web/package.json
+### tree

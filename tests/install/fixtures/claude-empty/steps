@@ -1,0 +1,14 @@
+# A first install into an empty directory. The whole engine lands under .sdd/,
+# the directories Claude Code reads land under .claude/, and the two files the
+# project also writes on — CLAUDE.md and .gitignore — are merged, not copied
+# whole.
+# The engine ships no rule today; one is planted so the rules channel is still
+# exercised — installed at its own path, and again where the host reads it.
+mkdir -p "$ENGINE/.sdd/rules"
+printf 'A rule.\n' > "$ENGINE/.sdd/rules/probe.md"
+sdd --target "$TARGET" --for claude
+
+expect "nothing was written under .github/" test ! -e .github
+expect "the rule a prompt names is a copy of the engine's" test -f .sdd/rules/probe.md
+expect "and the host reads the same rule from .claude/rules/" test -f .claude/rules/probe.md
+expect "no symlink into the engine is left anywhere" no_engine_links

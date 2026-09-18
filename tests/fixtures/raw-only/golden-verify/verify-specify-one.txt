@@ -1,0 +1,5 @@
+VERIFY=fail
+
+FAIL:
+_docs/Cart/design.md is not on disk — the role it was assigned to did not write it.
+### exit=2

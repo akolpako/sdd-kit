@@ -1,0 +1,271 @@
+### sdd --target <tmp>/installed-skills-claude/project --for claude
+exit=0
+### expect the installed skill is copied whole — pass
+### expect a linked skill arrives as files, not a link — pass
+### expect a skill for the other host does not arrive — pass
+### expect a name the engine ships stays the engine's — pass
+### expect the clash is named — pass
+### sdd --sync --all
+exit=0
+### expect a skill gone from the clone is pruned — pass
+### tree
+d  .claude/
+d  .claude/agents/
+c  .claude/agents/architect.md = <engine>/.sdd/agents/architect.md
+c  .claude/agents/backend-developer.md = <engine>/.sdd/agents/backend-developer.md
+c  .claude/agents/code-reviewer.md = <engine>/.sdd/agents/code-reviewer.md
+c  .claude/agents/frontend-developer.md = <engine>/.sdd/agents/frontend-developer.md
+c  .claude/agents/requirements-engineer.md = <engine>/.sdd/agents/requirements-engineer.md
+d  .claude/commands/
+c  .claude/commands/sdd-actualize.md = <engine>/.sdd/commands/sdd-actualize.md
+c  .claude/commands/sdd-code-fix.md = <engine>/.sdd/commands/sdd-code-fix.md
+c  .claude/commands/sdd-code-review.md = <engine>/.sdd/commands/sdd-code-review.md
+c  .claude/commands/sdd-implement.md = <engine>/.sdd/commands/sdd-implement.md
+c  .claude/commands/sdd-init.md = <engine>/.sdd/commands/sdd-init.md
+c  .claude/commands/sdd-next-story.md = <engine>/.sdd/commands/sdd-next-story.md
+c  .claude/commands/sdd-spec-review.md = <engine>/.sdd/commands/sdd-spec-review.md
+c  .claude/commands/sdd-specify.md = <engine>/.sdd/commands/sdd-specify.md
+c  .claude/commands/sdd-status.md = <engine>/.sdd/commands/sdd-status.md
+c  .claude/settings.json = <engine>/.sdd/_claude/settings.json
+d  .claude/skills/
+d  .claude/skills/angular-practices/
+c  .claude/skills/angular-practices/SKILL.md = <engine>/.sdd/skills/angular-practices/SKILL.md
+d  .claude/skills/java-core/
+c  .claude/skills/java-core/SKILL.md = <engine>/.sdd/skills/java-core/SKILL.md
+d  .claude/skills/java-jpa/
+c  .claude/skills/java-jpa/SKILL.md = <engine>/.sdd/skills/java-jpa/SKILL.md
+d  .claude/skills/java-junit/
+c  .claude/skills/java-junit/SKILL.md = <engine>/.sdd/skills/java-junit/SKILL.md
+d  .claude/skills/java-junit/references/
+c  .claude/skills/java-junit/references/junit-rule-arrange-act-assert.md = <engine>/.sdd/skills/java-junit/references/junit-rule-arrange-act-assert.md
+c  .claude/skills/java-junit/references/junit-rule-assertj-only.md = <engine>/.sdd/skills/java-junit/references/junit-rule-assertj-only.md
+c  .claude/skills/java-junit/references/junit-rule-async-awaitility.md = <engine>/.sdd/skills/java-junit/references/junit-rule-async-awaitility.md
+c  .claude/skills/java-junit/references/junit-rule-fakes.md = <engine>/.sdd/skills/java-junit/references/junit-rule-fakes.md
+c  .claude/skills/java-junit/references/junit-rule-first.md = <engine>/.sdd/skills/java-junit/references/junit-rule-first.md
+c  .claude/skills/java-junit/references/junit-rule-fixtures.md = <engine>/.sdd/skills/java-junit/references/junit-rule-fixtures.md
+c  .claude/skills/java-junit/references/junit-rule-literal-expected-values.md = <engine>/.sdd/skills/java-junit/references/junit-rule-literal-expected-values.md
+c  .claude/skills/java-junit/references/junit-rule-mockito-stubbing.md = <engine>/.sdd/skills/java-junit/references/junit-rule-mockito-stubbing.md
+c  .claude/skills/java-junit/references/junit-rule-named-setup-helpers.md = <engine>/.sdd/skills/java-junit/references/junit-rule-named-setup-helpers.md
+c  .claude/skills/java-junit/references/junit-rule-nested-grouping.md = <engine>/.sdd/skills/java-junit/references/junit-rule-nested-grouping.md
+c  .claude/skills/java-junit/references/junit-rule-no-control-flow.md = <engine>/.sdd/skills/java-junit/references/junit-rule-no-control-flow.md
+c  .claude/skills/java-junit/references/junit-rule-one-concept-per-test.md = <engine>/.sdd/skills/java-junit/references/junit-rule-one-concept-per-test.md
+c  .claude/skills/java-junit/references/junit-rule-parameterized-tests.md = <engine>/.sdd/skills/java-junit/references/junit-rule-parameterized-tests.md
+c  .claude/skills/java-junit/references/junit-rule-real-data-carriers.md = <engine>/.sdd/skills/java-junit/references/junit-rule-real-data-carriers.md
+c  .claude/skills/java-junit/references/junit-rule-state-based-assertions.md = <engine>/.sdd/skills/java-junit/references/junit-rule-state-based-assertions.md
+d  .claude/skills/maven-lib-source/
+c  .claude/skills/maven-lib-source/SKILL.md = <engine>/.sdd/skills/maven-lib-source/SKILL.md
+d  .claude/skills/maven-lib-source/scripts/
+c  .claude/skills/maven-lib-source/scripts/MavenLibSource.java = <engine>/.sdd/skills/maven-lib-source/scripts/MavenLibSource.java
+c  .claude/skills/maven-lib-source/scripts/maven-lib-source.sh = <engine>/.sdd/skills/maven-lib-source/scripts/maven-lib-source.sh
+d  .claude/skills/java-springboot/
+c  .claude/skills/java-springboot/SKILL.md = <engine>/.sdd/skills/java-springboot/SKILL.md
+d  .claude/skills/linked/
+f  .claude/skills/linked/SKILL.md
+f  .gitignore
+d  .sdd/
+f  .sdd/.sdd-manifest
+d  .sdd/prompts/
+c  .sdd/prompts/actualize-baseline-from-feature.md = <engine>/.sdd/prompts/actualize-baseline-from-feature.md
+c  .sdd/prompts/code-fix-findings-backend.md = <engine>/.sdd/prompts/code-fix-findings-backend.md
+c  .sdd/prompts/code-fix-findings-frontend.md = <engine>/.sdd/prompts/code-fix-findings-frontend.md
+c  .sdd/prompts/code-review-review-set.md = <engine>/.sdd/prompts/code-review-review-set.md
+c  .sdd/prompts/implement-backend.md = <engine>/.sdd/prompts/implement-backend.md
+c  .sdd/prompts/implement-frontend.md = <engine>/.sdd/prompts/implement-frontend.md
+c  .sdd/prompts/init-baseline-from-codebase.md = <engine>/.sdd/prompts/init-baseline-from-codebase.md
+c  .sdd/prompts/review-design+tasks.md = <engine>/.sdd/prompts/review-design+tasks.md
+c  .sdd/prompts/review-requirements.md = <engine>/.sdd/prompts/review-requirements.md
+c  .sdd/prompts/specify-design+tasks.md = <engine>/.sdd/prompts/specify-design+tasks.md
+c  .sdd/prompts/specify-requirements.md = <engine>/.sdd/prompts/specify-requirements.md
+d  .sdd/protocols/
+c  .sdd/protocols/architecture-design.md = <engine>/.sdd/protocols/architecture-design.md
+c  .sdd/protocols/code-review.md = <engine>/.sdd/protocols/code-review.md
+c  .sdd/protocols/developer.md = <engine>/.sdd/protocols/developer.md
+c  .sdd/protocols/docs-format.md = <engine>/.sdd/protocols/docs-format.md
+c  .sdd/protocols/interview.md = <engine>/.sdd/protocols/interview.md
+c  .sdd/protocols/orchestration.md = <engine>/.sdd/protocols/orchestration.md
+c  .sdd/protocols/project-baseline.md = <engine>/.sdd/protocols/project-baseline.md
+c  .sdd/protocols/requirements-writing.md = <engine>/.sdd/protocols/requirements-writing.md
+c  .sdd/protocols/spec-checklist.md = <engine>/.sdd/protocols/spec-checklist.md
+c  .sdd/protocols/spec-modes.md = <engine>/.sdd/protocols/spec-modes.md
+c  .sdd/protocols/task-breakdown.md = <engine>/.sdd/protocols/task-breakdown.md
+c  .sdd/protocols/task-loop.md = <engine>/.sdd/protocols/task-loop.md
+d  .sdd/scripts/
+c  .sdd/scripts/build-command.sh = <engine>/.sdd/scripts/build-command.sh
+c  .sdd/scripts/feature-state.sh = <engine>/.sdd/scripts/feature-state.sh
+c  .sdd/scripts/gate.sh = <engine>/.sdd/scripts/gate.sh
+c  .sdd/scripts/jira-fetch.sh = <engine>/.sdd/scripts/jira-fetch.sh
+d  .sdd/scripts/lib/
+c  .sdd/scripts/lib/format.sh = <engine>/.sdd/scripts/lib/format.sh
+c  .sdd/scripts/lib/log.sh = <engine>/.sdd/scripts/lib/log.sh
+c  .sdd/scripts/lib/token-counter.py = <engine>/.sdd/scripts/lib/token-counter.py
+c  .sdd/scripts/next-req.sh = <engine>/.sdd/scripts/next-req.sh
+c  .sdd/scripts/review-set.sh = <engine>/.sdd/scripts/review-set.sh
+c  .sdd/scripts/spawn-prompt.sh = <engine>/.sdd/scripts/spawn-prompt.sh
+c  .sdd/scripts/spec-edit.sh = <engine>/.sdd/scripts/spec-edit.sh
+d  .sdd/templates/
+d  .sdd/templates/architecture/
+c  .sdd/templates/architecture.md = <engine>/.sdd/templates/architecture.md
+c  .sdd/templates/architecture/00-quick-reference.md = <engine>/.sdd/templates/architecture/00-quick-reference.md
+c  .sdd/templates/architecture/01-system-overview.md = <engine>/.sdd/templates/architecture/01-system-overview.md
+c  .sdd/templates/architecture/02-c4-views.md = <engine>/.sdd/templates/architecture/02-c4-views.md
+c  .sdd/templates/architecture/03-module-structure.md = <engine>/.sdd/templates/architecture/03-module-structure.md
+c  .sdd/templates/architecture/04-data-model.md = <engine>/.sdd/templates/architecture/04-data-model.md
+c  .sdd/templates/architecture/05-business-logic.md = <engine>/.sdd/templates/architecture/05-business-logic.md
+c  .sdd/templates/architecture/06-api-spec.md = <engine>/.sdd/templates/architecture/06-api-spec.md
+c  .sdd/templates/architecture/07-tech-stack.md = <engine>/.sdd/templates/architecture/07-tech-stack.md
+c  .sdd/templates/architecture/08-design-patterns.md = <engine>/.sdd/templates/architecture/08-design-patterns.md
+c  .sdd/templates/architecture/09-testing.md = <engine>/.sdd/templates/architecture/09-testing.md
+c  .sdd/templates/architecture/10-security.md = <engine>/.sdd/templates/architecture/10-security.md
+c  .sdd/templates/architecture/11-observability.md = <engine>/.sdd/templates/architecture/11-observability.md
+c  .sdd/templates/architecture/12-nfr.md = <engine>/.sdd/templates/architecture/12-nfr.md
+c  .sdd/templates/architecture/13-constraints.md = <engine>/.sdd/templates/architecture/13-constraints.md
+c  .sdd/templates/architecture/14-glossary.md = <engine>/.sdd/templates/architecture/14-glossary.md
+c  .sdd/templates/architecture/15-references.md = <engine>/.sdd/templates/architecture/15-references.md
+c  .sdd/templates/code-style.md = <engine>/.sdd/templates/code-style.md
+c  .sdd/templates/design.md = <engine>/.sdd/templates/design.md
+c  .sdd/templates/new-requirements.md = <engine>/.sdd/templates/new-requirements.md
+c  .sdd/templates/raw.md = <engine>/.sdd/templates/raw.md
+c  .sdd/templates/requirements.md = <engine>/.sdd/templates/requirements.md
+c  .sdd/templates/review.md = <engine>/.sdd/templates/review.md
+c  .sdd/templates/tasks.md = <engine>/.sdd/templates/tasks.md
+f  CLAUDE.md
+### file .claude/skills/linked/SKILL.md
+---
+name: linked
+description: Linked.
+---
+### file .gitignore
+# SDD:BEGIN
+.sdd/*
+.claude/
+# SDD:END
+### file CLAUDE.md
+<!-- SDD:BEGIN -->
+# Information for agents
+
+This project uses Spec-Driven Development.
+
+**Nobody commits** — no command, no role. The current state of the project is the working tree, never the git history.
+
+## The assignment
+
+**The prompt carries everything the role needs**: the protocols it is to follow, the paths it may read and write, and whatever was already resolved — the build command, a starting number, the records of the work. A role looks nothing up that the prompt did not name, and reads nothing in a folder the prompt did not name.
+
+What a role changed is read from the working tree, never from its prose.
+
+## Scripts
+
+**A script that fails is reported, never worked around** — every error is the human's call. A `NOTES:` section is part of the answer too: it names what the script could not settle on its own, so it is passed on.
+
+## Skills
+
+A role may consult any other project skill when it helps.
+
+Whatever communication style the session is set to, anything written to `_docs/**` is normal prose.
+
+## Instructions conflicts
+
+**Precedence on conflict:** `_docs/code-style.md` (for code) or the architecture baseline — `_docs/architecture.index.md` and the sections it points at, or `_docs/architecture.md` — (for architecture) wins over instructions.
+<!-- SDD:END -->
+### manifest
+# Written by install.sh. Do not edit.
+host	claude
+<sum>	.claude/agents/architect.md
+<sum>	.claude/agents/backend-developer.md
+<sum>	.claude/agents/code-reviewer.md
+<sum>	.claude/agents/frontend-developer.md
+<sum>	.claude/agents/requirements-engineer.md
+<sum>	.claude/commands/sdd-actualize.md
+<sum>	.claude/commands/sdd-code-fix.md
+<sum>	.claude/commands/sdd-code-review.md
+<sum>	.claude/commands/sdd-implement.md
+<sum>	.claude/commands/sdd-init.md
+<sum>	.claude/commands/sdd-next-story.md
+<sum>	.claude/commands/sdd-spec-review.md
+<sum>	.claude/commands/sdd-specify.md
+<sum>	.claude/commands/sdd-status.md
+<sum>	.claude/settings.json
+<sum>	.claude/skills/angular-practices/SKILL.md
+<sum>	.claude/skills/java-core/SKILL.md
+<sum>	.claude/skills/java-jpa/SKILL.md
+<sum>	.claude/skills/java-junit/SKILL.md
+<sum>	.claude/skills/java-junit/references/junit-rule-arrange-act-assert.md
+<sum>	.claude/skills/java-junit/references/junit-rule-assertj-only.md
+<sum>	.claude/skills/java-junit/references/junit-rule-async-awaitility.md
+<sum>	.claude/skills/java-junit/references/junit-rule-fakes.md
+<sum>	.claude/skills/java-junit/references/junit-rule-first.md
+<sum>	.claude/skills/java-junit/references/junit-rule-fixtures.md
+<sum>	.claude/skills/java-junit/references/junit-rule-literal-expected-values.md
+<sum>	.claude/skills/java-junit/references/junit-rule-mockito-stubbing.md
+<sum>	.claude/skills/java-junit/references/junit-rule-named-setup-helpers.md
+<sum>	.claude/skills/java-junit/references/junit-rule-nested-grouping.md
+<sum>	.claude/skills/java-junit/references/junit-rule-no-control-flow.md
+<sum>	.claude/skills/java-junit/references/junit-rule-one-concept-per-test.md
+<sum>	.claude/skills/java-junit/references/junit-rule-parameterized-tests.md
+<sum>	.claude/skills/java-junit/references/junit-rule-real-data-carriers.md
+<sum>	.claude/skills/java-junit/references/junit-rule-state-based-assertions.md
+<sum>	.claude/skills/maven-lib-source/SKILL.md
+<sum>	.claude/skills/maven-lib-source/scripts/MavenLibSource.java
+<sum>	.claude/skills/maven-lib-source/scripts/maven-lib-source.sh
+<sum>	.claude/skills/java-springboot/SKILL.md
+<sum>	.claude/skills/linked/SKILL.md
+<sum>	.sdd/prompts/actualize-baseline-from-feature.md
+<sum>	.sdd/prompts/code-fix-findings-backend.md
+<sum>	.sdd/prompts/code-fix-findings-frontend.md
+<sum>	.sdd/prompts/code-review-review-set.md
+<sum>	.sdd/prompts/implement-backend.md
+<sum>	.sdd/prompts/implement-frontend.md
+<sum>	.sdd/prompts/init-baseline-from-codebase.md
+<sum>	.sdd/prompts/review-design+tasks.md
+<sum>	.sdd/prompts/review-requirements.md
+<sum>	.sdd/prompts/specify-design+tasks.md
+<sum>	.sdd/prompts/specify-requirements.md
+<sum>	.sdd/protocols/architecture-design.md
+<sum>	.sdd/protocols/code-review.md
+<sum>	.sdd/protocols/developer.md
+<sum>	.sdd/protocols/docs-format.md
+<sum>	.sdd/protocols/interview.md
+<sum>	.sdd/protocols/orchestration.md
+<sum>	.sdd/protocols/project-baseline.md
+<sum>	.sdd/protocols/requirements-writing.md
+<sum>	.sdd/protocols/spec-checklist.md
+<sum>	.sdd/protocols/spec-modes.md
+<sum>	.sdd/protocols/task-breakdown.md
+<sum>	.sdd/protocols/task-loop.md
+<sum>	.sdd/scripts/build-command.sh
+<sum>	.sdd/scripts/feature-state.sh
+<sum>	.sdd/scripts/gate.sh
+<sum>	.sdd/scripts/jira-fetch.sh
+<sum>	.sdd/scripts/lib/format.sh
+<sum>	.sdd/scripts/lib/log.sh
+<sum>	.sdd/scripts/lib/token-counter.py
+<sum>	.sdd/scripts/next-req.sh
+<sum>	.sdd/scripts/review-set.sh
+<sum>	.sdd/scripts/spawn-prompt.sh
+<sum>	.sdd/scripts/spec-edit.sh
+<sum>	.sdd/templates/architecture.md
+<sum>	.sdd/templates/architecture/00-quick-reference.md
+<sum>	.sdd/templates/architecture/01-system-overview.md
+<sum>	.sdd/templates/architecture/02-c4-views.md
+<sum>	.sdd/templates/architecture/03-module-structure.md
+<sum>	.sdd/templates/architecture/04-data-model.md
+<sum>	.sdd/templates/architecture/05-business-logic.md
+<sum>	.sdd/templates/architecture/06-api-spec.md
+<sum>	.sdd/templates/architecture/07-tech-stack.md
+<sum>	.sdd/templates/architecture/08-design-patterns.md
+<sum>	.sdd/templates/architecture/09-testing.md
+<sum>	.sdd/templates/architecture/10-security.md
+<sum>	.sdd/templates/architecture/11-observability.md
+<sum>	.sdd/templates/architecture/12-nfr.md
+<sum>	.sdd/templates/architecture/13-constraints.md
+<sum>	.sdd/templates/architecture/14-glossary.md
+<sum>	.sdd/templates/architecture/15-references.md
+<sum>	.sdd/templates/code-style.md
+<sum>	.sdd/templates/design.md
+<sum>	.sdd/templates/new-requirements.md
+<sum>	.sdd/templates/raw.md
+<sum>	.sdd/templates/requirements.md
+<sum>	.sdd/templates/review.md
+<sum>	.sdd/templates/tasks.md
+### registry
+<tmp>/installed-skills-claude/project	claude

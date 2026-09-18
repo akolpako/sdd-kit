@@ -1,0 +1,13 @@
+# A project that groups its requirements by domain: `REQ-ACC-003` beside
+# `REQ-001`, each sequence with its own `<!-- Next free number: -->` marker.
+#
+# It is the fixture that records what the gate says about such a compilation —
+# one REQ_DOMAINS: record per sequence, and NEXT_REQ answering for the
+# undomained one — and that a domained id is read as an id everywhere an
+# undomained one is: the entries it counts, the declarations it reads out of the
+# feature, the drafts it names.
+#
+# The undomained sequence is here on purpose. Grouping is a decision a project
+# makes partway through, so the ids it wrote before that keep standing, and the
+# two shapes live in one file ever after.
+FEATURE=Cart

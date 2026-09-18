@@ -1,0 +1,5 @@
+VERIFY=fail
+
+FAIL:
+_docs/Cart/design.md says status 'ready' where this run writes 'draft' — 'ready' is what /sdd-spec-review leaves, and nothing here promotes a spec.
+### exit=2

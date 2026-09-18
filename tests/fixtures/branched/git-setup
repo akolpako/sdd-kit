@@ -1,0 +1,23 @@
+# The history this fixture is about. Runs in the project, after `git init` and
+# instead of the single commit a git fixture gets by default.
+
+# main — the project as it stood before this feature.
+git add _docs pom.xml
+git commit -qm "project baseline"
+
+# develop — another team's commit, integrated and none of this review's business.
+git checkout -qb develop
+printf 'server:\n  port: 8081\n' > ops-deploy.yml
+git add ops-deploy.yml
+git commit -qm "another team: deploy config"
+
+# feat — this feature, branched off develop and already pushed once. The
+# remote-tracking refs are written by hand: a fixture needs the refs, not a
+# remote to talk to.
+git checkout -qb feat
+git add src
+git commit -qm "Cart: the service"
+git update-ref refs/remotes/origin/main "$(git rev-parse main)"
+git update-ref refs/remotes/origin/feat "$(git rev-parse feat)"
+git config branch.feat.remote origin
+git config branch.feat.merge refs/heads/feat

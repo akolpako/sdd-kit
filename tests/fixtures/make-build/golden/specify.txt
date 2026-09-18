@@ -1,0 +1,35 @@
+GATE=ask
+FEATURE=Cart
+FOLDER=Cart
+STAGE=reviewed
+RAW=present
+REQUIREMENTS=present
+DESIGN=present
+TASKS=present
+STATUS_REQUIREMENTS=ready
+STATUS_DESIGN=ready
+STATUS_TASKS=ready
+COMPILATION=present
+NEXT_REQ=REQ-004
+MODE=draft
+
+SPAWN:
+requirements-engineer|.sdd/protocols/spec-modes.md,.sdd/protocols/requirements-writing.md,.sdd/protocols/docs-format.md|requirements
+architect|.sdd/protocols/spec-modes.md,.sdd/protocols/architecture-design.md,.sdd/protocols/task-breakdown.md,.sdd/protocols/docs-format.md|design+tasks
+
+REQ_DOMAINS:
+-|NEXT=REQ-004|COUNTER=REQ-004|HIGHEST=REQ-003|DECLARED=REQ-003|DECLARED_IN=Cart|COUNT=3
+
+REQ_DUPLICATES:
+
+STOP:
+
+ASK:
+These files already hold a spec: new-requirements.md (ready), design.md (ready), tasks.md (ready). Which of them may this run overwrite? Generation does not start until the human answers, and a file marked ready carries the result of a /sdd-spec-review session that overwriting throws away.
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=0

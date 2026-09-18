@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=_docs/Wishlist/raw.md already describes this feature — it is never overwritten
+### tree

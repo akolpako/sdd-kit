@@ -1,0 +1,40 @@
+Working directory: <tmp>/branched
+Every `.sdd/...` and `_docs/...` path below and in the protocols it names is
+relative to it.
+
+# Assignment: the backend tasks of Cart
+
+Follow these protocols, in this order:
+
+.sdd/protocols/developer.md
+.sdd/protocols/task-loop.md
+
+Before the first task, load the installed skills that match this work, as your
+`## Skills` section says.
+
+FEATURE=Cart
+
+Build command — the verification of this run, resolved already:
+
+mvn -q verify
+
+Files of this run:
+
+_docs/Cart/new-requirements.md
+_docs/Cart/design.md
+_docs/Cart/tasks.md
+_docs/code-style.md
+_docs/architecture.index.md
+
+The open tasks of this feature:
+
+TASK-003|open|backend|Cart totals|
+TASK-004|open|backend|Cart REST endpoints|
+
+Your type is `backend`, and every task of it above is yours in this one run.
+Your `tasks.md` is `_docs/Cart/tasks.md` — run the task loop over it.
+
+Return, with the skills you loaded named on the first line: the tasks you
+closed, the tasks you blocked with their reports, and the result of the build
+command above.
+### exit=0

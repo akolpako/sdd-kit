@@ -1,0 +1,120 @@
+SCAFFOLD=spec
+FOLDER=Cart
+
+COPIED:
+_docs/Cart/design.md
+### exit=0
+### tree
+diff -ru -x .git <tmp>/dup-req/_docs/Cart/design.md <tmp>/edit/_docs/Cart/design.md
+--- <tmp>/dup-req/_docs/Cart/design.md
++++ <tmp>/edit/_docs/Cart/design.md
+@@ -1,7 +1,107 @@
++---
++type: design
++feature: Cart
++status: draft
++tags:
++  - sdd/design
++---
++
+ # Design — Cart
+ 
+-> Status: draft
++<!-- The `status` property above is `draft` or `ready` — the only record on
++disk of whether the spec was reviewed. -->
+ 
++<!-- A section this feature does not touch is deleted, not filled with an
++example or a placeholder. A section the feature is bound by but does not
++change is one line pointing at the architecture baseline — the section file, or
++the `## ` section, that holds it — never a retelling of it. -->
++
++<!-- Budget — the size of this file follows the size of the feature, counted
++in the tasks of `tasks.md`:
++  * 5 tasks or fewer — about 150 lines, one diagram;
++  * 6 to 15 tasks — about 300 lines;
++  * more — no ceiling, but every diagram earns its place.
++A diagram, a section, or an assumption written only to fill the template is
++waste: the file is read again by every role that implements or reviews the
++feature. -->
++
+ ## Overview
+ 
+-A cart service over a cart table, reached through one REST controller.
++<!-- What this feature adds to the system and how it fits what already
++exists. The architecture baseline holds the architecture of the project — this
++file never repeats it, it only says where this feature attaches to it. -->
++
++## Architecture
++
++### System Context
++
++<!-- C4 L1 as a `mermaid C4Context` block: who uses the feature and which
++external systems it talks to; every `Rel` carries the protocol and, where it
++matters, the auth. Then C4 L2 as a `mermaid C4Container` block — only the
++containers this feature runs in or changes, a diagram of the whole system
++belongs in the architecture baseline. Under **Key external dependencies:**, one
++line per external system: its protocol, its auth, and what happens when it is
++unavailable. -->
++
++**Key external dependencies:**
++
++### Module Structure
++
++<!-- Which modules this feature adds or changes, and why each is placed where
++it is. Purpose and rationale, not file lists. An arrow that crosses a layer
++boundary the architecture baseline fixes is named here explicitly, with the
++reason. The module dependencies follow as a `mermaid graph TD` block. -->
++
++## Data Model
++
++<!-- The entities this feature adds or changes, their fields, and the
++relations between them as a `mermaid erDiagram` block. Unchanged entities
++appear only where a relation needs them. -->
++
++## API Contracts
++
++<!-- The base path, then one row per endpoint: the endpoint, its method, what
++it does or returns, and the notes that bind it — auth, idempotency, rate
++limit. Conventions — versioning, paging, naming — come from the architecture
++baseline's API section and are not restated. Then a JSON request and response
++example, and a JSON error example in the shape the baseline fixes for the whole
++project. -->
++
++**Base path:**
++
++| Endpoint | Method | Purpose | Notes |
++|----------|--------|---------|-------|
++
++**Request / response:**
++
++**Error response:**
++
++## Business Logic
++
++<!-- One `### <workflow name>` block per workflow: the flow as a
++`mermaid sequenceDiagram` with responses coming back dotted, then
++**Key rules:** — the business rules the flow enforces and what it rejects —
++then a table of what happens when a step fails: one row per component with its
++failure classification (transient / permanent), its retry policy, and the
++recovery, meaning what the user sees and what the system does. -->
++
++## Security Considerations
++
++<!-- What this feature adds to the attack surface: new inputs, new
++permissions, new data at rest. The project-wide model stays in the
++architecture baseline's security section. -->
++
++## Non-Functional Requirements
++
++<!-- Only the ones this feature changes or is bound by: latency budget,
++throughput, data volume, availability. Each with the number that decides it. -->
++
++## Assumptions
++
++<!-- Everything decided without confirmation, one line each — format in
++`.sdd/protocols/spec-modes.md`. -->
++
++## Open Questions
++
++<!-- Points only the human can settle, one line each — see
++`.sdd/protocols/spec-modes.md`. -->

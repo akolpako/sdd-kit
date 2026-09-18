@@ -1,0 +1,11 @@
+# Changing the host is an uninstall first — installing over the top would leave
+# the previous host's files standing with nothing to collect them. The refused
+# run writes nothing, and the same host over the same path refreshes it.
+sdd --target "$TARGET" --for copilot
+snapshot installed
+
+sdd --target "$TARGET" --for claude
+expect_unchanged installed "the refused install left the target as it was"
+
+sdd --target "$TARGET" --for copilot
+expect_unchanged installed "and re-installing the recorded host changed nothing either"

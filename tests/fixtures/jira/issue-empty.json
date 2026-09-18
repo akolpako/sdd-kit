@@ -1,0 +1,8 @@
+{
+  "key": "ABC-12345",
+  "fields": {
+    "summary": "Publish account events in the new format",
+    "description": null,
+    "attachment": []
+  }
+}

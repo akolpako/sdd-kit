@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=no value for {{FINDINGS}}: the gate did not print it and no argument carried it
+ERROR=no prompt was printed for findings-backend: fix the values above and run it again

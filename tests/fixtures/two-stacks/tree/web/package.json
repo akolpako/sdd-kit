@@ -1,0 +1,6 @@
+{
+  "name": "shop-web",
+  "scripts": {
+    "test": "ng test"
+  }
+}

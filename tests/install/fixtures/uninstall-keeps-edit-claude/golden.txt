@@ -1,0 +1,20 @@
+### sdd --target <tmp>/uninstall-keeps-edit-claude/project --for claude
+exit=0
+### sdd --uninstall <tmp>/uninstall-keeps-edit-claude/project
+exit=0
+### expect the edited file is still there — pass
+### expect an untouched one is gone — pass
+### expect and the manifest stays, because it still describes a file on disk — pass
+### tree
+d  .claude/
+d  .claude/commands/
+f  .claude/commands/sdd-status.md
+d  .sdd/
+f  .sdd/.sdd-manifest
+### file .claude/commands/sdd-status.md
+This command was rewritten by the project.
+### manifest
+# Written by install.sh. Do not edit.
+host	claude
+<sum>	.claude/commands/sdd-status.md
+### registry

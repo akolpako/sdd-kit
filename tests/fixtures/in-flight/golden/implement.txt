@@ -1,0 +1,28 @@
+GATE=ask
+FEATURE=Wishlist
+FOLDER=Wishlist
+STAGE=specified
+TASKS_DONE=0
+TASKS_TOTAL=2
+TASKS_BLOCKED=0
+ROLE_ORDER=backend
+BUILD_ROOT=mvn -q verify
+BUILD_BACKEND=mvn -q verify
+BUILD_FRONTEND=
+BASELINE=mvn -q verify
+BUILD_FILES=1
+
+SPAWN:
+backend-developer|.sdd/protocols/developer.md,.sdd/protocols/task-loop.md|backend
+
+STOP:
+
+ASK:
+Not reviewed: new-requirements.md (draft), design.md (draft), tasks.md (draft). /sdd-spec-review Wishlist is what promotes a spec to ready. Implementing anyway needs the human to say so in as many words, and the final report then says the work was built from an unreviewed spec.
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=0

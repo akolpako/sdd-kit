@@ -1,0 +1,22 @@
+GATE=stop
+FEATURE=ABC-12345
+FOLDER=ABC-12345
+STAGE=
+REQUIREMENTS=
+DESIGN=
+COMPILATION=
+NEXT_REQ=
+
+REQ_DOMAINS:
+
+STOP:
+The project has no _docs/ yet — there is nothing to actualize. Run /sdd-init, then /sdd-next-story ABC-12345.
+
+ASK:
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=2

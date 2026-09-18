@@ -1,0 +1,12 @@
+# Two features at once. Cart is finished and actualized: its numbers are entries
+# of the compilation and the counter stands past them. Wishlist is a draft whose
+# new-requirements.md declares REQ-004 and REQ-005 with no entry anywhere — the
+# compilation is not written until /sdd-actualize runs. The next free number is
+# read off those declarations, not off the counter, and a third feature started
+# here is handed REQ-006.
+#
+# The two features carry their status in the two forms the engine reads: Cart in
+# the `> Status:` line the templates wrote before frontmatter, Wishlist in the
+# `status` property they write now. One tree, both readable, and neither shape
+# changes what a command concludes.
+FEATURE=Wishlist

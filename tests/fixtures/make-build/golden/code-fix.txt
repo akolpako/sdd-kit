@@ -1,0 +1,26 @@
+GATE=stop
+FEATURE=Cart
+FOLDER=Cart
+STAGE=reviewed
+REVIEW=missing
+REVIEW_PATH=_docs/Cart/review.md
+REVIEW_DATE=
+REVIEW_ROOT=
+REVIEW_VERDICT=absent
+ROOT=
+BUILD_ROOT=make verify
+BUILD_BACKEND=make verify
+BUILD_FRONTEND=make verify
+
+STOP:
+_docs/Cart/review.md is missing — there is no report to act on. /sdd-code-review Cart writes one.
+
+ASK:
+
+WARN:
+Not a git repository — whether the report still describes the current code cannot be checked. A finding may be about a line that has since moved.
+
+ANOMALIES:
+
+NOTES:
+### exit=0

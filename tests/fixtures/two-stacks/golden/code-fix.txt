@@ -1,0 +1,25 @@
+GATE=stop
+FEATURE=Cart
+FOLDER=Cart
+STAGE=reviewed
+REVIEW=missing
+REVIEW_PATH=_docs/Cart/review.md
+REVIEW_DATE=
+REVIEW_ROOT=
+REVIEW_VERDICT=absent
+ROOT=HEAD
+BUILD_ROOT=
+BUILD_BACKEND=mvn clean verify
+BUILD_FRONTEND=cd web && npm run build && npm test
+
+STOP:
+_docs/Cart/review.md is missing — there is no report to act on. /sdd-code-review Cart writes one.
+
+ASK:
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=0

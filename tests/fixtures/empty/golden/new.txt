@@ -1,0 +1,20 @@
+GATE=ok
+FEATURE=Cart
+FOLDER=Cart
+STAGE=
+NAME_OK=yes
+NAME_WARN=
+RAW=missing
+
+FEATURES:
+
+STOP:
+
+ASK:
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=0

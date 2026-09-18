@@ -1,0 +1,17 @@
+SECTION=Problem
+CHANGED=yes
+FILE=_docs/Cart/raw.md
+### exit=0
+### tree
+diff -ru -x .git <tmp>/ready-half/_docs/Cart/raw.md <tmp>/edit/_docs/Cart/raw.md
+--- <tmp>/ready-half/_docs/Cart/raw.md
++++ <tmp>/edit/_docs/Cart/raw.md
+@@ -2,7 +2,7 @@
+ 
+ ## Problem
+ 
+-Shoppers cannot see what they picked before paying.
++Shoppers lose the cart when the session drops.
+ 
+ ## Users
+ 

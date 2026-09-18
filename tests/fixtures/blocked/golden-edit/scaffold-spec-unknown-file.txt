@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=not a spec file: raw.md — new-requirements.md, design.md or tasks.md
+### tree

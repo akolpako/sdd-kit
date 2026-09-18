@@ -1,0 +1,9 @@
+# The same silence on the other host: no terminal, no question, no overwrite.
+sdd --target "$TARGET" --for copilot
+printf 'This command was rewritten by the project.\n' > "$TARGET/.github/skills/sdd-status/SKILL.md"
+sdd --sync
+
+expect "the edit is still there" grep -q 'rewritten by the project' .github/skills/sdd-status/SKILL.md
+said "the output names --force" "--force"
+said "and --keep-edits" "--keep-edits"
+said "and says what it kept" "1 file(s) kept as this project has them."

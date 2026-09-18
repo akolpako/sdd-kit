@@ -1,0 +1,5 @@
+# The history this fixture is about is the one that does not exist. Runs in the
+# project, after `git init` and instead of the single commit a git fixture gets
+# by default: everything is staged and nothing is committed, so `git rev-parse
+# HEAD` fails and no ref of any name resolves.
+git add -A

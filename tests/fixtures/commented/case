@@ -1,0 +1,13 @@
+# Every format the scripts read, carrying an HTML comment: the template's
+# example entries left in the compilation, a real entry with a note after it, a
+# task and an architecture row with the same, and a commented-out `> Status:`
+# line above the real one. What is inside a comment counts nowhere; what is
+# outside one counts everywhere, and the same lines have to be real to a reader
+# and to a writer.
+#
+# The blank `> Status:` and `> Verdict:` lines above the real ones are the same
+# claim from the other side: a field line with no value is not the field, and a
+# writer that landed on it would rewrite the line nothing reads and leave the
+# old value standing where everything does.
+FEATURE=Cart
+GIT=yes

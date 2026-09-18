@@ -1,0 +1,36 @@
+### sdd --target <tmp>/copilot-uninstall-shared/project --for copilot
+exit=0
+### sdd --uninstall <tmp>/copilot-uninstall-shared/project
+exit=0
+### expect the project's workflow survives — pass
+### expect so does an empty directory of the project's own — pass
+### expect and the two the installer filled stand empty — pass
+### expect no engine link is left anywhere — pass
+### tree
+d  .github/
+d  .github/ISSUE_TEMPLATE/
+d  .github/agents/
+d  .github/skills/
+d  .github/skills/angular-practices/
+d  .github/skills/java-core/
+d  .github/skills/java-jpa/
+d  .github/skills/java-junit/
+d  .github/skills/java-junit/references/
+d  .github/skills/maven-lib-source/
+d  .github/skills/maven-lib-source/scripts/
+d  .github/skills/java-springboot/
+d  .github/skills/sdd-actualize/
+d  .github/skills/sdd-code-fix/
+d  .github/skills/sdd-code-review/
+d  .github/skills/sdd-implement/
+d  .github/skills/sdd-init/
+d  .github/skills/sdd-next-story/
+d  .github/skills/sdd-spec-review/
+d  .github/skills/sdd-specify/
+d  .github/skills/sdd-status/
+d  .github/workflows/
+f  .github/workflows/ci.yml
+### file .github/workflows/ci.yml
+name: ci
+on: [push]
+### registry

@@ -1,0 +1,10 @@
+# An uninstall removes what the manifest lists and still matches. A file the
+# project edited is not that, so it is left standing and named in the output,
+# while every untouched one goes.
+sdd --target "$TARGET" --for claude
+printf 'This command was rewritten by the project.\n' > "$TARGET/.claude/commands/sdd-status.md"
+sdd --uninstall "$TARGET"
+
+expect "the edited file is still there" grep -q 'rewritten by the project' .claude/commands/sdd-status.md
+expect "an untouched one is gone" test ! -e .claude/commands/sdd-init.md
+expect "and the manifest stays, because it still describes a file on disk" test -f .sdd/.sdd-manifest

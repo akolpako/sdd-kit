@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=_docs/Wishlist/raw.md has 24 lines — line 9999 is not in it
+### tree

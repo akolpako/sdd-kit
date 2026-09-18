@@ -1,0 +1,77 @@
+JIRA=ok
+KEY=ABC-12345
+BASE=https://jira.example.com
+SUMMARY=Publish account events in the new format
+OUT=_docs/ABC-12345/raw.md
+
+ATTACHMENTS:
+
+NOTES:
+`topology.png` was not downloaded: --from-file is a file read and this run makes no request.
+1 attachment(s) on the issue are not referenced by the description and were not downloaded.
+### exit=0
+### specs
+_docs/ABC-12345/raw.md
+### file _docs/ABC-12345/raw.md
+# ABC-12345 — Publish account events in the new format
+
+https://jira.example.com/browse/ABC-12345
+
+## Goals
+
+- Publish account events in the new REST format
+- Keep the existing XML feed running in parallel
+- Write the two formats into separate topics
+
+## Current situation
+
+### billing-core
+
+This service writes outbox rows. One row per account change, with type ACCOUNT.
+
+The row is written in the same transaction as the account itself.
+
+### billing-dispatch
+
+In a loop:
+
+- read the next unpublished rows
+- push them to the broker
+- delete the rows
+
+## Solution design
+
+Message:
+
+- add the field entityType
+
+```java
+record AccountEvent(String id, EntityType type) {}
+```
+
+| Field | Required |
+| --- | --- |
+| id | yes |
+| type | yes |
+
+See [the broker notes](https://wiki.example.com/brokers) and ![topology.png](attachments/topology.png)
+
+## Conditions of Satisfaction
+
+- every message carries entityType
+- dispatch rejects rows whose type is not ACCOUNT
+
+## Known constraints
+
+<!-- Anything that limits the solution and is not negotiable: deadlines,
+external systems to integrate with, data that cannot move, compatibility to
+keep, legal or security rules, expected load. Architectural constraints that
+hold for the whole project belong in the architecture baseline instead — put here
+only what is specific to this feature. -->
+
+## Out of scope
+
+<!-- What this feature explicitly does NOT include, especially the things a
+reader would reasonably assume it does. This is the cheapest section in the
+file: every line here is work that will not be specified, built, or argued
+about later. -->

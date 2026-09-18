@@ -1,0 +1,8 @@
+# The same uninstall in a tree with no config file: .sdd/ has nothing of the
+# project's left in it and is pruned away entirely.
+sdd --target "$TARGET" --for claude
+mkdir -p "$TARGET/.sdd/log"
+printf '== 20260101-000000 run exit=0 sdd 1 next-req.sh\n' > "$TARGET/.sdd/log/sdd.log"
+sdd --uninstall "$TARGET"
+
+expect "nothing of .sdd/ is left" test ! -e .sdd

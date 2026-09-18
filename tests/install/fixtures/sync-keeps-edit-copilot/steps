@@ -1,0 +1,9 @@
+# The same edit on the other host, where the command is wrapped into a skill
+# directory. --keep-edits answers for it exactly as it does under .claude/.
+sdd --target "$TARGET" --for copilot
+printf 'This command was rewritten by the project.\n' > "$TARGET/.github/skills/sdd-status/SKILL.md"
+sdd --sync --all --keep-edits
+
+expect "the edit survives the sync" grep -q 'rewritten by the project' .github/skills/sdd-status/SKILL.md
+said "the run says what it kept" "1 file(s) kept as this project has them."
+expect "and the file is still in the manifest" grep -q '\.github/skills/sdd-status/SKILL\.md' .sdd/.sdd-manifest

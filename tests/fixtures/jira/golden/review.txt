@@ -1,0 +1,30 @@
+GATE=stop
+FEATURE=ABC-12345
+FOLDER=ABC-12345
+STAGE=
+RAW=
+REQUIREMENTS=
+DESIGN=
+TASKS=
+STATUS_REQUIREMENTS=
+STATUS_DESIGN=
+STATUS_TASKS=
+COMPILATION=
+NEXT_REQ=
+MODE=review
+
+REQ_DOMAINS:
+
+REQ_DUPLICATES:
+
+STOP:
+The project has no _docs/ yet — there is no spec to review. Run /sdd-init, then /sdd-next-story ABC-12345.
+
+ASK:
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=2

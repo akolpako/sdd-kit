@@ -1,0 +1,5 @@
+VERIFY=fail
+
+FAIL:
+_docs/requirements.md is not on disk — nothing of this feature was promoted into it.
+### exit=2

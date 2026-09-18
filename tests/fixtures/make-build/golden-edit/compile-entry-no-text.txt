@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=REQ-900 has no entry yet, so its wording has to come with it: compile-entry Cart REQ-900 final <text>
+### tree

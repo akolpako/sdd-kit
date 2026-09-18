@@ -1,0 +1,40 @@
+GATE=ok
+FEATURE=Cart
+FOLDER=Cart
+STAGE=actualized
+RAW=present
+REQUIREMENTS=present
+DESIGN=present
+TASKS=present
+STATUS_REQUIREMENTS=ready
+STATUS_DESIGN=ready
+STATUS_TASKS=ready
+COMPILATION=present
+NEXT_REQ=REQ-004
+MODE=review
+
+SPAWN:
+requirements-engineer|.sdd/protocols/spec-modes.md,.sdd/protocols/spec-checklist.md,.sdd/protocols/interview.md,.sdd/protocols/requirements-writing.md,.sdd/protocols/docs-format.md|requirements
+architect|.sdd/protocols/spec-modes.md,.sdd/protocols/spec-checklist.md,.sdd/protocols/interview.md,.sdd/protocols/architecture-design.md,.sdd/protocols/task-breakdown.md,.sdd/protocols/docs-format.md|design+tasks
+
+REQ_DOMAINS:
+-|NEXT=REQ-004|COUNTER=REQ-004|HIGHEST=REQ-003|DECLARED=REQ-003|DECLARED_IN=Cart|COUNT=3
+
+REQ_DUPLICATES:
+
+TASKS:
+TASK-001|done|backend|REQ-002|Cart table and entity|
+TASK-002|done|backend|REQ-002|Add and remove items|
+TASK-003|done|backend|REQ-003|Cart totals|
+TASK-004|done|backend|REQ-002,REQ-003|Cart REST endpoints|
+
+STOP:
+
+ASK:
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=0

@@ -1,0 +1,4 @@
+# Reviewed specs, half the tasks done, a code review already on disk, and a
+# git history to take a diff against.
+FEATURE=Cart
+GIT=yes

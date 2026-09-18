@@ -1,0 +1,15 @@
+# A project installed by the engine as it was before it copied: its files are
+# symlinks into the clone. An ordinary install replaces each one with the copy
+# and writes the manifest beside them. There is no migration command and this
+# is why there needs to be none.
+mkdir -p "$TARGET/.claude/agents" "$TARGET/.claude/commands" "$TARGET/.sdd/scripts"
+ln -s "$ENGINE/.sdd/agents/architect.md" "$TARGET/.claude/agents/architect.md"
+ln -s "$ENGINE/.sdd/commands/sdd-status.md" "$TARGET/.claude/commands/sdd-status.md"
+ln -s "$ENGINE/.sdd/scripts/gate.sh" "$TARGET/.sdd/scripts/gate.sh"
+
+sdd --target "$TARGET" --for claude
+
+expect "the link became a copy" test ! -L .claude/agents/architect.md
+expect "no symlink into the engine is left anywhere" no_engine_links
+expect "and the copy is in the manifest" grep -q '\.claude/agents/architect\.md' .sdd/.sdd-manifest
+expect "the script it replaced is executable" test -x .sdd/scripts/gate.sh

@@ -1,0 +1,28 @@
+Working directory: <tmp>/commented
+Every `.sdd/...` and `_docs/...` path below and in the protocols it names is
+relative to it.
+
+# Assignment: promote what Cart decided
+
+Follow these protocols, in this order:
+
+.sdd/protocols/project-baseline.md
+.sdd/protocols/docs-format.md
+
+FEATURE=Cart
+
+Files of this run:
+
+_docs/Cart/new-requirements.md
+_docs/Cart/design.md
+_docs/architecture.index.md
+_docs/requirements.md
+
+Promote into the architecture baseline what this feature's design decided, per
+the protocol.
+
+`_docs/requirements.md` is not yours in this run: it is edited
+outside this assignment.
+
+Return: what you promoted, and what you deliberately left with the feature.
+### exit=0

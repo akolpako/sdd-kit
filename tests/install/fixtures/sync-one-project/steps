@@ -1,0 +1,22 @@
+# Two projects registered, one host each, and only one of them named on the
+# command line. The engine edit reaches that one; the other is left exactly as
+# it was, which is what --sync could not do at all before.
+#
+# $TARGET is the project that is not synced, because the snapshot helper is what
+# says a tree has not moved and it works on $TARGET.
+OTHER="${TARGET%/project}/other"
+mkdir -p "$OTHER"
+
+sdd --target "$TARGET" --for claude
+sdd --target "$OTHER" --for copilot
+
+printf '\nAn edit made in the engine after the install.\n' >> "$ENGINE/.sdd/templates/requirements.md"
+snapshot before-sync
+
+sdd --sync "$OTHER"
+
+expect_unchanged before-sync "the project that was not named was left alone"
+expect "the named project carries the engine's new content" \
+  cmp -s "$OTHER/.sdd/templates/requirements.md" "$ENGINE/.sdd/templates/requirements.md"
+expect "and the one that was not still holds what it was installed with" \
+  sh -c '! cmp -s .sdd/templates/requirements.md "$ENGINE/.sdd/templates/requirements.md"'

@@ -1,0 +1,8 @@
+SCAFFOLD=spec
+FOLDER=Cart
+
+COPIED:
+_docs/Cart/design.md
+### exit=0
+### tree
+Only in <tmp>/edit/_docs/Cart: design.md

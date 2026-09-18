@@ -1,0 +1,29 @@
+GATE=ask
+FEATURE=Cart
+FOLDER=Cart
+STAGE=specified
+TASKS_DONE=0
+TASKS_TOTAL=3
+TASKS_BLOCKED=0
+ROLE_ORDER=backend
+BUILD_ROOT=
+BUILD_BACKEND=
+BUILD_FRONTEND=
+BASELINE=
+BUILD_FILES=0
+
+SPAWN:
+backend-developer|.sdd/protocols/developer.md,.sdd/protocols/task-loop.md|backend
+
+STOP:
+
+ASK:
+Not reviewed: new-requirements.md (draft), design.md (draft), tasks.md (draft). /sdd-spec-review Cart is what promotes a spec to ready. Implementing anyway needs the human to say so in as many words, and the final report then says the work was built from an unreviewed spec.
+No build command for this project: .sdd/sdd.conf holds no SDD_BUILD_ROOT, and no pom.xml, build.gradle or package.json was found to propose one from. Write the command that verifies this project into .sdd/sdd.conf as SDD_BUILD_ROOT=<command> — one line, run from the project root. Nothing is built until it is there.
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=0

@@ -1,0 +1,29 @@
+GATE=ok
+FEATURE=Cart
+FOLDER=Cart
+STAGE=in progress 2/4
+REVIEW=present
+REVIEW_PATH=_docs/Cart/review.md
+REVIEW_DATE=2026-01-15
+REVIEW_ROOT=deadbeef
+REVIEW_VERDICT=BLOCKED
+ROOT=HEAD
+BUILD_ROOT=mvn -q verify
+BUILD_BACKEND=mvn -q verify
+BUILD_FRONTEND=
+
+SPAWN:
+backend-developer|.sdd/protocols/developer.md|findings-backend
+frontend-developer|.sdd/protocols/developer.md|findings-frontend
+
+STOP:
+
+ASK:
+
+WARN:
+The report was taken against deadbeef and the code now sits on HEAD — it describes a different commit range. A fix applied to a moved line is never reported as a finding closed.
+
+ANOMALIES:
+
+NOTES:
+### exit=0

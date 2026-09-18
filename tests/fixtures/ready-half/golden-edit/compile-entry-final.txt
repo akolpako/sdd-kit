@@ -1,0 +1,16 @@
+ENTRY=REQ-002
+ACTION=updated
+NEXT_FREE=REQ-004
+FILE=_docs/requirements.md
+### exit=0
+### tree
+diff -ru -x .git <tmp>/ready-half/_docs/requirements.md <tmp>/edit/_docs/requirements.md
+--- <tmp>/ready-half/_docs/requirements.md
++++ <tmp>/edit/_docs/requirements.md
+@@ -7,5 +7,5 @@
+ ## Requirements
+ 
+ - **REQ-001** — Catalog listing. A shopper browses the products on offer. *(Source: Catalog)*
+-- **REQ-002** — Cart holds items. A shopper keeps picked items until checkout. *(Source: Cart, draft)*
++- **REQ-002** — Cart holds items. A shopper keeps picked items until checkout. *(Source: Cart)* ^req-002
+ - **REQ-003** — Cart totals. A cart shows the sum of its items. *(Source: Cart, draft)*

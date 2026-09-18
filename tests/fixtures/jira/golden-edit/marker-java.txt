@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=no such file: src/main/java/com/example/CartService.java
+### tree

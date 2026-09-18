@@ -1,0 +1,22 @@
+# A repository that already tracks its own .github/workflows/ci.yml. After the
+# install git sees none of the engine — the block under .github/ is what does
+# that — and a file git already tracked stays visible whatever the block says,
+# which is what keeps the project's workflows in /sdd-code-review's set.
+#
+# Nothing inside .sdd/ is exempt any more, .sdd/sdd.conf included. It holds
+# JIRA_TOKEN, and a personal access token must never reach a commit. The price
+# is that a teammate's clone answers the gate's ASK: for the build command a
+# second time; that was weighed and paid deliberately.
+sdd --target "$TARGET" --for copilot
+show "git status after the install" git status --porcelain
+expect "git does not see the engine" no_engine_in_git_status
+
+printf 'jobs:\n  build:\n    runs-on: ubuntu-latest\n' >> "$TARGET/.github/workflows/ci.yml"
+show "git status after an edit to the tracked workflow" git status --porcelain
+expect "the edit to the tracked workflow shows" git_status_names .github/workflows/ci.yml
+
+printf 'SDD_BUILD_ROOT=make verify\nJIRA_TOKEN=not-a-real-token\n' > "$TARGET/.sdd/sdd.conf"
+show "git status after the build command was written" git status --porcelain -uall
+expect ".sdd/sdd.conf is ignored" git_ignores .sdd/sdd.conf
+expect "git does not see it" git_status_hides .sdd/sdd.conf
+expect "and the rest of the engine still does not" no_engine_in_git_status

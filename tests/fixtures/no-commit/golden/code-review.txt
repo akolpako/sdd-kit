@@ -1,0 +1,26 @@
+GATE=ok
+FEATURE=Cart
+FOLDER=Cart
+STAGE=in progress 2/4
+BASE=
+ROOT=
+DIFF=git diff --cached -- . ':(exclude)_docs/' ':(exclude).sdd/' ':(exclude).claude/'
+CHANGED=2
+REVIEW_PATH=_docs/Cart/review.md
+REVIEW_PREVIOUS=2026-01-15
+
+SPAWN:
+code-reviewer|.sdd/protocols/code-review.md,.sdd/protocols/docs-format.md|review-set
+
+STOP:
+
+ASK:
+
+WARN:
+The base 'main' was dropped: this repository has no commit yet, so there is nothing to take a diff against. The review set is the staged tree.
+No base branch was detected, so the review set is the uncommitted changes only. The report is labelled a partial review and never reported as complete — re-run as /sdd-code-review Cart <base-ref> to review against a branch.
+
+ANOMALIES:
+
+NOTES:
+### exit=0

@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=_docs/Cart/raw.md carries no status — a status is not added where the format has none. It is the `status` property of the frontmatter, or the `> Status:` line of a document written before them
+### tree

@@ -1,0 +1,35 @@
+GATE=stop
+FEATURE=Cart
+FOLDER=Cart
+STAGE=raw
+RAW=present
+REQUIREMENTS=missing
+DESIGN=missing
+TASKS=missing
+STATUS_REQUIREMENTS=absent
+STATUS_DESIGN=absent
+STATUS_TASKS=absent
+COMPILATION=missing
+NEXT_REQ=
+MODE=review
+
+REQ_DOMAINS:
+
+REQ_DUPLICATES:
+
+STOP:
+_docs/Cart/new-requirements.md is missing — there is nothing to review. /sdd-specify Cart writes it.
+_docs/Cart/design.md is missing — there is nothing to review. /sdd-specify Cart writes it.
+_docs/Cart/tasks.md is missing — there is nothing to review. /sdd-specify Cart writes it.
+
+ASK:
+
+WARN:
+_docs/requirements.md is not there — the requirements of this feature cannot be compared against the ones the project already has.
+_docs/architecture.index.md is not there — the design is reviewed without the architecture context, and /sdd-init is what creates it.
+
+ANOMALIES:
+
+NOTES:
+feature-state: No _docs/requirements.md — no feature can be told apart from actualized, and every finished one stays at 'implemented'.
+### exit=0

@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=_docs/Wishlist/raw.md has no section `## Nowhere`
+### tree

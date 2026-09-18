@@ -1,0 +1,16 @@
+VERDICT=stale — fixes applied <today>
+FILE=_docs/Cart/review.md
+### exit=0
+### tree
+diff -ru -x .git <tmp>/no-commit/_docs/Cart/review.md <tmp>/edit/_docs/Cart/review.md
+--- <tmp>/no-commit/_docs/Cart/review.md
++++ <tmp>/edit/_docs/Cart/review.md
+@@ -3,7 +3,7 @@
+ > Reviewed: 2026-01-15
+ > Base: main
+ > Root: deadbeef
+-> Verdict: BLOCKED
++> Verdict: stale — fixes applied <today>
+ 
+ ## Review set
+ 

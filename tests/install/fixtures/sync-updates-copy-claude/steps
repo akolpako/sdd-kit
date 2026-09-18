@@ -1,0 +1,11 @@
+# What the whole change is for. A copy does not follow the engine on its own,
+# so an engine edit reaches a project when --sync runs and not before. Nothing
+# tested this while the installer linked, because there was nothing to carry.
+
+sdd --target "$TARGET" --for claude
+printf '\nAn edit made in the engine after the install.\n' >> "$ENGINE/.sdd/agents/architect.md"
+sdd --sync --all
+
+expect "the project carries the engine's new content" grep -q 'An edit made in the engine after the install\.' .claude/agents/architect.md
+expect "and it arrived verbatim" cmp -s "$ENGINE/.sdd/agents/architect.md" .claude/agents/architect.md
+expect "and the file is still the installer's own" grep -q '\.claude/agents/architect\.md' .sdd/.sdd-manifest

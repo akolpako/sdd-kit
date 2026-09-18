@@ -1,0 +1,40 @@
+Working directory: <tmp>/two-stacks
+Every `.sdd/...` and `_docs/...` path below and in the protocols it names is
+relative to it.
+
+# Assignment: the design and the task breakdown of Cart
+
+Follow these protocols, in this order:
+
+.sdd/protocols/spec-modes.md
+.sdd/protocols/architecture-design.md
+.sdd/protocols/task-breakdown.md
+.sdd/protocols/docs-format.md
+
+MODE=draft
+FEATURE=Cart
+
+Files of this run:
+
+_docs/Cart/raw.md
+_docs/Cart/new-requirements.md
+_docs/Cart/design.md
+_docs/Cart/tasks.md
+_docs/architecture.index.md
+_docs/requirements.md
+
+Kept by the human from an earlier run — input to read, never rewritten:
+
+new-requirements.md
+
+Write `_docs/Cart/design.md` and `_docs/Cart/tasks.md` in this one
+run, each with `status: draft` among its properties. The breakdown covers the
+requirements of `_docs/Cart/new-requirements.md` and nothing beyond them.
+
+Both files are already on disk, holding nothing but the templates they were
+copied from: the structure to keep is the one already in them, and no template
+has to be found.
+
+Return: the design decisions you took, the tasks you broke the work into, and
+what the requirements left unsettled.
+### exit=0

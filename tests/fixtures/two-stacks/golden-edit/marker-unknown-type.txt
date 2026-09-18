@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=no comment syntax known for .json (web/package.json) — the marker is not guessed
+### tree

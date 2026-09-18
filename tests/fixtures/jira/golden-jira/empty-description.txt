@@ -1,0 +1,32 @@
+JIRA=ok
+KEY=ABC-12345
+BASE=https://jira.example.com
+SUMMARY=Publish account events in the new format
+OUT=_docs/ABC-12345/raw.md
+
+ATTACHMENTS:
+
+NOTES:
+The issue has an empty description; only the title, the link and the two sections below were written.
+### exit=0
+### specs
+_docs/ABC-12345/raw.md
+### file _docs/ABC-12345/raw.md
+# ABC-12345 — Publish account events in the new format
+
+https://jira.example.com/browse/ABC-12345
+
+## Known constraints
+
+<!-- Anything that limits the solution and is not negotiable: deadlines,
+external systems to integrate with, data that cannot move, compatibility to
+keep, legal or security rules, expected load. Architectural constraints that
+hold for the whole project belong in the architecture baseline instead — put here
+only what is specific to this feature. -->
+
+## Out of scope
+
+<!-- What this feature explicitly does NOT include, especially the things a
+reader would reasonably assume it does. This is the cheapest section in the
+file: every line here is work that will not be specified, built, or argued
+about later. -->

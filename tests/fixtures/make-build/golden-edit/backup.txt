@@ -1,0 +1,14 @@
+BACKUP=_docs/.backup/<ts>
+FILES=7
+
+COPIED:
+Cart/design.md
+Cart/new-requirements.md
+Cart/raw.md
+Cart/tasks.md
+architecture.md
+code-style.md
+requirements.md
+### exit=0
+### tree
+Only in <tmp>/edit/_docs: .backup

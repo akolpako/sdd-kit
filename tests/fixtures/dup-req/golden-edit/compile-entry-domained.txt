@@ -1,0 +1,22 @@
+ENTRY=REQ-ACC-900
+ACTION=appended
+NEXT_FREE=REQ-ACC-901
+FILE=_docs/requirements.md
+### exit=0
+### tree
+diff -ru -x .git <tmp>/dup-req/_docs/requirements.md <tmp>/edit/_docs/requirements.md
+--- <tmp>/dup-req/_docs/requirements.md
++++ <tmp>/edit/_docs/requirements.md
+@@ -1,6 +1,7 @@
+ # Requirements Compilation
+ 
+ <!-- Next free number: REQ-003 -->
++<!-- Next free number: REQ-ACC-901 -->
+ 
+ All application requirements of the project, one line each.
+ 
+@@ -9,3 +10,4 @@
+ - **REQ-001** — Catalog listing. A shopper browses the products on offer. *(Source: Catalog)*
+ - **REQ-002** — Cart holds items. A shopper keeps picked items until checkout. *(Source: Cart, draft)*
+ - **REQ-002** — Cart totals. A cart shows the sum of its items. *(Source: Cart, draft)*
++- **REQ-ACC-900** — Password reset. An account holder sets a new password over a mailed link. *(Source: Cart)* ^req-acc-900

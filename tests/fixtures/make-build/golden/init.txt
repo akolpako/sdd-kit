@@ -1,0 +1,22 @@
+GATE=ok
+PROJECT=greenfield
+TEMPLATES=ok
+EXISTING=code-style.md,requirements.md,architecture.md
+BUILD_ROOT=make verify
+BUILD_BACKEND=make verify
+BUILD_FRONTEND=make verify
+
+SPAWN:
+
+DETECTED:
+
+STOP:
+
+ASK:
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=0

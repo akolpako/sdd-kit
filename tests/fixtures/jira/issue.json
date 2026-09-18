@@ -1,0 +1,21 @@
+{
+  "key": "ABC-12345",
+  "fields": {
+    "summary": "Publish account events in the new format",
+    "description": "h2. Goals\n * Publish account events in the new REST format\n * Keep the existing XML feed running in parallel\n * Write the two formats into separate topics\n\nh2. Current situation\nh3. billing-core\n\nThis service writes outbox rows. One row per account change, with type ACCOUNT.\n\nThe row is written in the same transaction as the account itself.\nh3. billing-dispatch\n\nIn a loop:\n * read the next unpublished rows\n * push them to the broker\n * delete the rows\n\nh2. Solution design\n \nMessage:\n * add the field entityType\n\n{code:java}\nrecord AccountEvent(String id, EntityType type) {}\n{code}\n\n||Field||Required||\n|id|yes|\n|type|yes|\n\nSee [the broker notes|https://wiki.example.com/brokers] and !topology.png|thumbnail!\n\nh2. Conditions of Satisfaction\n * every message carries entityType\n * dispatch rejects rows whose type is not ACCOUNT\n",
+    "attachment": [
+      {
+        "filename": "topology.png",
+        "content": "https://jira.example.com/secure/attachment/90001/topology.png",
+        "mimeType": "image/png",
+        "size": 20480
+      },
+      {
+        "filename": "unused-notes.txt",
+        "content": "https://jira.example.com/secure/attachment/90002/unused-notes.txt",
+        "mimeType": "text/plain",
+        "size": 900
+      }
+    ]
+  }
+}

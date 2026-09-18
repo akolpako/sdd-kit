@@ -1,0 +1,13 @@
+# The same old install on the other host, where the links carry the host's
+# names — architect.agent.md and the wrapped skill directory.
+mkdir -p "$TARGET/.github/agents" "$TARGET/.github/skills/sdd-status" "$TARGET/.sdd/scripts"
+ln -s "$ENGINE/.sdd/agents/architect.md" "$TARGET/.github/agents/architect.agent.md"
+ln -s "$ENGINE/.sdd/commands/sdd-status.md" "$TARGET/.github/skills/sdd-status/SKILL.md"
+ln -s "$ENGINE/.sdd/scripts/gate.sh" "$TARGET/.sdd/scripts/gate.sh"
+
+sdd --target "$TARGET" --for copilot
+
+expect "the link became a copy" test ! -L .github/agents/architect.agent.md
+expect "no symlink into the engine is left anywhere" no_engine_links
+expect "and the copy is in the manifest" grep -q '\.github/agents/architect\.agent\.md' .sdd/.sdd-manifest
+expect "the script it replaced is executable" test -x .sdd/scripts/gate.sh

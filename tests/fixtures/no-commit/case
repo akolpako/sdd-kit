@@ -1,0 +1,8 @@
+# A repository with nothing committed yet: the project is staged, HEAD does not
+# resolve, and the human names a base on the command line all the same. There is
+# nothing to take that base against, so it is dropped rather than carried on an
+# output whose diff comes from the staged tree — and the drop is said out loud,
+# because a ref that was named and quietly ignored is worse than one refused.
+FEATURE=Cart
+GIT=yes
+EXTRA=main

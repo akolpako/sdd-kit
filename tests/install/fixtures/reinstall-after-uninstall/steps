@@ -1,0 +1,7 @@
+# An uninstall drops the path from the registry, so the host it was installed
+# for is no longer on record — and the same path installs for the other host
+# without the refusal a live entry would have raised.
+sdd --target "$TARGET" --for claude
+sdd --uninstall "$TARGET"
+show "the registry after the uninstall" cat "$SDD_REGISTRY"
+sdd --target "$TARGET" --for copilot

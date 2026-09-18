@@ -1,0 +1,26 @@
+GATE=stop
+FEATURE=Cart
+FOLDER=Cart
+STAGE=in progress 1/3, 1 blocked
+REVIEW=missing
+REVIEW_PATH=_docs/Cart/review.md
+REVIEW_DATE=
+REVIEW_ROOT=
+REVIEW_VERDICT=absent
+ROOT=
+BUILD_ROOT=mvn clean verify
+BUILD_BACKEND=mvn clean verify
+BUILD_FRONTEND=
+
+STOP:
+_docs/Cart/review.md is missing — there is no report to act on. /sdd-code-review Cart writes one.
+
+ASK:
+
+WARN:
+Not a git repository — whether the report still describes the current code cannot be checked. A finding may be about a line that has since moved.
+
+ANOMALIES:
+
+NOTES:
+### exit=0

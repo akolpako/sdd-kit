@@ -1,0 +1,6 @@
+SCAFFOLD=feature
+FOLDER=ABC-12345
+RAW=_docs/ABC-12345/raw.md
+### exit=0
+### tree
+Only in <tmp>/edit: _docs

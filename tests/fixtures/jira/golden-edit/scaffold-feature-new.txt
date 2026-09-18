@@ -1,0 +1,6 @@
+SCAFFOLD=feature
+FOLDER=Wishlist
+RAW=_docs/Wishlist/raw.md
+### exit=0
+### tree
+Only in <tmp>/edit: _docs

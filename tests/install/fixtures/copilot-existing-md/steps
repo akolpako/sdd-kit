@@ -1,0 +1,3 @@
+# The same claim on the other host's instruction file, which sits inside the
+# directory the installer also fills.
+sdd --target "$TARGET" --for copilot

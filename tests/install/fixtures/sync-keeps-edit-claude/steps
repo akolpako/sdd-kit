@@ -1,0 +1,10 @@
+# A file the project edited after it was installed, and --keep-edits as the
+# answer given in advance. The edit stays, the run says how many it kept, and
+# the file stays the installer's — an uninstall still has it to collect.
+sdd --target "$TARGET" --for claude
+printf 'This command was rewritten by the project.\n' > "$TARGET/.claude/commands/sdd-status.md"
+sdd --sync --all --keep-edits
+
+expect "the edit survives the sync" grep -q 'rewritten by the project' .claude/commands/sdd-status.md
+said "the run says what it kept" "1 file(s) kept as this project has them."
+expect "and the file is still in the manifest" grep -q '\.claude/commands/sdd-status\.md' .sdd/.sdd-manifest

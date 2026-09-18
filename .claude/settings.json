@@ -1,0 +1,7 @@
+{
+  "disableBundledSkills": true,
+  "disableClaudeAiConnectors": true,
+  "deniedMcpServers": [
+    { "serverName": "claude-in-chrome" }
+  ]
+}

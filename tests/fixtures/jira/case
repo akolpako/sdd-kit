@@ -1,0 +1,8 @@
+# A feature imported from Jira rather than typed by hand. The name is the issue
+# key, which is not PascalCase and must not be warned about, and the project is
+# empty otherwise — /sdd-next-story is the first command run in it.
+#
+# It is the one fixture the golden-jira family runs in: the sanitized Jira
+# answers next to this file are what jira-fetch.sh reads through --from-file, so
+# no test here makes a request.
+FEATURE=ABC-12345

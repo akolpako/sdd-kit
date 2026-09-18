@@ -1,0 +1,9 @@
+# A file the engine no longer ships is left standing in the project, and the
+# manifest is what still calls it the installer's. Nothing collects it on
+# re-install — --sync is what does, and the directory the last of them left
+# empty goes with it, because .claude/ is the engine's own top to bottom.
+sdd --target "$TARGET" --for claude
+rm -rf "$ENGINE/.sdd/skills/maven-lib-source"
+sdd --sync
+
+expect "the skill directory it emptied is gone too" test ! -e .claude/skills/maven-lib-source

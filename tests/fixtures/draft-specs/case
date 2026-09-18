@@ -1,0 +1,8 @@
+# Three specs written and none reviewed, one backend stack, no task done.
+#
+# And no .sdd/sdd.conf, which is the other half of what it is for: the build
+# command is the human's, so a project that has not answered is asked — by name,
+# with the proposal detection made from pom.xml. It is the fixture that records
+# what happens when the answer is ignored all the same: the render is not
+# refused, it carries `(none)` where the command goes.
+FEATURE=Cart

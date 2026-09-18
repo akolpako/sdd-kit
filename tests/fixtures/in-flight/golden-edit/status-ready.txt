@@ -1,0 +1,46 @@
+STATUS=ready
+
+UPDATED:
+_docs/Wishlist/new-requirements.md
+_docs/Wishlist/design.md
+_docs/Wishlist/tasks.md
+
+UNCHANGED:
+### exit=0
+### tree
+diff -ru -x .git <tmp>/in-flight/_docs/Wishlist/design.md <tmp>/edit/_docs/Wishlist/design.md
+--- <tmp>/in-flight/_docs/Wishlist/design.md
++++ <tmp>/edit/_docs/Wishlist/design.md
+@@ -1,7 +1,7 @@
+ ---
+ type: design
+ feature: Wishlist
+-status: draft
++status: ready
+ tags:
+   - sdd/design
+ ---
+diff -ru -x .git <tmp>/in-flight/_docs/Wishlist/new-requirements.md <tmp>/edit/_docs/Wishlist/new-requirements.md
+--- <tmp>/in-flight/_docs/Wishlist/new-requirements.md
++++ <tmp>/edit/_docs/Wishlist/new-requirements.md
+@@ -1,7 +1,7 @@
+ ---
+ type: requirements
+ feature: Wishlist
+-status: draft
++status: ready
+ tags:
+   - sdd/requirements
+ ---
+diff -ru -x .git <tmp>/in-flight/_docs/Wishlist/tasks.md <tmp>/edit/_docs/Wishlist/tasks.md
+--- <tmp>/in-flight/_docs/Wishlist/tasks.md
++++ <tmp>/edit/_docs/Wishlist/tasks.md
+@@ -1,7 +1,7 @@
+ ---
+ type: tasks
+ feature: Wishlist
+-status: draft
++status: ready
+ tags:
+   - sdd/tasks
+ ---

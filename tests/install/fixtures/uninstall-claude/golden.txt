@@ -1,0 +1,15 @@
+### sdd --target <tmp>/uninstall-claude/project --for claude
+exit=0
+### sdd --uninstall <tmp>/uninstall-claude/project
+exit=0
+### expect no engine link is left — pass
+### expect the project's own instructions survive — pass
+### expect the .gitignore that held nothing but the block is gone — pass
+### tree
+f  CLAUDE.md
+### file CLAUDE.md
+# Cart
+
+Run the tests with `mvn test` before you call anything done.
+
+### registry

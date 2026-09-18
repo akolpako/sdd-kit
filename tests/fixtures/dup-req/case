@@ -1,0 +1,3 @@
+# The compilation hands REQ-002 out twice: the number generator and the gate
+# both have to say so instead of handing out a third.
+FEATURE=Cart

@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=_docs/Cart/raw.md has no section `## Nowhere`
+### tree

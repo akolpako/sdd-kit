@@ -1,0 +1,12 @@
+### sdd --target <tmp>/uninstall-keeps-conf/project --for claude
+exit=0
+### sdd --uninstall <tmp>/uninstall-keeps-conf/project
+exit=0
+### expect the log went out with the engine — pass
+### expect the config the human wrote stayed — pass
+### tree
+d  .sdd/
+f  .sdd/sdd.conf
+### file .sdd/sdd.conf
+SDD_LOG=1
+### registry

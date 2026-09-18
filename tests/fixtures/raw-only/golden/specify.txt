@@ -1,0 +1,36 @@
+GATE=ok
+FEATURE=Cart
+FOLDER=Cart
+STAGE=raw
+RAW=present
+REQUIREMENTS=missing
+DESIGN=missing
+TASKS=missing
+STATUS_REQUIREMENTS=absent
+STATUS_DESIGN=absent
+STATUS_TASKS=absent
+COMPILATION=missing
+NEXT_REQ=REQ-001
+MODE=draft
+
+SPAWN:
+requirements-engineer|.sdd/protocols/spec-modes.md,.sdd/protocols/requirements-writing.md,.sdd/protocols/docs-format.md|requirements
+architect|.sdd/protocols/spec-modes.md,.sdd/protocols/architecture-design.md,.sdd/protocols/task-breakdown.md,.sdd/protocols/docs-format.md|design+tasks
+
+REQ_DOMAINS:
+
+REQ_DUPLICATES:
+
+STOP:
+
+ASK:
+
+WARN:
+_docs/architecture.index.md is not there — the spec is written without the architecture context, and /sdd-init is what creates it.
+_docs/requirements.md is not there — create it from .sdd/templates/requirements.md, whose counter starts at REQ-001. The numbers of this run are held by the feature's own new-requirements.md, and /sdd-actualize is what writes them into the compilation.
+
+ANOMALIES:
+
+NOTES:
+feature-state: No _docs/requirements.md — no feature can be told apart from actualized, and every finished one stays at 'implemented'.
+### exit=0

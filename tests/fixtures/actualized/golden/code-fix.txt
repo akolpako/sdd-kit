@@ -1,0 +1,29 @@
+GATE=ok
+FEATURE=Cart
+FOLDER=Cart
+STAGE=actualized
+REVIEW=present
+REVIEW_PATH=_docs/Cart/review.md
+REVIEW_DATE=2026-01-15
+REVIEW_ROOT=deadbeef
+REVIEW_VERDICT=APPROVED
+ROOT=
+BUILD_ROOT=mvn -q verify
+BUILD_BACKEND=mvn -q verify
+BUILD_FRONTEND=
+
+SPAWN:
+backend-developer|.sdd/protocols/developer.md|findings-backend
+frontend-developer|.sdd/protocols/developer.md|findings-frontend
+
+STOP:
+
+ASK:
+
+WARN:
+Not a git repository — whether the report still describes the current code cannot be checked. A finding may be about a line that has since moved.
+
+ANOMALIES:
+
+NOTES:
+### exit=0

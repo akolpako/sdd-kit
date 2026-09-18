@@ -1,0 +1,17 @@
+SECTION=Problem
+CHANGED=yes
+FILE=_docs/Wishlist/raw.md
+### exit=0
+### tree
+diff -ru -x .git <tmp>/in-flight/_docs/Wishlist/raw.md <tmp>/edit/_docs/Wishlist/raw.md
+--- <tmp>/in-flight/_docs/Wishlist/raw.md
++++ <tmp>/edit/_docs/Wishlist/raw.md
+@@ -9,7 +9,7 @@
+ 
+ ## Problem
+ 
+-Shoppers lose track of items they are not ready to buy yet.
++Shoppers lose the cart when the session drops.
+ 
+ ## Users
+ 

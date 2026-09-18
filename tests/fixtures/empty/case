@@ -1,0 +1,2 @@
+# A project with no _docs/ at all: every command that needs one stops.
+FEATURE=Cart

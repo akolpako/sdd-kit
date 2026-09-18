@@ -1,0 +1,43 @@
+GATE=ok
+FEATURE=Cart
+FOLDER=Cart
+STAGE=specified
+RAW=present
+REQUIREMENTS=present
+DESIGN=present
+TASKS=present
+STATUS_REQUIREMENTS=draft
+STATUS_DESIGN=draft
+STATUS_TASKS=draft
+COMPILATION=present
+NEXT_REQ=REQ-004
+MODE=review
+
+SPAWN:
+requirements-engineer|.sdd/protocols/spec-modes.md,.sdd/protocols/spec-checklist.md,.sdd/protocols/interview.md,.sdd/protocols/requirements-writing.md,.sdd/protocols/docs-format.md|requirements
+architect|.sdd/protocols/spec-modes.md,.sdd/protocols/spec-checklist.md,.sdd/protocols/interview.md,.sdd/protocols/architecture-design.md,.sdd/protocols/task-breakdown.md,.sdd/protocols/docs-format.md|design+tasks
+
+REQ_DOMAINS:
+-|NEXT=REQ-004|COUNTER=REQ-003|HIGHEST=REQ-002|DECLARED=REQ-003|DECLARED_IN=Cart|COUNT=3
+
+REQ_DUPLICATES:
+REQ-002
+
+TASKS:
+TASK-001|open|backend|REQ-002|Cart table and entity|
+TASK-002|open|backend|REQ-002|Add and remove items|
+TASK-003|open|backend|REQ-003|Cart totals|
+
+STOP:
+
+ASK:
+
+WARN:
+_docs/architecture.index.md is not there — the design is reviewed without the architecture context, and /sdd-init is what creates it.
+The compilation carries the same number more than once: REQ-002 — repair it before this session issues a new number.
+
+ANOMALIES:
+
+NOTES:
+next-req: 1 number(s) are carried by more than one entry. The compilation is already inconsistent — report it before any number is issued.
+### exit=0

@@ -1,0 +1,13 @@
+# The same install for the other host: .github/ instead of .claude/, the roles
+# renamed to .agent.md, the commands wrapped into skill directories, and the
+# core in .github/copilot-instructions.md.
+# The engine ships no rule today; one is planted so the rules channel is still
+# exercised — installed at its own path, and again where the host reads it.
+mkdir -p "$ENGINE/.sdd/rules"
+printf 'A rule.\n' > "$ENGINE/.sdd/rules/probe.md"
+sdd --target "$TARGET" --for copilot
+
+expect "nothing was written under .claude/" test ! -e .claude
+expect "the rule a prompt names is a copy of the engine's" test -f .sdd/rules/probe.md
+expect "and the host reads the same rule from .github/instructions/" test -f .github/instructions/probe.instructions.md
+expect "no symlink into the engine is left anywhere" no_engine_links

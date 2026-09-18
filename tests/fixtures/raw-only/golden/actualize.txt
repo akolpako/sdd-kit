@@ -1,0 +1,27 @@
+GATE=stop
+FEATURE=Cart
+FOLDER=Cart
+STAGE=raw
+REQUIREMENTS=missing
+DESIGN=missing
+COMPILATION=missing
+NEXT_REQ=
+
+REQ_DOMAINS:
+
+STOP:
+_docs/Cart/new-requirements.md is missing — there is nothing to promote from it. /sdd-specify Cart writes it.
+_docs/Cart/design.md is missing — there is nothing to promote from it. /sdd-specify Cart writes it.
+_docs/requirements.md is not there — the entries this feature's requirements become have nowhere to land. /sdd-init creates it.
+_docs/architecture.index.md is not there — there is nothing to promote a decision into. /sdd-init owns creating it.
+missing or unreadable: ./_docs/requirements.md — no number is issued from a count made by hand.
+
+ASK:
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+feature-state: No _docs/requirements.md — no feature can be told apart from actualized, and every finished one stays at 'implemented'.
+### exit=2

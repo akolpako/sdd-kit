@@ -1,0 +1,20 @@
+STATUS=ready
+
+UPDATED:
+_docs/Cart/new-requirements.md
+
+UNCHANGED:
+_docs/Cart/new-requirements.md
+### exit=0
+### tree
+diff -ru -x .git <tmp>/domained/_docs/Cart/new-requirements.md <tmp>/edit/_docs/Cart/new-requirements.md
+--- <tmp>/domained/_docs/Cart/new-requirements.md
++++ <tmp>/edit/_docs/Cart/new-requirements.md
+@@ -1,6 +1,6 @@
+ # Requirements — Cart
+ 
+-> Status: draft
++> Status: ready
+ 
+ ## Requirements
+ 

@@ -1,0 +1,43 @@
+STATUS=ready
+
+UPDATED:
+_docs/Cart/new-requirements.md
+_docs/Cart/design.md
+_docs/Cart/tasks.md
+
+UNCHANGED:
+### exit=0
+### tree
+diff -ru -x .git <tmp>/draft-specs/_docs/Cart/design.md <tmp>/edit/_docs/Cart/design.md
+--- <tmp>/draft-specs/_docs/Cart/design.md
++++ <tmp>/edit/_docs/Cart/design.md
+@@ -1,6 +1,6 @@
+ # Design — Cart
+ 
+-> Status: draft
++> Status: ready
+ 
+ ## Overview
+ 
+diff -ru -x .git <tmp>/draft-specs/_docs/Cart/new-requirements.md <tmp>/edit/_docs/Cart/new-requirements.md
+--- <tmp>/draft-specs/_docs/Cart/new-requirements.md
++++ <tmp>/edit/_docs/Cart/new-requirements.md
+@@ -1,6 +1,6 @@
+ # Requirements — Cart
+ 
+-> Status: draft
++> Status: ready
+ 
+ ## Requirements
+ 
+diff -ru -x .git <tmp>/draft-specs/_docs/Cart/tasks.md <tmp>/edit/_docs/Cart/tasks.md
+--- <tmp>/draft-specs/_docs/Cart/tasks.md
++++ <tmp>/edit/_docs/Cart/tasks.md
+@@ -1,6 +1,6 @@
+ # Tasks — Cart
+ 
+-> Status: draft
++> Status: ready
+ 
+ ## Overview
+ 

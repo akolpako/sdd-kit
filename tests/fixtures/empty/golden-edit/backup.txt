@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=no _docs/ — there is nothing to back up
+### tree

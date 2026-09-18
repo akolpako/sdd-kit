@@ -1,0 +1,23 @@
+GATE=stop
+FEATURE=Cart
+FOLDER=Cart
+STAGE=in progress 1/3, 1 blocked
+REQUIREMENTS=present
+DESIGN=present
+COMPILATION=present
+NEXT_REQ=REQ-004
+
+REQ_DOMAINS:
+-|NEXT=REQ-004|COUNTER=REQ-004|HIGHEST=REQ-003|DECLARED=REQ-003|DECLARED_IN=Cart|COUNT=3
+
+STOP:
+_docs/architecture.index.md is not there — there is nothing to promote a decision into. /sdd-init owns creating it.
+
+ASK:
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=0

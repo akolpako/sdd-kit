@@ -1,0 +1,14 @@
+MARKER=src/main/java/com/example/CartService.java:3
+DATE=<today>
+### exit=0
+### tree
+diff -ru -x .git <tmp>/make-build/src/main/java/com/example/CartService.java <tmp>/edit/src/main/java/com/example/CartService.java
+--- <tmp>/make-build/src/main/java/com/example/CartService.java
++++ <tmp>/edit/src/main/java/com/example/CartService.java
+@@ -1,5 +1,6 @@
+ package com.example;
+ 
++// TODO Code Review: The total ignores the discount. (<today>)
+ public class CartService {
+   public int total(int count, int price) {
+     return count * price;

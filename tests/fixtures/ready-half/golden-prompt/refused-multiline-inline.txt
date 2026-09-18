@@ -1,0 +1,5 @@
+### exit=2
+### stderr
+ERROR=the value of {{FEATURE}} is more than one line: give the placeholder a line of its own
+ERROR=the value of {{FEATURE}} is more than one line: give the placeholder a line of its own
+ERROR=no prompt was printed for backend: fix the values above and run it again

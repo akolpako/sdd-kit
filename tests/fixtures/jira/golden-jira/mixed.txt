@@ -1,0 +1,44 @@
+JIRA=ok
+KEY=ABC-12345
+BASE=https://jira.example.com
+SUMMARY=Split the publisher into its own pod
+OUT=_docs/ABC-12345/raw.md
+
+ATTACHMENTS:
+
+NOTES:
+### exit=0
+### specs
+_docs/ABC-12345/raw.md
+### file _docs/ABC-12345/raw.md
+# ABC-12345 — Split the publisher into its own pod
+
+https://jira.example.com/browse/ABC-12345
+
+## Solution design
+
+1. Add a new module **billing-outbox-app**. It builds a runnable jar:
+   - The build file produces an image out of that jar.
+   - It keeps the `ActivationGroupIndicator` start conditions, and `KAFKA_GROUP` with them.
+   - A nested bullet whose marker spells the level above it.
+1. Reconfigure **billing-core** to hold no publisher.
+
+- A list of its own
+  - nested under a bullet, two columns in
+
+A closing paragraph naming SOME_CONST_NAME and **one bold run**.
+
+## Known constraints
+
+<!-- Anything that limits the solution and is not negotiable: deadlines,
+external systems to integrate with, data that cannot move, compatibility to
+keep, legal or security rules, expected load. Architectural constraints that
+hold for the whole project belong in the architecture baseline instead — put here
+only what is specific to this feature. -->
+
+## Out of scope
+
+<!-- What this feature explicitly does NOT include, especially the things a
+reader would reasonably assume it does. This is the cheapest section in the
+file: every line here is work that will not be specified, built, or argued
+about later. -->

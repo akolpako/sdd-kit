@@ -1,0 +1,8 @@
+{
+  "key": "ABC-12345",
+  "fields": {
+    "summary": "Split the publisher into its own pod",
+    "description": "h2. Solution design\n # Add a new module {*}billing-outbox-app{*}. It builds a runnable jar:\n ** The build file produces an image out of that jar.\n ** It keeps the {{{}ActivationGroupIndicator{}}} start conditions, and {{KAFKA_GROUP{}}} with them.\n #* A nested bullet whose marker spells the level above it.\n #  Reconfigure {*}billing-core{*} to hold no publisher.\n \n\n * A list of its own\n ** nested under a bullet, two columns in\n\nA closing paragraph naming SOME_CONST_NAME and {*}one bold run{*}.\n",
+    "attachment": []
+  }
+}

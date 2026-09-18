@@ -1,0 +1,6 @@
+SCAFFOLD=review
+FOLDER=Wishlist
+REVIEW=_docs/Wishlist/review.md
+### exit=0
+### tree
+Only in <tmp>/edit/_docs/Wishlist: review.md

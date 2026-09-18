@@ -1,0 +1,116 @@
+### sdd --target <tmp>/refuse-missing-for/project
+exit=2
+### stderr
+  --target needs --for claude|copilot — a project's files are written for one host.
+
+SDD installer
+
+  ./install.sh                                 pick install, sync or uninstall from a menu
+  ./install.sh --target <path> --for <host>    install into <path>, no questions asked
+  ./install.sh --sync                          ask which registered project to bring up to date
+  ./install.sh --sync <path>                   bring that one project up to date
+  ./install.sh --sync --all                    bring every registered project up to date
+  ./install.sh --uninstall <path>              remove the engine from <path>
+  ./install.sh --help
+
+  <host> is claude or copilot. claude writes .claude/ and CLAUDE.md; copilot writes
+  .github/ and .github/copilot-instructions.md. A project has one host, chosen at
+  install time; changing it is --uninstall followed by an install.
+
+  --sync and --uninstall take the host from the registry, so --for is an error there.
+
+  The menu does all three, with the folder browser for an install and the registry
+  as a list for the other two. Esc steps back out of any list; from the menu itself
+  it ends the run.
+
+  An install and a --sync both ask what to do about files the project edited after
+  they were installed. Answer in advance, which is what a script has to do:
+
+  --force                                      overwrite every edited file
+  --keep-edits                                 keep every edited file
+
+  With neither and no terminal on stdin, the edits are kept and nothing is asked.
+
+  A plain --sync with no terminal on stdin walks every registered project, as it
+  always has. --sync --all is the same thing said outright, which is what a script
+  should say.
+
+Every install is recorded in <tmp>/refuse-missing-for/registry.txt, which is what --sync walks.
+### sdd --sync --for claude
+exit=2
+### stderr
+  --for does not apply to --sync — the host comes from the registry there.
+
+SDD installer
+
+  ./install.sh                                 pick install, sync or uninstall from a menu
+  ./install.sh --target <path> --for <host>    install into <path>, no questions asked
+  ./install.sh --sync                          ask which registered project to bring up to date
+  ./install.sh --sync <path>                   bring that one project up to date
+  ./install.sh --sync --all                    bring every registered project up to date
+  ./install.sh --uninstall <path>              remove the engine from <path>
+  ./install.sh --help
+
+  <host> is claude or copilot. claude writes .claude/ and CLAUDE.md; copilot writes
+  .github/ and .github/copilot-instructions.md. A project has one host, chosen at
+  install time; changing it is --uninstall followed by an install.
+
+  --sync and --uninstall take the host from the registry, so --for is an error there.
+
+  The menu does all three, with the folder browser for an install and the registry
+  as a list for the other two. Esc steps back out of any list; from the menu itself
+  it ends the run.
+
+  An install and a --sync both ask what to do about files the project edited after
+  they were installed. Answer in advance, which is what a script has to do:
+
+  --force                                      overwrite every edited file
+  --keep-edits                                 keep every edited file
+
+  With neither and no terminal on stdin, the edits are kept and nothing is asked.
+
+  A plain --sync with no terminal on stdin walks every registered project, as it
+  always has. --sync --all is the same thing said outright, which is what a script
+  should say.
+
+Every install is recorded in <tmp>/refuse-missing-for/registry.txt, which is what --sync walks.
+### sdd --uninstall <tmp>/refuse-missing-for/project --for claude
+exit=2
+### stderr
+  --for does not apply to --uninstall — the host comes from the registry there.
+
+SDD installer
+
+  ./install.sh                                 pick install, sync or uninstall from a menu
+  ./install.sh --target <path> --for <host>    install into <path>, no questions asked
+  ./install.sh --sync                          ask which registered project to bring up to date
+  ./install.sh --sync <path>                   bring that one project up to date
+  ./install.sh --sync --all                    bring every registered project up to date
+  ./install.sh --uninstall <path>              remove the engine from <path>
+  ./install.sh --help
+
+  <host> is claude or copilot. claude writes .claude/ and CLAUDE.md; copilot writes
+  .github/ and .github/copilot-instructions.md. A project has one host, chosen at
+  install time; changing it is --uninstall followed by an install.
+
+  --sync and --uninstall take the host from the registry, so --for is an error there.
+
+  The menu does all three, with the folder browser for an install and the registry
+  as a list for the other two. Esc steps back out of any list; from the menu itself
+  it ends the run.
+
+  An install and a --sync both ask what to do about files the project edited after
+  they were installed. Answer in advance, which is what a script has to do:
+
+  --force                                      overwrite every edited file
+  --keep-edits                                 keep every edited file
+
+  With neither and no terminal on stdin, the edits are kept and nothing is asked.
+
+  A plain --sync with no terminal on stdin walks every registered project, as it
+  always has. --sync --all is the same thing said outright, which is what a script
+  should say.
+
+Every install is recorded in <tmp>/refuse-missing-for/registry.txt, which is what --sync walks.
+### tree
+### registry

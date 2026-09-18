@@ -1,0 +1,6 @@
+SCAFFOLD=feature
+FOLDER=Cart
+RAW=_docs/Cart/raw.md
+### exit=0
+### tree
+Only in <tmp>/edit: _docs

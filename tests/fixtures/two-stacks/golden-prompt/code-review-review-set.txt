@@ -1,0 +1,41 @@
+Working directory: <tmp>/two-stacks
+Every `.sdd/...` and `_docs/...` path below and in the protocols it names is
+relative to it.
+
+# Assignment: review this set against these specs
+
+Follow these protocols, in this order:
+
+.sdd/protocols/code-review.md
+.sdd/protocols/docs-format.md
+
+FEATURE=Cart
+
+The review set of this run, resolved already:
+
+BASE=
+ROOT=HEAD
+DIFF=git diff HEAD -- . ':(exclude)_docs/' ':(exclude).sdd/' ':(exclude).claude/'
+
+An empty `BASE` means no base branch was found: the set is the uncommitted
+changes alone, and the review is partial and says so.
+
+Untracked files, part of the same set:
+
+web/src/cart.service.ts
+
+Tasks the implementation came back `blocked` on — code missing for these is not
+a finding:
+
+(none)
+
+Specs of this run:
+
+_docs/Cart/new-requirements.md
+_docs/Cart/design.md
+_docs/Cart/tasks.md
+_docs/code-style.md
+_docs/architecture.index.md
+
+Return: your report in one piece, per the protocol.
+### exit=0

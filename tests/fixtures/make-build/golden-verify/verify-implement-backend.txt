@@ -1,0 +1,5 @@
+VERIFY=fail
+
+FAIL:
+Still open after the backend role returned: TASK-001 Cart table and entity, TASK-002 Add and remove items, TASK-003 Cart totals, TASK-004 Cart REST endpoints. A task is marked by the role that owns the loop — one left open is reported by name, never marked here on its behalf.
+### exit=2

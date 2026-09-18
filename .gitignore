@@ -1,0 +1,10 @@
+.idea
+settings.local.json
+.DS_Store
+installed-repos.txt
+.sdd/log/
+.sdd/sdd.conf
+.venv/
+/.claude/skills/
+/.agents/
+/skills-lock.json

@@ -1,0 +1,32 @@
+SCAFFOLD=init
+MODE=split
+
+COPIED:
+_docs/code-style.md
+_docs/requirements.md
+_docs/architecture/00-quick-reference.md
+_docs/architecture/01-system-overview.md
+_docs/architecture/02-c4-views.md
+_docs/architecture/03-module-structure.md
+_docs/architecture/04-data-model.md
+_docs/architecture/05-business-logic.md
+_docs/architecture/06-api-spec.md
+_docs/architecture/07-tech-stack.md
+_docs/architecture/08-design-patterns.md
+_docs/architecture/09-testing.md
+_docs/architecture/10-security.md
+_docs/architecture/11-observability.md
+_docs/architecture/12-nfr.md
+_docs/architecture/13-constraints.md
+_docs/architecture/14-glossary.md
+_docs/architecture/15-references.md
+
+UNTOUCHED:
+
+SKIPPED:
+### exit=0
+### tree
+Only in <tmp>/edit/_docs: architecture
+Only in <tmp>/edit/_docs: architecture.index.md
+Only in <tmp>/edit/_docs: code-style.md
+Only in <tmp>/edit/_docs: requirements.md

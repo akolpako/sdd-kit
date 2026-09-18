@@ -1,0 +1,28 @@
+GATE=ok
+FEATURE=Cart
+FOLDER=Cart
+STAGE=reviewed
+TASKS_DONE=0
+TASKS_TOTAL=4
+TASKS_BLOCKED=0
+ROLE_ORDER=backend,frontend
+BUILD_ROOT=
+BUILD_BACKEND=mvn clean verify
+BUILD_FRONTEND=cd web && npm run build && npm test
+BASELINE=
+BUILD_FILES=2
+
+SPAWN:
+backend-developer|.sdd/protocols/developer.md,.sdd/protocols/task-loop.md|backend
+frontend-developer|.sdd/protocols/developer.md,.sdd/protocols/task-loop.md|frontend
+
+STOP:
+
+ASK:
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=0

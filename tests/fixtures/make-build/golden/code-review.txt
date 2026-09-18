@@ -1,0 +1,23 @@
+GATE=stop
+FEATURE=Cart
+FOLDER=Cart
+STAGE=reviewed
+BASE=
+ROOT=
+DIFF=
+CHANGED=0
+REVIEW_PATH=_docs/Cart/review.md
+REVIEW_PREVIOUS=
+
+STOP:
+Not a git repository: /sdd-code-review needs git to tell what this feature changed. Nothing here is worked out by reading the tree by hand.
+
+ASK:
+
+WARN:
+No task is marked [x]. Whatever the working tree holds is reviewed all the same, but the feature is not implemented — check that /sdd-implement Cart actually ran.
+
+ANOMALIES:
+
+NOTES:
+### exit=0

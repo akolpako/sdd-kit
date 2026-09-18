@@ -1,0 +1,38 @@
+### sdd --target <tmp>/uninstall-keeps-edit-copilot/project --for copilot
+exit=0
+### sdd --uninstall <tmp>/uninstall-keeps-edit-copilot/project
+exit=0
+### expect the edited file is still there — pass
+### expect an untouched one is gone — pass
+### expect and the manifest stays, because it still describes a file on disk — pass
+### tree
+d  .github/
+d  .github/agents/
+d  .github/skills/
+d  .github/skills/angular-practices/
+d  .github/skills/java-core/
+d  .github/skills/java-jpa/
+d  .github/skills/java-junit/
+d  .github/skills/java-junit/references/
+d  .github/skills/maven-lib-source/
+d  .github/skills/maven-lib-source/scripts/
+d  .github/skills/java-springboot/
+d  .github/skills/sdd-actualize/
+d  .github/skills/sdd-code-fix/
+d  .github/skills/sdd-code-review/
+d  .github/skills/sdd-implement/
+d  .github/skills/sdd-init/
+d  .github/skills/sdd-next-story/
+d  .github/skills/sdd-spec-review/
+d  .github/skills/sdd-specify/
+d  .github/skills/sdd-status/
+f  .github/skills/sdd-status/SKILL.md
+d  .sdd/
+f  .sdd/.sdd-manifest
+### file .github/skills/sdd-status/SKILL.md
+This command was rewritten by the project.
+### manifest
+# Written by install.sh. Do not edit.
+host	copilot
+<sum>	.github/skills/sdd-status/SKILL.md
+### registry

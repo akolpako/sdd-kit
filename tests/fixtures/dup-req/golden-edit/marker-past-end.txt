@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=_docs/Cart/raw.md has 17 lines — line 9999 is not in it
+### tree

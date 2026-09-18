@@ -1,0 +1,6 @@
+### exit=2
+### stderr
+ERROR=no JIRA_TOKEN — set it in <tmp>/jira-home/.config/sdd-kit/tokens.env or in .sdd/sdd.conf (chmod 600 the token file)
+### specs
+### file _docs/ABC-12345/raw.md
+not written

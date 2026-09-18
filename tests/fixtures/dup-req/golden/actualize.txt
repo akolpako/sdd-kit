@@ -1,0 +1,24 @@
+GATE=stop
+FEATURE=Cart
+FOLDER=Cart
+STAGE=specified
+REQUIREMENTS=present
+DESIGN=present
+COMPILATION=present
+NEXT_REQ=REQ-004
+
+REQ_DOMAINS:
+-|NEXT=REQ-004|COUNTER=REQ-003|HIGHEST=REQ-002|DECLARED=REQ-003|DECLARED_IN=Cart|COUNT=3
+
+STOP:
+_docs/architecture.index.md is not there — there is nothing to promote a decision into. /sdd-init owns creating it.
+
+ASK:
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+next-req: 1 number(s) are carried by more than one entry. The compilation is already inconsistent — report it before any number is issued.
+### exit=0

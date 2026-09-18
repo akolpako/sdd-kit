@@ -1,0 +1,27 @@
+GATE=stop
+FEATURE=ABC-12345
+FOLDER=ABC-12345
+STAGE=
+REVIEW=
+REVIEW_PATH=_docs/ABC-12345/review.md
+REVIEW_DATE=
+REVIEW_ROOT=
+REVIEW_VERDICT=
+ROOT=
+BUILD_ROOT=
+BUILD_BACKEND=
+BUILD_FRONTEND=
+
+STOP:
+The project has no _docs/ yet — there is no report to act on. Run /sdd-init, then /sdd-next-story ABC-12345.
+
+ASK:
+No build command for this project: .sdd/sdd.conf holds no SDD_BUILD_ROOT, and no pom.xml, build.gradle or package.json was found to propose one from. Write the command that verifies this project into .sdd/sdd.conf as SDD_BUILD_ROOT=<command> — one line, run from the project root. Nothing is built until it is there.
+
+WARN:
+Not a git repository — whether the report still describes the current code cannot be checked. A finding may be about a line that has since moved.
+
+ANOMALIES:
+
+NOTES:
+### exit=2

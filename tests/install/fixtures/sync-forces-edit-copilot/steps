@@ -1,0 +1,8 @@
+# --force on the other host, where the command is wrapped into a skill
+# directory before it is written.
+sdd --target "$TARGET" --for copilot
+printf 'This command was rewritten by the project.\n' > "$TARGET/.github/skills/sdd-status/SKILL.md"
+sdd --sync --all --force
+
+expect "the engine's content is back" cmp -s .github/skills/sdd-status/SKILL.md "$ENGINE/.sdd/commands/sdd-status.md"
+said "the run says what it overwrote" "1 file(s) overwritten with the engine's copy."

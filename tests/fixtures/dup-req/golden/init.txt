@@ -1,0 +1,22 @@
+GATE=ok
+PROJECT=greenfield
+TEMPLATES=ok
+EXISTING=requirements.md
+BUILD_ROOT=
+BUILD_BACKEND=
+BUILD_FRONTEND=
+
+SPAWN:
+
+DETECTED:
+
+STOP:
+
+ASK:
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=0

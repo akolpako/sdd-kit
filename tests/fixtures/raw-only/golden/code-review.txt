@@ -1,0 +1,28 @@
+GATE=stop
+FEATURE=Cart
+FOLDER=Cart
+STAGE=raw
+BASE=
+ROOT=
+DIFF=
+CHANGED=0
+REVIEW_PATH=_docs/Cart/review.md
+REVIEW_PREVIOUS=
+
+STOP:
+_docs/Cart/new-requirements.md is missing — the review has nothing to measure the code against. /sdd-specify Cart writes it.
+_docs/Cart/design.md is missing — the review has nothing to measure the code against. /sdd-specify Cart writes it.
+_docs/Cart/tasks.md is missing — the review has nothing to measure the code against. /sdd-specify Cart writes it.
+Not a git repository: /sdd-code-review needs git to tell what this feature changed. Nothing here is worked out by reading the tree by hand.
+
+ASK:
+
+WARN:
+Not reviewed: new-requirements.md (no status), design.md (no status), tasks.md (no status). The yardstick of this review is an unreviewed spec, and the report says so. /sdd-spec-review Cart is what promotes a spec to ready.
+No task is marked [x]. Whatever the working tree holds is reviewed all the same, but the feature is not implemented — check that /sdd-implement Cart actually ran.
+
+ANOMALIES:
+
+NOTES:
+feature-state: No _docs/requirements.md — no feature can be told apart from actualized, and every finished one stays at 'implemented'.
+### exit=0

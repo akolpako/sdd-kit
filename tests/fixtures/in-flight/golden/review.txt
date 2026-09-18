@@ -1,0 +1,38 @@
+GATE=ok
+FEATURE=Wishlist
+FOLDER=Wishlist
+STAGE=specified
+RAW=present
+REQUIREMENTS=present
+DESIGN=present
+TASKS=present
+STATUS_REQUIREMENTS=draft
+STATUS_DESIGN=draft
+STATUS_TASKS=draft
+COMPILATION=present
+NEXT_REQ=REQ-006
+MODE=review
+
+SPAWN:
+requirements-engineer|.sdd/protocols/spec-modes.md,.sdd/protocols/spec-checklist.md,.sdd/protocols/interview.md,.sdd/protocols/requirements-writing.md,.sdd/protocols/docs-format.md|requirements
+architect|.sdd/protocols/spec-modes.md,.sdd/protocols/spec-checklist.md,.sdd/protocols/interview.md,.sdd/protocols/architecture-design.md,.sdd/protocols/task-breakdown.md,.sdd/protocols/docs-format.md|design+tasks
+
+REQ_DOMAINS:
+-|NEXT=REQ-006|COUNTER=REQ-004|HIGHEST=REQ-003|DECLARED=REQ-005|DECLARED_IN=Wishlist|COUNT=3
+
+REQ_DUPLICATES:
+
+TASKS:
+TASK-001|open|backend|REQ-004|Wishlist table and entity|
+TASK-002|open|backend|REQ-005|Move an item into the cart|
+
+STOP:
+
+ASK:
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=0

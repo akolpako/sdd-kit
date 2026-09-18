@@ -1,0 +1,22 @@
+GATE=stop
+FEATURE=Cart
+FOLDER=Cart
+STAGE=specified
+NAME_OK=yes
+NAME_WARN=
+RAW=present
+
+FEATURES:
+Cart
+
+STOP:
+_docs/Cart/raw.md already holds a description, and this command never overwrites one — delete the file to start over. Edit it, or run /sdd-specify Cart.
+
+ASK:
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=0

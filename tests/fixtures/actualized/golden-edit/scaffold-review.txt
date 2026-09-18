@@ -1,0 +1,94 @@
+SCAFFOLD=review
+FOLDER=Cart
+REVIEW=_docs/Cart/review.md
+### exit=0
+### tree
+diff -ru -x .git <tmp>/actualized/_docs/Cart/review.md <tmp>/edit/_docs/Cart/review.md
+--- <tmp>/actualized/_docs/Cart/review.md
++++ <tmp>/edit/_docs/Cart/review.md
+@@ -1,31 +1,74 @@
++---
++type: review
++feature: Cart
++reviewed: <YYYY-MM-DD>
++base: <base ref, or "none — uncommitted changes only">
++root: <the commit the reviewed diff was taken against>
++verdict: <APPROVED | APPROVED WITH MINOR ISSUES | BLOCKED>
++tags:
++  - sdd/review
++---
++
+ # Code Review — Cart
+ 
+-> Reviewed: 2026-01-15
+-> Base: main
+-> Root: deadbeef
+-> Verdict: APPROVED
++<!-- The report of one code review: a snapshot of the working tree as it was on
++the `reviewed` date above, never a ledger of what has since been fixed.
+ 
++The four header fields are the properties above, in that order. `verdict` also
++takes `stale — fixes applied <YYYY-MM-DD>`. A value carrying a colon is quoted,
++or YAML reads the colon as the end of the key. -->
++
+ ## Review set
+ 
+-The committed diff against `deadbeef`, no untracked files.
++<!-- One line for the class of the set — the diff, the untracked files, and
++what the class means for what this report may claim. Then, when they apply:
++what was excluded (generated files, binaries), what was truncated, and the
++tasks left blocked, which are unfinished by design rather than missing. -->
+ 
+ ## Findings
+ 
++<!-- Sorted by severity, worst first, numbered `F-01` upward in that order. The
++numbers are stable within a report.
++
+ ### F-01 — Critical — Security
+-- **Where:** `src/main/java/com/example/CartService.java:12`
+-- **What:** The item count is read from the request and never bounded.
+-- **Recommendation:** Bound it at the service edge.
+ 
++> [!danger] Where: `src/main/java/.../CartController.java:42`
++> **What:** <the defect, one or two sentences>
++>
++> **Recommendation:** <what to do about it>
++
++Severity is one of Critical, Major, Minor, Suggestion; category is one of
++Security, Performance, Quality, Spec Deviation, Style. The callout type carries
++the severity, so a reader sees it before reading a word:
++
++| Severity | Callout |
++|----------|---------|
++| Critical | `> [!danger]` |
++| Major | `> [!warning]` |
++| Minor | `> [!note]` |
++| Suggestion | `> [!tip]` |
++
++When the review found more than the report holds, the section ends with the one
++line saying how many are below the threshold. -->
++
+ ## Requirement coverage
+ 
++<!--
+ | Requirement | Implemented in | Tested by | Conditions covered |
+ |-------------|----------------|-----------|--------------------|
+-| `REQ-002` | `CartService.java` | — | 0/1 |
++| `REQ-001` | `CartService.java` | `CartServiceTest.java` | 3/3 |
++| `REQ-002` | `PromoCodeValidator.java` | — | 0/2 |
+ 
++A dash is an answer; an unrelated file stretched into a cell is not. -->
++
+ ### Gaps
+ 
+-`REQ-002` has no test.
++<!-- Listed separately, because they are what the table is read for:
++requirements with no code, requirements with no test, and conditions of
++satisfaction no test covers. This reports; it does not block. -->
+ 
+ ## Older TODO Code Review markers
+ 
+-None.
++<!-- The `TODO Code Review:` markers already in the code, with their file, line
++and date — what earlier reviews decided to defer. Reported, never removed, and
++never raised again as new findings. -->

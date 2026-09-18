@@ -1,0 +1,23 @@
+GATE=stop
+FEATURE=Cart
+FOLDER=Cart
+STAGE=
+BASE=
+ROOT=
+DIFF=
+CHANGED=0
+REVIEW_PATH=_docs/Cart/review.md
+REVIEW_PREVIOUS=
+
+STOP:
+The project has no _docs/ yet — there is no specification to review the code against. Run /sdd-init, then /sdd-next-story Cart.
+Not a git repository: /sdd-code-review needs git to tell what this feature changed. Nothing here is worked out by reading the tree by hand.
+
+ASK:
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=2

@@ -1,0 +1,27 @@
+GATE=ok
+FEATURE=Cart
+FOLDER=Cart
+STAGE=reviewed
+TASKS_DONE=0
+TASKS_TOTAL=4
+TASKS_BLOCKED=0
+ROLE_ORDER=backend
+BUILD_ROOT=make verify
+BUILD_BACKEND=make verify
+BUILD_FRONTEND=make verify
+BASELINE=make verify
+BUILD_FILES=0
+
+SPAWN:
+backend-developer|.sdd/protocols/developer.md,.sdd/protocols/task-loop.md|backend
+
+STOP:
+
+ASK:
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=0

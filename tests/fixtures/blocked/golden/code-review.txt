@@ -1,0 +1,23 @@
+GATE=stop
+FEATURE=Cart
+FOLDER=Cart
+STAGE=in progress 1/3, 1 blocked
+BASE=
+ROOT=
+DIFF=
+CHANGED=0
+REVIEW_PATH=_docs/Cart/review.md
+REVIEW_PREVIOUS=
+
+STOP:
+Not a git repository: /sdd-code-review needs git to tell what this feature changed. Nothing here is worked out by reading the tree by hand.
+
+ASK:
+
+WARN:
+1 task(s) are blocked. Their code is reviewed like the rest of the set — the report names them as unfinished by design, never as work that went missing.
+
+ANOMALIES:
+
+NOTES:
+### exit=0

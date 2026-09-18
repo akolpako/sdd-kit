@@ -1,0 +1,28 @@
+GATE=ok
+FEATURE=Cart
+FOLDER=Cart
+STAGE=in progress 1/3, 1 blocked
+TASKS_DONE=1
+TASKS_TOTAL=3
+TASKS_BLOCKED=1
+ROLE_ORDER=backend
+BUILD_ROOT=mvn clean verify
+BUILD_BACKEND=mvn clean verify
+BUILD_FRONTEND=
+BASELINE=mvn clean verify
+BUILD_FILES=1
+
+SPAWN:
+backend-developer|.sdd/protocols/developer.md,.sdd/protocols/task-loop.md|backend
+
+STOP:
+
+ASK:
+
+WARN:
+1 task(s) carry BLOCKED: from an earlier run. They are unchecked, so this run retries them with fresh attempts — their TODO: records carry the reason they failed last time.
+
+ANOMALIES:
+
+NOTES:
+### exit=0

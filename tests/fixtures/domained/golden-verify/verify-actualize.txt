@@ -1,0 +1,5 @@
+VERIFY=fail
+
+FAIL:
+Still draft in _docs/requirements.md: REQ-CART-001. An entry stays draft until its wording matches the final new-requirements.md, and a draft entry keeps the feature short of actualized.
+### exit=2

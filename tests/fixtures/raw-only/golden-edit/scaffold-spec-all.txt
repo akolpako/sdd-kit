@@ -1,0 +1,12 @@
+SCAFFOLD=spec
+FOLDER=Cart
+
+COPIED:
+_docs/Cart/new-requirements.md
+_docs/Cart/design.md
+_docs/Cart/tasks.md
+### exit=0
+### tree
+Only in <tmp>/edit/_docs/Cart: design.md
+Only in <tmp>/edit/_docs/Cart: new-requirements.md
+Only in <tmp>/edit/_docs/Cart: tasks.md

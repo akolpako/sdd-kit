@@ -1,0 +1,24 @@
+# Skills the human installed into the engine clone with `npx skills add`.
+# .claude/skills/ is for Claude Code projects alone and .agents/skills/ for
+# Copilot projects alone. A skill that npx linked to its canonical copy arrives
+# as files, and a name the engine already ships stays the engine's.
+mkdir -p "$ENGINE/.claude/skills/probe/references" "$ENGINE/.agents/skills/linked" \
+         "$ENGINE/.agents/skills/copilot-only" "$ENGINE/.claude/skills/java-core"
+printf -- '---\nname: probe\ndescription: A probe.\n---\n' > "$ENGINE/.claude/skills/probe/SKILL.md"
+printf 'More.\n' > "$ENGINE/.claude/skills/probe/references/more.md"
+printf -- '---\nname: linked\ndescription: Linked.\n---\n' > "$ENGINE/.agents/skills/linked/SKILL.md"
+ln -s ../../.agents/skills/linked "$ENGINE/.claude/skills/linked"
+printf -- '---\nname: copilot-only\ndescription: Copilot.\n---\n' > "$ENGINE/.agents/skills/copilot-only/SKILL.md"
+printf -- '---\nname: java-core\ndescription: A clash.\n---\n' > "$ENGINE/.claude/skills/java-core/SKILL.md"
+sdd --target "$TARGET" --for claude
+
+expect "the installed skill is copied whole" test -f .claude/skills/probe/references/more.md
+expect "a linked skill arrives as files, not a link" bash -c 'test ! -L .claude/skills/linked && test -f .claude/skills/linked/SKILL.md'
+expect "a skill for the other host does not arrive" test ! -e .claude/skills/copilot-only
+expect "a name the engine ships stays the engine's" cmp -s .claude/skills/java-core/SKILL.md "$ENGINE/.sdd/skills/java-core/SKILL.md"
+said "the clash is named" "skipped — the engine ships a skill of that name"
+
+rm -rf "$ENGINE/.claude/skills/probe"
+sdd --sync --all
+
+expect "a skill gone from the clone is pruned" test ! -e .claude/skills/probe

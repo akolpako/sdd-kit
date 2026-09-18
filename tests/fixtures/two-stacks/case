@@ -1,0 +1,6 @@
+# Backend and frontend tasks in one feature: the run has two spawns, and the
+# working tree carries changes for a code review to look at. Next to them lies
+# the engine install.sh wrote — untracked .sdd/ and .claude/, as it is on every
+# project — and none of it belongs to the review set.
+FEATURE=Cart
+GIT=yes

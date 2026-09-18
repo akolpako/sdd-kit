@@ -1,0 +1,12 @@
+# A plain --sync with nobody to ask, which is what a script and this harness
+# always give it. The question is not asked, the edit is not overwritten, and
+# the output names both flags so whoever reads it can answer next time. This is
+# the case that guards against a script silently discarding somebody's work.
+sdd --target "$TARGET" --for claude
+printf 'This command was rewritten by the project.\n' > "$TARGET/.claude/commands/sdd-status.md"
+sdd --sync
+
+expect "the edit is still there" grep -q 'rewritten by the project' .claude/commands/sdd-status.md
+said "the output names --force" "--force"
+said "and --keep-edits" "--keep-edits"
+said "and says what it kept" "1 file(s) kept as this project has them."

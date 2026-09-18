@@ -1,0 +1,27 @@
+GATE=ok
+FEATURE=Wishlist
+FOLDER=Wishlist
+STAGE=specified
+REQUIREMENTS=present
+DESIGN=present
+COMPILATION=present
+NEXT_REQ=REQ-006
+
+SPAWN:
+architect|.sdd/protocols/project-baseline.md,.sdd/protocols/docs-format.md|baseline-from-feature
+
+REQ_DOMAINS:
+-|NEXT=REQ-006|COUNTER=REQ-004|HIGHEST=REQ-003|DECLARED=REQ-005|DECLARED_IN=Wishlist|COUNT=3
+
+COMPILATION_ENTRIES:
+
+STOP:
+
+ASK:
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=0

@@ -1,0 +1,42 @@
+GATE=ok
+FEATURE=Cart
+FOLDER=Cart
+STAGE=specified
+RAW=present
+REQUIREMENTS=present
+DESIGN=present
+TASKS=present
+STATUS_REQUIREMENTS=draft
+STATUS_DESIGN=draft
+STATUS_TASKS=draft
+COMPILATION=present
+NEXT_REQ=REQ-002
+MODE=review
+
+SPAWN:
+requirements-engineer|.sdd/protocols/spec-modes.md,.sdd/protocols/spec-checklist.md,.sdd/protocols/interview.md,.sdd/protocols/requirements-writing.md,.sdd/protocols/docs-format.md|requirements
+architect|.sdd/protocols/spec-modes.md,.sdd/protocols/spec-checklist.md,.sdd/protocols/interview.md,.sdd/protocols/architecture-design.md,.sdd/protocols/task-breakdown.md,.sdd/protocols/docs-format.md|design+tasks
+
+REQ_DOMAINS:
+-|NEXT=REQ-002|COUNTER=REQ-002|HIGHEST=REQ-001|DECLARED=|DECLARED_IN=|COUNT=1
+ACC|NEXT=REQ-ACC-004|COUNTER=REQ-ACC-004|HIGHEST=REQ-ACC-003|DECLARED=|DECLARED_IN=|COUNT=2
+CART|NEXT=REQ-CART-003|COUNTER=REQ-CART-002|HIGHEST=REQ-CART-001|DECLARED=REQ-CART-002|DECLARED_IN=Cart|COUNT=1
+
+REQ_DUPLICATES:
+
+TASKS:
+TASK-001|open|backend|REQ-CART-001|Cart table and entity|
+TASK-002|open|backend|REQ-CART-001|Add and remove items|
+TASK-003|open|backend|REQ-CART-002|Cart totals|
+
+STOP:
+
+ASK:
+
+WARN:
+_docs/architecture.index.md is not there — the design is reviewed without the architecture context, and /sdd-init is what creates it.
+
+ANOMALIES:
+
+NOTES:
+### exit=0

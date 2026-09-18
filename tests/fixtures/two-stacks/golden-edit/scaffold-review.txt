@@ -1,0 +1,6 @@
+SCAFFOLD=review
+FOLDER=Cart
+REVIEW=_docs/Cart/review.md
+### exit=0
+### tree
+Only in <tmp>/edit/_docs/Cart: review.md

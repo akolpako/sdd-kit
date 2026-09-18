@@ -1,0 +1,26 @@
+GATE=ok
+FEATURE=Cart
+FOLDER=Cart
+STAGE=reviewed
+BASE=
+ROOT=HEAD
+DIFF=git diff HEAD -- . ':(exclude)_docs/' ':(exclude).sdd/' ':(exclude).claude/'
+CHANGED=2
+REVIEW_PATH=_docs/Cart/review.md
+REVIEW_PREVIOUS=
+
+SPAWN:
+code-reviewer|.sdd/protocols/code-review.md,.sdd/protocols/docs-format.md|review-set
+
+STOP:
+
+ASK:
+
+WARN:
+No task is marked [x]. Whatever the working tree holds is reviewed all the same, but the feature is not implemented — check that /sdd-implement Cart actually ran.
+No base branch was detected, so the review set is the uncommitted changes only. The report is labelled a partial review and never reported as complete — re-run as /sdd-code-review Cart <base-ref> to review against a branch.
+
+ANOMALIES:
+
+NOTES:
+### exit=0

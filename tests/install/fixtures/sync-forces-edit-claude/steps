@@ -1,0 +1,8 @@
+# The same edit and the other answer. --force overwrites it, and the file
+# carries the engine's content again.
+sdd --target "$TARGET" --for claude
+printf 'This command was rewritten by the project.\n' > "$TARGET/.claude/commands/sdd-status.md"
+sdd --sync --all --force
+
+expect "the engine's content is back" cmp -s .claude/commands/sdd-status.md "$ENGINE/.sdd/commands/sdd-status.md"
+said "the run says what it overwrote" "1 file(s) overwritten with the engine's copy."

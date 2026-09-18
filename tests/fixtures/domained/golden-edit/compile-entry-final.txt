@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=REQ-002 has no entry yet, so its wording has to come with it: compile-entry Cart REQ-002 final <text>
+### tree
