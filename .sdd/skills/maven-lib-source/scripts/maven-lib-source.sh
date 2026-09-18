@@ -50,14 +50,14 @@ VF_VERSION="1.10.1"
 VF_GAV="org.vineflower:vineflower:${VF_VERSION}"
 VF_ORIGIN="decompiled(vineflower ${VF_VERSION})"
 
-CACHE_ROOT="${HOME}/.cache/.sdd/maven-lib-source"
+CACHE_ROOT="${HOME}/.cache/maven-lib-source"
 INDEX_ROOT="${CACHE_ROOT}/index"
 PROJECT_ROOT="${CACHE_ROOT}/projects"
 DECL_ROOT="${CACHE_ROOT}/declarations"
 TOOL_ROOT="${CACHE_ROOT}/tools"
 ANSWERS_ROOT="${CACHE_ROOT}/answers"
 TMP_ROOT="${TMPDIR:-/tmp}"; TMP_ROOT="${TMP_ROOT%/}"
-SRC_ROOT="${TMP_ROOT}/.sdd-maven-lib-source"
+SRC_ROOT="${TMP_ROOT}/maven-lib-source"
 
 SCAN_JOBS=8
 
@@ -100,7 +100,7 @@ Options:
   --out <dir>            also place the file there, and report that path
   --spill <mode>         auto (default) writes an answer longer than 120 lines
                          to a file and prints its head; never prints it whole;
-                         always writes every answer. JAVA_LIB_SOURCE_SPILL_LINES
+                         always writes every answer. MAVEN_LIB_SOURCE_SPILL_LINES
                          moves the threshold
   --from-project <dir>   resolve the version from that project's own build
   --module <path>        the module inside it, as Maven's -pl takes it
@@ -140,7 +140,7 @@ case "${1:-}" in
 esac
 
 METHOD=""; OFFLINE=0; NOCACHE=0; JSON=0; PRINT=0; OUTDIR=""; MEMBERS=""
-SPILL="auto"; SPILL_LINES="${JAVA_LIB_SOURCE_SPILL_LINES:-120}"; SPILL_HEAD=14
+SPILL="auto"; SPILL_LINES="${MAVEN_LIB_SOURCE_SPILL_LINES:-120}"; SPILL_HEAD=14
 FROM_PROJECT=""; MODULE=""; GROUP_PREFIX=""; ALL=0; REFRESH=0; LIST=0
 TAB=$'\t'
 METHODS=()
@@ -178,7 +178,7 @@ done
 N_POS=${#POSITIONAL[@]}
 
 case "$SPILL" in auto|never|always) ;; *) usage_err "--spill takes auto, never or always, not ${SPILL}" ;; esac
-[[ "$SPILL_LINES" =~ ^[0-9]+$ ]] || usage_err "JAVA_LIB_SOURCE_SPILL_LINES takes a number, not ${SPILL_LINES}"
+[[ "$SPILL_LINES" =~ ^[0-9]+$ ]] || usage_err "MAVEN_LIB_SOURCE_SPILL_LINES takes a number, not ${SPILL_LINES}"
 
 # The same name twice is one method, not two: asking for it twice would print
 # the same cut twice and pay for it twice.
@@ -1075,9 +1075,9 @@ java_reader() {
   if [[ $JAVA_READER_PROBED -eq 0 ]]; then
     JAVA_READER_PROBED=1
     local srcf="${SELF_DIR}/MavenLibSource.java" key dir
-    # JAVA_LIB_SOURCE_READER=text puts the fallback in front, which is how it is
+    # MAVEN_LIB_SOURCE_READER=text puts the fallback in front, which is how it is
     # tested on a machine that has a JDK.
-    [[ "${JAVA_LIB_SOURCE_READER:-}" == "text" ]] && return 1
+    [[ "${MAVEN_LIB_SOURCE_READER:-}" == "text" ]] && return 1
     if [[ $HAVE_JAVA -eq 1 && -r "$srcf" ]] && need javac; then
       key=$(cksum < "$srcf" | tr -d ' ')
       dir="${TOOL_ROOT}/${key}"

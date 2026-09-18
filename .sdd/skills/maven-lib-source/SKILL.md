@@ -1,21 +1,23 @@
 ---
 name: maven-lib-source
-description: 'Reads a class from a Maven dependency jar — the sources jar, a decompilation, or signatures, labelled with which one. Use before stating what a class or method from a dependency does, and instead of reaching into ~/.m2 with find, unzip, jar or javap.'
+description: 'Reads the real source of a class from Maven dependencies, in the version the build uses. Use before stating what a dependency class or method does or whether it exists in the project''s version, and instead of digging through ~/.m2 with find, unzip, jar or javap. Maven only.'
 ---
 
 # Maven library source
 
-Read a library class rather than recall it. This replaces reading `~/.m2` by hand: do not use `find`, `unzip`, `jar` or `javap` for it.
+When an AI agent needs to know what a library class does, it either answers from memory — often about a different version than yours — or digs through `~/.m2` by hand: `find`, `unzip`, `javap`, then reads a 9,000-line file into context. The first gives wrong answers; the second is slow and burns tokens.
 
-Script: `scripts/maven-lib-source.sh`.
+This skill gives the agent one script call instead. It finds the class in your Maven dependencies, picks the version your build actually uses, and returns only what was asked — a method, a filtered index of declarations, or line ranges — instead of whole files. No sources jar? It decompiles or falls back to signatures, and labels which.
 
-What a class declares is read by javac's own parser, so it cannot be wrong about it. Where there is no JDK, or the file is Kotlin, a text reader answers instead — it follows the shape of the source, and a shape it does not know is a declaration missing from the index. Both are cached under the checksum of the file, so a class is parsed once.
+Maven only (not Gradle); needs bash and unzip.
 
-## Which classes this is for
+Read the class from the jar; do not use `find`, `unzip`, `jar` or `javap` on `~/.m2` by hand.
 
-Classes that arrive on the classpath from a jar. A class the repository under work declares is not one of them — grep the sources for it instead.
+Script: `scripts/maven-lib-source.sh`, relative to this skill's directory.
 
-The import tells them apart: a package outside the project's own groupId comes from a dependency. Where that is not obvious, grep first and call this when the grep finds nothing:
+## Which classes
+
+Only classes from dependency jars. For a class the project itself declares, grep the sources; when unsure, grep first:
 
 ```bash
 rg -l 'class Foo|interface Foo|enum Foo|record Foo' --glob '**/src/**/*.java'
@@ -25,58 +27,45 @@ rg -l 'class Foo|interface Foo|enum Foo|record Foo' --glob '**/src/**/*.java'
 
 | Question | Call |
 |---|---|
-| What is this class? | `find <Class> --from-project <dir>` — one call: it names the dependency and reads the class |
-| Several classes | `find <A> <B> <C> --from-project <dir>` — one scan answers all of them |
-| Which dependency holds it? | the same call; `--list` to stop at the list |
-| Which version do we use? | pass `--from-project <dir>`, leave the version out |
-| What does this method do? | `--method <name>` — prints the code, every overload |
-| Two methods of one class | `--method <a> --method <b>` — repeatable, one call |
-| What does the class declare? | no flag — prints the path, the line count, an index of the types, methods, fields and constants |
-| What are the enum's constants? | no flag — they are in the index |
-| Only the part of a fat class I asked about | `--members <pattern>` — keeps the declarations matching it |
+| What is this class? | `find <Class> --from-project <dir>` — names the dependency and reads the class |
+| Several classes | `find <A> <B> <C> --from-project <dir>` — one scan |
+| Which dependency holds it? | `find <Class> --from-project <dir> --list` |
+| Is it in our version / will it compile? | `find <Class> --from-project <dir> [--module <path>]` — exit `4` means not on the classpath, whatever other versions on disk hold |
+| What does this method do? | `--method <name>` — every overload, nested classes included; repeatable |
+| What does the class declare? | no flag — path, line count, index of types, methods, fields, constants |
+| Part of a fat class | `--members <regex>` — case-insensitive, matched against the whole declaration line, parameters included |
 | The whole text | `--print` |
 
 ```bash
-scripts/maven-lib-source.sh find <Class> [<Class> ...] --from-project <dir> [--module <path>]
-scripts/maven-lib-source.sh find <Class> --method <a> --method <b> --from-project <dir>
+scripts/maven-lib-source.sh find <Class> [<Class> ...] --from-project <dir> [--module <path>] [--method <m> ...]
 scripts/maven-lib-source.sh <groupId> <artifactId> <className> --from-project <dir> [--module <path>]
-scripts/maven-lib-source.sh <groupId> <artifactId> <version> <className> [--method <name>]
-scripts/maven-lib-source.sh index <group-prefix>
+scripts/maven-lib-source.sh <groupId> <artifactId> <version> <className>
 ```
 
-**Pass the simple class name.** `find PaymentTransaction`, not `find com.example.payment.servicemodel.PaymentTransaction`. The package is the part that gets remembered wrong, and the search does not need it: it reports the package the class actually has. A fully qualified name is for one job only — picking one of two classes a search reported under the same simple name.
-
-A qualified name whose package is wrong is not a dead end either: the simple name is tried before the miss is reported, and what it matched is read, or listed where several classes carry that name. Stderr says the asked name is not what came back, and the header names the package the class really has.
-
-Options: `--method <name>` (repeatable), `--members <pattern>`, `--list`, `--print`, `--out <dir>`, `--spill auto|never|always`, `--from-project <dir>`, `--module <path>`, `--group-prefix <p>`, `--all`, `--refresh`, `--offline`, `--no-cache`, `--json`, `--help`.
-
-`find` is the call to reach for: it resolves the coordinates and reads the class in one go. The three- and four-argument forms are for a class whose artifact is already known, or a name that matched more than once.
+The coordinate form is for an artifact already known, or for a name `find` matched more than once. All options: `--help`.
 
 ## Rules
 
-- **The version comes from the build.** `--from-project` reads it off the module's classpath; a remembered version is not passed. `--module` takes what Maven's `-pl` takes — in a multi-module project, name the module being worked in, or the classpath that comes back is one module's rather than the one being asked about. The scan of that classpath is kept, so the first search of a project costs seconds and the rest cost none.
-- **Versions of one artifact are one hit.** A repository that holds twenty of them still reports the class once, and the newest is what a single hit reads. `--from-project` is what makes it the version the build uses.
-- **A search is narrowed** by `--from-project` (the module's classpath, exact) or `--group-prefix`. With neither, only the indexes that exist are consulted; the repository is not scanned.
-- **Ask once.** Every name and every method wanted goes into the one call. Calling again for the second method of a class already read is a wasted turn, not a cheaper one.
-- **Take the answer whole.** `| tail`, `| head` and `| grep` over this output cut the header — `artifact:`, `class:`, `source:` are printed first, and they are what says which class and which version answered. What is wanted from a long class is asked for instead: `--members`, `--method`, `--list`.
-- **A long answer comes back as a file.** Over 120 lines, the head is printed and the whole answer is written where it can be read in parts; the last lines of that head name the file and the command that reads the rest. The path is stable, so calling the same thing again does not make a second file. `--spill never` prints it whole, `--spill always` files it whatever its length.
-- **Narrow a fat class** with `--members <pattern>` — an extended regular expression, matched case insensitively against the declarations. A class of three hundred methods answers a question about six of them in six lines.
-- **Read the range the index names**, not the file. `sed -n '<from>,<to>p' <file:>` on the path the answer printed; the library is unpacked whole beside it, so its neighbours grep for subclasses, usages and annotations. Reaching for `--print` and piping it into `grep` is the slow way round.
-- **The `file:` path is read, never cited.** It is a cache on this machine, so it is a fine argument to `sed`, `grep` and `rg`, and never part of an answer. What is cited is `groupId:artifactId:version`, the class, and `source:`.
-- **`--out <dir>`** when the path lies outside the workspace and cannot be read.
+- **Simple class name**, not qualified: the package is what gets remembered wrong. A wrong package still resolves by simple name; the header shows the real one. A qualified name only to pick one of several hits.
+- **Version from the build:** pass `--from-project`, never a remembered version; without it `find` reads the newest version on disk. In a multi-module project add `--module` (as Maven's `-pl`) for the module being worked in — without it the classpath is an arbitrary module's.
+- **Offline:** `--offline` — nothing is downloaded; works with `find` and `--from-project`.
+- **Search scope:** `--from-project` or `--group-prefix`; with neither, only existing indexes are searched (`--all` scans the whole repository).
+- **Batch what you know:** every class and method already known goes into one call; call again only for a class the answer led to.
+- **Don't pipe** through `head`, `tail` or `grep` — the header (`artifact:`, `class:`, `source:`) gets cut. Narrow with `--method`, `--members`, `--list`.
+- **Long answers** (over 120 lines) are written to a file; the last lines printed give the `sed` command for the rest.
+- **Read ranges, not files:** `sed -n '<from>,<to>p' <file>` using the index line numbers. The whole library is unpacked beside it — grep there for subclasses and usages.
+- **Cite** `groupId:artifactId:version`, the class and `source:` — never the `file:` path, it is a local cache.
+- **`--out <dir>`** copies the file into the workspace when its path cannot be read.
 
-## What the answer is worth
+## Trust by `source:`
 
-`source:` says how far to trust it.
-
-- **`sources`, `sources-downloaded`** — the real file, javadoc and parameter names intact.
-- **`decompiled(vineflower <v>)`** — logic and control flow reliable; no comments, parameter names may read `var1`, lambdas appear as synthetic methods. Its comments and parameter names are never quoted as the library's.
-- **`javap`** — signatures only, printed inline. Settles which overloads exist and what they throw, nothing about behaviour.
+- `sources`, `sources-downloaded` — the real file with javadoc.
+- `decompiled(vineflower <v>)` — logic reliable; comments and parameter names (`var1`) are not the library's, never quote them.
+- `javap` — signatures only: which overloads exist and what they throw, nothing about behaviour.
 
 ## Output
 
-A search that found one class prints that class, whose header names the artifact
-it came from:
+One hit — the class is read:
 
 ```
 artifact: org.apache.commons:commons-lang3:3.20.0
@@ -86,11 +75,10 @@ file: /var/folders/…/sources/org/apache/commons/lang3/StringUtils.java
 lines: 9216
 index:
    125  public class StringUtils
-   146  public static final String SPACE
    236  public static String abbreviate(final String str, final int maxWidth)
 ```
 
-A search that found several prints them and reads none, for the caller to pick:
+Several hits — listed, none read; pick one and call again with its coordinates:
 
 ```
 class: StringUtils
@@ -99,38 +87,22 @@ found: 2
   org.apache.commons:commons-lang3:3.20.0  org.apache.commons.lang3.StringUtils  (newest of 17 in the repository)
 ```
 
-A long answer is filed, and what comes back is its head and the way to the rest:
-
-```
-artifact: org.apache.commons:commons-lang3:3.20.0
-class: org.apache.commons.lang3.StringUtils
-source: sources
-file: /var/folders/…/sources/org/apache/commons/lang3/StringUtils.java
-lines: 9216
-index:
-   125  public class StringUtils
-   146  public static final String SPACE
-
-answer: 412 lines, the first 14 above. file: ~/.cache/.sdd/maven-lib-source/answers/StringUtils-2891740153-9216.txt
-hint: read the rest of it — sed -n 15,412p ~/.cache/.sdd/maven-lib-source/answers/StringUtils-2891740153-9216.txt
-```
-
 ## Exit codes
 
-`0` ok · `2` usage · `3` artifact missing, or not on the classpath · `4` class not found · `5` ambiguous name · `6` method not found · `7` offline dead end · `8` missing tool.
+`0` ok (including several hits) · `2` usage · `3` artifact missing or not on the classpath · `4` class not found · `5` a coordinate read whose simple name matches several classes in the artifact · `6` method not found · `7` offline dead end · `8` missing tool.
 
-A qualified name with the wrong package is not `4` where the simple name matches: the class is answered, and stderr says so.
+With several names or methods, what was found is printed and what was missed is named on stderr. Every failure prints a `hint:` with the fixing command — run it. On `7`, record an assumption and carry on.
 
-A search that matched several classes is not an error: it exits `0` with the list. `5` is a read whose simple class name matched more than one package inside the one artifact.
+## Requirements
 
-A search for several names reports each on its own and exits `4` if any of them missed; the ones that were found are in the output regardless. A method that is not there is named on stderr while the rest are returned.
-
-Every failure prints a `hint:` carrying the command that fixes it; run that rather than improvise. On exit `7`, record an assumption and carry on — it never blocks the work.
+- **Required:** `bash`, `unzip`.
+- **Optional:** JDK — exact parsing, decompilation, `javap`; without it, sources jars only. `mvn` — `--from-project` and downloads.
+- **Network:** unless `--offline`, missing jars, sources jars and the Vineflower decompiler are fetched with `mvn dependency:get`; Vineflower and a helper built from `scripts/MavenLibSource.java` run under local `java`. `--from-project` runs `mvn dependency:build-classpath`.
+- **Disk:** cache in `~/.cache/maven-lib-source`, unpacked sources under the system temp directory.
 
 ## Limits
 
-- Maven artifacts only. JDK classes are not in `~/.m2`.
-- A nested class is read through the class that encloses it, and the index lists it; a search matches outer classes only.
-- The fallback reader cuts a method rather than parsing it, and truncates a signature that runs over several lines. Where it cannot follow the source at all it returns the file and its index instead, and says so on stderr. The parser does neither.
-- An index is a snapshot: `index <prefix> --refresh` after an artifact is installed, or `--refresh` on the search itself.
-- The decompiler version is pinned in the script.
+- Maven artifacts only; JDK classes are not in `~/.m2`.
+- Nested classes are read through their outer class; search matches outer classes only.
+- Without a JDK (or for Kotlin) a text reader is used: it may truncate multi-line signatures.
+- Indexes are snapshots: `--refresh` after installing an artifact.

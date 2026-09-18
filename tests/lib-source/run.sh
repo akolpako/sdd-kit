@@ -871,7 +871,7 @@ EOF
   ok=0
   [[ $rc -eq 0 ]] || ok=1
   printf '%s\n' "$out" | grep -q '^source: sources$' || ok=1
-  PTREE="$LIBSRC_TMP/.sdd-maven-lib-source/com.example/partial/1.0.0/sources"
+  PTREE="$LIBSRC_TMP/maven-lib-source/com.example/partial/1.0.0/sources"
   [[ -d "$PTREE" ]] || ok=1
   : > "$PTREE/canary" 2>/dev/null
   libsrc_run com.example partial 1.0.0 com.example.Half --offline
@@ -905,7 +905,7 @@ EOF
   # And where there is none — no JDK, or Kotlin — the text reader answers, with
   # the same declarations in the same order.
   want="$(printf '%s\n' "$out" | sed -n '/^index:/,$p')"
-  out="$(MAVEN_REPO_LOCAL="$LIBSRC_REPO" TMPDIR="$LIBSRC_TMP" JAVA_LIB_SOURCE_READER=text \
+  out="$(MAVEN_REPO_LOCAL="$LIBSRC_REPO" TMPDIR="$LIBSRC_TMP" MAVEN_LIB_SOURCE_READER=text \
          "$LIBSRC" com.example demo 1.0.0 com.example.Demo --offline --no-cache 2>/dev/null)"
   rc=$?
   ok=0
@@ -920,7 +920,7 @@ EOF
     "expected the same declarations without the parser: missing ${bad:-<none>}; exit=$rc, lines=${n:-0}"
 
   # A method is cut by both of them.
-  out="$(MAVEN_REPO_LOCAL="$LIBSRC_REPO" TMPDIR="$LIBSRC_TMP" JAVA_LIB_SOURCE_READER=text \
+  out="$(MAVEN_REPO_LOCAL="$LIBSRC_REPO" TMPDIR="$LIBSRC_TMP" MAVEN_LIB_SOURCE_READER=text \
          "$LIBSRC" com.example demo 1.0.0 com.example.Demo --method join --offline 2>/dev/null)"
   rc=$?
   n="$(printf '%s\n' "$out" | grep -c 'public String join')"
