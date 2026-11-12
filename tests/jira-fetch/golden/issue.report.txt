@@ -1,0 +1,18 @@
+JIRA=ok
+KEY=ABC-123
+SUMMARY=Send order confirmations by email
+TYPE=Story
+STATUS=In Progress
+URL=https://jira.example.com/browse/ABC-123
+OUT=<TMP>/g1/issue.md
+LINES=25
+
+ATTACHMENTS:
+
+NOTES:
+`flow diagram.png` was not downloaded: --from-file makes no request. The link was kept.
+`spec.pdf` was not downloaded: --from-file makes no request. The link was kept.
+`contract v1.docx` was not downloaded: --from-file makes no request. The link was kept.
+`../../escape.png` was not downloaded: an attachment name may not be a path.
+`missing.png` is referenced by the description but is not attached to the issue; the link was kept and points at nothing.
+1 attachment(s) on the issue are not referenced by the description and were not downloaded.

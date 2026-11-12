@@ -1,65 +1,68 @@
 JIRA=ok
 KEY=ABC-12345
-BASE=https://jira.example.com
-SUMMARY=Publish account events in the new format
+SUMMARY=Send order confirmations by email
+TYPE=
+STATUS=
+URL=https://jira.example.com/browse/ABC-12345
 OUT=_docs/ABC-12345/raw.md
+LINES=62
 
 ATTACHMENTS:
 
 NOTES:
-`topology.png` was not downloaded: --from-file is a file read and this run makes no request.
+`flow.png` was not downloaded: --from-file makes no request. The link was kept.
 1 attachment(s) on the issue are not referenced by the description and were not downloaded.
 ### exit=0
 ### specs
 _docs/ABC-12345/raw.md
 ### file _docs/ABC-12345/raw.md
-# ABC-12345 — Publish account events in the new format
+# ABC-12345 — Send order confirmations by email
 
 https://jira.example.com/browse/ABC-12345
 
 ## Goals
 
-- Publish account events in the new REST format
-- Keep the existing XML feed running in parallel
-- Write the two formats into separate topics
+- Send a confirmation email when an order is placed
+- Keep the existing on-screen confirmation
+- Send the email and the receipt as separate messages
 
 ## Current situation
 
-### billing-core
+### order-service
 
-This service writes outbox rows. One row per account change, with type ACCOUNT.
+This service stores the orders. One row per order, with status PLACED.
 
-The row is written in the same transaction as the account itself.
+The row is written in the same transaction as the payment.
 
-### billing-dispatch
+### mail-sender
 
 In a loop:
 
-- read the next unpublished rows
-- push them to the broker
-- delete the rows
+- read the next unsent messages
+- hand them to the mail server
+- mark them as sent
 
 ## Solution design
 
 Message:
 
-- add the field entityType
+- add the field orderId
 
 ```java
-record AccountEvent(String id, EntityType type) {}
+record OrderPlaced(String id, OrderStatus status) {}
 ```
 
 | Field | Required |
 | --- | --- |
 | id | yes |
-| type | yes |
+| status | yes |
 
-See [the broker notes](https://wiki.example.com/brokers) and ![topology.png](attachments/topology.png)
+See [the mail server notes](https://wiki.example.com/mail) and ![flow.png](attachments/flow.png)
 
 ## Conditions of Satisfaction
 
-- every message carries entityType
-- dispatch rejects rows whose type is not ACCOUNT
+- every message carries orderId
+- the sender skips orders whose status is not PLACED
 
 ## Known constraints
 

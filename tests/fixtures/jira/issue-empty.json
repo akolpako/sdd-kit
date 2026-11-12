@@ -1,7 +1,7 @@
 {
   "key": "ABC-12345",
   "fields": {
-    "summary": "Publish account events in the new format",
+    "summary": "Send order confirmations by email",
     "description": null,
     "attachment": []
   }

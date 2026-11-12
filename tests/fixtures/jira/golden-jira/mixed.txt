@@ -1,8 +1,11 @@
 JIRA=ok
 KEY=ABC-12345
-BASE=https://jira.example.com
-SUMMARY=Split the publisher into its own pod
+SUMMARY=Move report generation into its own service
+TYPE=
+STATUS=
+URL=https://jira.example.com/browse/ABC-12345
 OUT=_docs/ABC-12345/raw.md
+LINES=31
 
 ATTACHMENTS:
 
@@ -11,17 +14,17 @@ NOTES:
 ### specs
 _docs/ABC-12345/raw.md
 ### file _docs/ABC-12345/raw.md
-# ABC-12345 — Split the publisher into its own pod
+# ABC-12345 — Move report generation into its own service
 
 https://jira.example.com/browse/ABC-12345
 
 ## Solution design
 
-1. Add a new module **billing-outbox-app**. It builds a runnable jar:
+1. Add a new module **report-worker**. It builds a runnable jar:
    - The build file produces an image out of that jar.
-   - It keeps the `ActivationGroupIndicator` start conditions, and `KAFKA_GROUP` with them.
+   - It keeps the `StartupCondition` start conditions, and `WORKER_GROUP` with them.
    - A nested bullet whose marker spells the level above it.
-1. Reconfigure **billing-core** to hold no publisher.
+1. Reconfigure **web-app** to run no worker.
 
 - A list of its own
   - nested under a bullet, two columns in

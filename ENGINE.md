@@ -85,7 +85,7 @@ other's files — one agent with two definitions, one command defined twice.
 | the protocol `.sdd/protocols/*.md` | The procedure the role performs. Reaches the role only inside the prompt; the only protocol a command names is `orchestration.md`. |
 | the agent `.sdd/agents/*.md` | Does the assignment and writes its files. Never reads a command file, never learns the flow. |
 | `spec-edit.sh` | Writes whose format, place and date are fixed. The command supplies only the words. |
-| `jira-fetch.sh` | Everything about Jira: config keys, REST call, wiki-markup → Markdown, attachments. The only script that touches the network or needs `curl`/`jq`. |
+| `jira-import.sh` | The Jira issue as `raw.md`: runs the `jira-fetch` skill's script, which owns everything about Jira (config keys, REST call, wiki-markup → Markdown, attachments), then appends the two sections the flow reads by name. The only script that touches the network or needs `curl`/`jq`. |
 
 **A command does five things and nothing else:** run `gate.sh` (a `stop` or `ask` ends the run
 there, in the gate's words); spawn each role its `SPAWN:` records name, with the prompt
@@ -100,7 +100,7 @@ is `orchestration.md`.
 | Command | Role · scope | Protocols | Orchestrator writes (via `spec-edit.sh` unless noted) |
 |---|---|---|---|
 | `/sdd-init` | architect · baseline-from-codebase — brownfield only | project-baseline, docs-format | `scaffold init` (both branches, before spawn); `arch-index` after; `.sdd/sdd.conf` — its only write outside `_docs/` |
-| `/sdd-next-story` | — | — | `scaffold feature`, then `section` or `jira-fetch.sh --out` (rewrites `raw.md` whole) |
+| `/sdd-next-story` | — | — | `scaffold feature`, then `section` or `jira-import.sh --out` (rewrites `raw.md` whole) |
 | `/sdd-specify` | requirements-engineer · requirements<br>architect · design+tasks | spec-modes, requirements-writing, docs-format<br>spec-modes, architecture-design, task-breakdown, docs-format | `backup`, then `scaffold spec` over the files this run writes |
 | `/sdd-spec-review` | same two roles and scopes | as for specify, plus spec-checklist, interview | `status` markers; answers into `## Open Questions` via `section` |
 | `/sdd-implement` | backend-developer · backend<br>frontend-developer · frontend | developer, task-loop | nothing |
@@ -212,7 +212,8 @@ flowchart LR
     CMD["a /sdd-* command"] --> GATE["gate.sh"]
     CMD --> SE["spec-edit.sh"]
     CMD --> SPN["spawn-prompt.sh"]
-    NS["/sdd-next-story — Jira mode"] --> JF["jira-fetch.sh"]
+    NS["/sdd-next-story — Jira mode"] --> JI["jira-import.sh"]
+    JI --> JF["skill jira-fetch"]
     ST["/sdd-status — no gate"] --> FS["feature-state.sh"]
     SPN -->|"--prompt-data"| GATE
     GATE --> FS
@@ -222,7 +223,7 @@ flowchart LR
     FS --> FMT["lib/format.sh"]
     NR --> FMT
     SE --> FMT
-    JF --> FMT
+    JI --> FMT
 ```
 
 - **Output**: `KEY=value` lines, then `SECTION:` blocks, one record per line; print what was read

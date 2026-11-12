@@ -1,18 +1,21 @@
 JIRA=ok
 KEY=ABC-12345
-BASE=https://jira.example.com
-SUMMARY=Publish account events in the new format
+SUMMARY=Send order confirmations by email
+TYPE=
+STATUS=
+URL=https://jira.example.com/browse/ABC-12345
 OUT=_docs/ABC-12345/raw.md
+LINES=18
 
 ATTACHMENTS:
 
 NOTES:
-The issue has an empty description; only the title, the link and the two sections below were written.
+The issue has an empty description.
 ### exit=0
 ### specs
 _docs/ABC-12345/raw.md
 ### file _docs/ABC-12345/raw.md
-# ABC-12345 — Publish account events in the new format
+# ABC-12345 — Send order confirmations by email
 
 https://jira.example.com/browse/ABC-12345
 

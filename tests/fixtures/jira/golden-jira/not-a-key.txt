@@ -1,0 +1,7 @@
+### exit=2
+### stderr
+ERROR=not an issue key or a link to an issue: Cart
+hint: pass the issue link as the browser shows it (…/browse/<KEY>), or the key, such as ABC-123
+### specs
+### file _docs/ABC-12345/raw.md
+not written

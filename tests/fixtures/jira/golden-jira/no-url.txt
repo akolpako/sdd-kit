@@ -1,6 +1,8 @@
-### exit=2
+### exit=1
 ### stderr
-ERROR=no JIRA_URL — a bare key needs the instance; set JIRA_URL in <tmp>/jira-home/.config/sdd-kit/tokens.env or in .sdd/sdd.conf, or pass the browse URL instead
+ERROR=no JIRA_URL — a bare issue key needs the instance
+hint: put JIRA_URL=<base url> in a tokens file and pass it with --tokens <file> (none was passed), or set it in the environment, or pass the issue link instead of the key
+hint: the import reads JIRA_URL and JIRA_TOKEN from <tmp>/jira-home/.config/sdd-kit/tokens.env and .sdd/sdd.conf; neither exists
 ### specs
 ### file _docs/ABC-12345/raw.md
 not written

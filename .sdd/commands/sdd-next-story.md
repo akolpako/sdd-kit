@@ -42,7 +42,7 @@ Every step is the orchestrator's own.
 
 3. **Create `raw.md`:** run `.sdd/scripts/spec-edit.sh scaffold feature ABC-12345`. It prints `RAW=` — the path the next step writes into.
 
-4. **Download the issue:** run `.sdd/scripts/jira-fetch.sh <the argument, as the human typed it> --out <RAW>`. It writes the title, the link to the issue, the converted description and the two sections the flow reads by name, and downloads the attachments the description points at.
+4. **Download the issue:** run `.sdd/scripts/jira-import.sh <the argument, as the human typed it> --out <RAW>`. It reads the issue through the `jira-fetch` skill — the title, the link, a line with type and status, the converted description — appends the two sections the flow reads by name, and downloads the attachments the description points at.
 
    This rewrites what step 3 created. To download an issue a second time the human deletes `raw.md` first.
 
@@ -53,7 +53,7 @@ Every step is the orchestrator's own.
    - anything in the script's `NOTES:` — an attachment that could not be fetched, an empty description, an attachment left in Jira
    - then: read `raw.md`, fill in `## Known constraints` and `## Out of scope`, and run `/sdd-specify ABC-12345`
 
-A redirect, a rejected token or a missing issue is the human's call, not something to retry differently (`.sdd/AGENTS.md`).
+A redirect, a rejected token or a missing issue is the human's call, not something to retry differently (`.sdd/AGENTS.md`): report the script's `ERROR=` and `hint:` lines as they are.
 
 ## Process — a feature filled in by hand
 

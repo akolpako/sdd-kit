@@ -1,0 +1,22 @@
+{
+  "id": "9",
+  "type": "page",
+  "title": "Edge cases",
+  "space": {
+    "key": "PAY",
+    "name": "PAY"
+  },
+  "version": {
+    "number": 1
+  },
+  "ancestors": [],
+  "body": {
+    "export_view": {
+      "value": "<!-- a comment with <b>tags</b> inside -->\n<script>var x = \"<p>no</p>\";</script>\n<h2>Title<br>continued <a name=\"anchor\"></a></h2>\n<h3></h3>\n<ul><li>item with code<div class=\"code panel pdl\"><div class=\"codeContent panelContent pdl\"><pre class=\"syntaxhighlighter-pre\" data-syntaxhighlighter-params=\"brush: bash; gutter: false\">mvn verify\necho done</pre></div></div></li><li>item with table<div class=\"table-wrap\"><table><tr><td>a</td><td>b</td></tr></table></div></li></ul>\n<blockquote><ul><li>quoted item</li></ul></blockquote>\n<p><a href=\"https://confluence.example.com/download/attachments/9/big.png\"><img class=\"confluence-embedded-image confluence-thumbnail\" src=\"https://confluence.example.com/download/thumbnails/9/big.png\" data-image-src=\"https://confluence.example.com/download/attachments/9/big.png\" data-linked-resource-default-alias=\"big.png\" title=\"x > y\"></a></p>\n<p><a href=\"#top\"></a>empty link above; <strong> spaced bold </strong>end; <em></em>empty em</p>\n<table class=\"confluenceTable\"><tbody><tr><th>A</th><th>B</th></tr><tr><td rowspan=\"2\">r</td><td>1</td></tr><tr><td>2</td></tr><tr><td><table><tr><td>in1</td><td>in2</td></tr></table></td><td>after</td></tr></tbody></table>\n<p>attachment from another page <a href=\"/download/attachments/55/big.png\">big</a> and same twice <a href=\"/download/attachments/9/big.png\">again</a></p>\n<p>evil <a href=\"/download/attachments/9/..%2F..%2Fetc%2Fpasswd\">x</a></p>\n<h4>Without delegation</h4><pre><br/></pre><p>after empty pre</p><p><img class=\"confluence-embedded-image\" height=\"400\" src=\"https://confluence.example.com/download/attachments/embedded-page/PAY/Edge%20cases/image-2026-6-17.png?api=v2\"></p><ul><li>B2B: <span class=\"jira-issue\" data-jira-key=\"CIAM-1\" data-client-id=\"SINGLE_x\"><a href=\"https://jira.example.com/browse/CIAM-1\" class=\"jira-issue-key\"><span class=\"aui-icon aui-icon-wait issue-placeholder\"></span>CIAM-1</a> - <span class=\"summary\">Getting issue details...</span> <span class=\"aui-lozenge issue-placeholder\">STATUS</span></span> trailing</li></ul>"
+    }
+  },
+  "_links": {
+    "base": "https://confluence.example.com",
+    "webui": "/spaces/PAY/pages/9/Edge+cases"
+  }
+}

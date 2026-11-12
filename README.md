@@ -16,7 +16,7 @@ SDD Kit adds this flow to any project as slash commands, agent roles and skills.
 - Commands never commit. Each one writes its files and stops.
 
 **Requirements:** Claude Code or Copilot · `bash` 4+ (macOS: `brew install bash`) · `git` ·
-`curl` + `jq` (only for Jira import).
+`curl` + `jq` (only for Jira issues and Confluence pages).
 
 ---
 
@@ -60,8 +60,10 @@ does not use.
 
 ```sh
 # ~/.config/sdd-kit/tokens.env — global, optional
-JIRA_URL=https://jira.example.com   # only for Jira import (Server / Data Center)
+JIRA_URL=https://jira.example.com   # only for Jira import and jira-fetch (Server / Data Center); needed for bare keys
 JIRA_TOKEN=<token>
+CONFLUENCE_URL=https://confluence.example.com   # only for confluence-fetch (Data Center); needed for bare page ids
+CONFLUENCE_TOKEN=<token>            # Confluence → Settings → Personal Access Tokens
 
 # .sdd/sdd.conf — per project, overrides global; created by /sdd-init
 SDD_BUILD_ROOT=mvn clean verify     # build + test command; or SDD_BUILD_BACKEND / SDD_BUILD_FRONTEND
@@ -137,6 +139,8 @@ Spec files have `status: draft | ready` in their frontmatter. You can open `_doc
 | `java-jpa` | JPA / Hibernate: entities, fetching, locking, schema |
 | `java-junit` | JUnit 5, Mockito, AssertJ |
 | `maven-lib-source` | Reads a dependency's source from its jar instead of guessing |
+| `jira-fetch` | Reads a Jira issue (by link or key) into Markdown, with the attachments its description shows |
+| `confluence-fetch` | Reads a Confluence page (by link) into Markdown, with its images and attachments |
 | `angular-practices` | Angular: `OnPush`, state, subscriptions |
 
 **Recommended** from [skills.sh](https://skills.sh). Agents find and load them automatically.

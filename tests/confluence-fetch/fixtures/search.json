@@ -1,0 +1,42 @@
+{
+  "results": [
+    {
+      "id": "123456",
+      "type": "page",
+      "status": "current",
+      "title": "Payments — design",
+      "space": {
+        "key": "PAY",
+        "name": "Payments"
+      },
+      "version": {
+        "number": 7,
+        "when": "2026-10-01T09:30:00.000+02:00",
+        "by": {
+          "displayName": "John Doe"
+        }
+      },
+      "ancestors": [
+        {
+          "id": "1",
+          "title": "Payments Home"
+        },
+        {
+          "id": "2",
+          "title": "Architecture"
+        }
+      ],
+      "body": {
+        "export_view": {
+          "value": "<div class=\"toc-macro client-side-toc-macro\" data-headerelements=\"H1,H2\"><ul><li><a href=\"#Payments-Overview\">Overview</a></li></ul></div>\n<h1 id=\"Payments-Overview\">Overview</h1>\n<p>The <strong>payment service</strong> handles <em>card</em> and <code>SEPA</code> transfers&nbsp;&mdash; see <a href=\"https://confluence.example.com/display/PAY/Glossary\">the glossary</a> and <a href=\"https://example.org/spec\">https://example.org/spec</a>.</p>\n<p>Owner: <a class=\"confluence-userlink user-mention\" data-username=\"jdoe\" href=\"https://confluence.example.com/display/~jdoe\">John Doe</a><img class=\"emoticon emoticon-tick\" src=\"https://confluence.example.com/images/icons/emoticons/check.svg\" alt=\"(tick)\"></p>\n<div class=\"confluence-information-macro confluence-information-macro-information\"><span class=\"aui-icon aui-icon-small aui-iconfont-info confluence-information-macro-icon\"></span><div class=\"confluence-information-macro-body\"><p>Limits apply to <strong>all</strong> merchants.</p><p>Second line.</p></div></div>\n<h2 id=\"Payments-Flow\">Flow &amp; states</h2>\n<ol><li>Create the payment</li><li>Authorise it<ul><li>3-D Secure when required</li><li>otherwise skip</li></ul></li><li><p>Capture</p></li></ol>\n<ul class=\"inline-task-list\" data-inline-tasks-content-id=\"1\"><li class=\"checked\" data-inline-task-id=\"1\">Design reviewed</li><li data-inline-task-id=\"2\">Load test</li></ul>\n<div class=\"code panel pdl\" style=\"border-width: 1px;\"><div class=\"codeContent panelContent pdl\">\n<pre class=\"syntaxhighlighter-pre\" data-syntaxhighlighter-params=\"brush: java; gutter: false; theme: Confluence\" data-theme=\"Confluence\">public Payment create(Request r) {\n    if (r.amount() &lt;= 0) throw new IllegalArgumentException(&quot;amount&quot;);\n\n    return repo.save(new Payment(r));\n}\n</pre>\n</div></div>\n<div class=\"preformatted panel\" style=\"border-width: 1px;\"><div class=\"preformattedContent panelContent\">\n<pre>POST /payments\n  -&gt; 201 Created</pre>\n</div></div>\n<div class=\"table-wrap\"><table class=\"confluenceTable\"><colgroup><col><col><col></colgroup><tbody>\n<tr><th class=\"confluenceTh\">State</th><th class=\"confluenceTh\">Next</th><th class=\"confluenceTh\">Note</th></tr>\n<tr><td class=\"confluenceTd\">NEW</td><td class=\"confluenceTd\">AUTHORISED | FAILED</td><td class=\"confluenceTd\"><p>first</p><p>second</p></td></tr>\n<tr><td class=\"confluenceTd\" colspan=\"2\">CAPTURED</td><td class=\"confluenceTd\"><ul><li>a</li><li>b</li></ul></td></tr>\n</tbody></table></div>\n<p><span class=\"confluence-embedded-file-wrapper confluence-embedded-manual-size\"><img class=\"confluence-embedded-image\" height=\"250\" src=\"https://confluence.example.com/download/thumbnails/123456/flow%20diagram.png?version=1&amp;modificationDate=1700000000000&amp;api=v2\" data-image-src=\"https://confluence.example.com/download/attachments/123456/flow%20diagram.png?version=1&amp;modificationDate=1700000000000&amp;api=v2\" data-linked-resource-default-alias=\"flow diagram.png\"></span></p>\n<p>Spec: <a href=\"https://confluence.example.com/download/attachments/123456/spec.pdf?version=2&amp;api=v2\" data-linked-resource-default-alias=\"spec.pdf\">spec.pdf</a>, external <img src=\"https://cdn.example.org/logo.png\" alt=\"logo\"></p>\n<p>Ticket: <span class=\"jira-issue\" data-jira-key=\"PAY-42\"><a href=\"https://jira.example.com/browse/PAY-42\" class=\"jira-issue-key\"><img class=\"icon\" src=\"https://jira.example.com/secure/viewavatar?avatarId=1\">PAY-42</a> - <span class=\"summary\">Refunds</span> <span class=\"aui-lozenge aui-lozenge-subtle\">Done</span></span></p>\n<div class=\"panel\" style=\"border-width: 1px;\"><div class=\"panelHeader\" style=\"border-bottom-width: 1px;\"><b>Contacts</b></div><div class=\"panelContent\"><p>Team Payments, line one<br>line two</p></div></div>\n<blockquote><p>Quoted text.</p></blockquote>\n<hr>\n<div class=\"expand-container\"><div class=\"expand-control\"><span class=\"expand-control-icon icon\">&nbsp;</span><span class=\"expand-control-text\">Details</span></div><div class=\"expand-content expand-hidden\"><p>Hidden details with <a href=\"/pages/viewpage.action?pageId=777\">a relative link</a>.</p></div></div>\n<p>Unicode: Привет, &laquo;quotes&raquo;, &#8364;5, &#x2192;.</p>\n",
+          "representation": "storage"
+        }
+      },
+      "_links": {
+        "base": "https://confluence.example.com",
+        "webui": "/spaces/PAY/pages/123456/Payments+design"
+      }
+    }
+  ],
+  "size": 1
+}

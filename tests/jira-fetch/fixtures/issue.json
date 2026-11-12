@@ -1,0 +1,43 @@
+{
+  "key": "ABC-123",
+  "self": "https://jira.example.com/rest/api/2/issue/10001",
+  "fields": {
+    "summary": "Send order confirmations by email",
+    "issuetype": {
+      "name": "Story"
+    },
+    "status": {
+      "name": "In Progress"
+    },
+    "priority": {
+      "name": "Major"
+    },
+    "assignee": {
+      "displayName": "Jane Doe"
+    },
+    "updated": "2026-10-30T12:15:00.000+0300",
+    "description": "h2. Goals\n * Send a confirmation email when an order is placed\n * Keep the existing on-screen confirmation\n\nh2. Design\nAs agreed with [~jdoe], see !flow diagram.png|thumbnail! and the [^spec.pdf].\nThe [old contract|^contract v1.docx] stays.\n\n{code:java}\nrecord OrderPlaced(String id) {} // !not-an-image.png!\n{code}\n\n||Field||Required||\n|id|yes|\n\nAlso !https://cdn.example.net/logo.png! and !../../escape.png! and !missing.png!.\nSee [the mail server notes|https://wiki.example.com/mail] and [https://example.com/x_y_z].\n",
+    "attachment": [
+      {
+        "filename": "flow diagram.png",
+        "content": "https://jira.example.com/secure/attachment/1/flow%20diagram.png"
+      },
+      {
+        "filename": "spec.pdf",
+        "content": "https://jira.example.com/secure/attachment/2/spec.pdf"
+      },
+      {
+        "filename": "spec.pdf",
+        "content": "https://jira.example.com/secure/attachment/3/spec.pdf"
+      },
+      {
+        "filename": "contract v1.docx",
+        "content": "https://files.example.net/attachment/4/contract.docx"
+      },
+      {
+        "filename": "unused.txt",
+        "content": "https://jira.example.com/secure/attachment/5/unused.txt"
+      }
+    ]
+  }
+}

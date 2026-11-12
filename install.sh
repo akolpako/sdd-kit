@@ -1378,8 +1378,8 @@ install_files() {
   # convenience. The cost is real and worth stating: a teammate's clone meets
   # the gate's ASK: again and builds nothing until they answer it a second time.
   # Whoever would rather pay the other price keeps only JIRA_URL in
-  # .sdd/sdd.conf and the token in ~/.config/sdd-kit/tokens.env, which
-  # jira-fetch.sh reads either way.
+  # .sdd/sdd.conf and the token in ~/.config/sdd-kit/tokens.env, which the
+  # jira-fetch skill reads either way.
   #
   # The first line stays `.sdd/*` rather than `.sdd/` so a future exemption can
   # be written as a negation at all: git will not re-include a file whose parent

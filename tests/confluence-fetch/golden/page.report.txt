@@ -1,0 +1,14 @@
+CONFLUENCE=ok
+ID=123456
+TITLE=Payments — design
+SPACE=PAY
+VERSION=7
+URL=https://confluence.example.com/spaces/PAY/pages/123456/Payments+design
+OUT=<TMP>/g1/page.md
+LINES=66
+
+ATTACHMENTS:
+
+NOTES:
+A table has merged cells; they were split and the extra cells left empty.
+2 attachment(s) were not downloaded: --from-file makes no request. The links were kept.

@@ -20,10 +20,12 @@
 # scripts it fans out to. Every other case here would pass with the log broken —
 # it is written and never read.
 #
-# The maven-lib-source skill's own suite lives in `lib-source/run.sh` and is
-# called from here as one job: it builds a Maven repository of its own, which is
-# not a shape a fixture of this file can hold. Run it alone while changing that
-# script; run this one to be told whether it still passes.
+# The maven-lib-source, confluence-fetch and jira-fetch skills have suites of
+# their own, `lib-source/run.sh`, `confluence-fetch/run.sh` and
+# `jira-fetch/run.sh`, called from here as one job each: one builds a Maven
+# repository, the other two put a fake curl on PATH, and none is a shape a
+# fixture of this file can hold. Run one alone while changing
+# its script; run this one to be told whether it still passes.
 #
 # Last of the three, it calls lib/format.sh directly, on the values and the file
 # shapes no fixture can produce: a blank `> Key:` line above a real one, a value
@@ -70,7 +72,7 @@
 #                     EDIT_CASES, followed by what it changed on disk as a diff
 #                     against the untouched fixture
 #   golden-jira/<case>.txt
-#                     the expected output of one jira-fetch.sh run from
+#                     the expected output of one jira-import.sh run from
 #                     JIRA_CASES, followed by the paths it left under _docs/
 #                     and the text of the file it wrote. Only a fixture that
 #                     carries the sanitized Jira answer the case names runs
@@ -96,7 +98,7 @@ SCRIPTS="$SCRIPT_DIR/../.sdd/scripts"
 GATE="$SCRIPTS/gate.sh"
 RENDERER="$SCRIPTS/spawn-prompt.sh"
 EDITOR_SH="$SCRIPTS/spec-edit.sh"
-JIRA_SH="$SCRIPTS/jira-fetch.sh"
+JIRA_SH="$SCRIPTS/jira-import.sh"
 FIXTURES="$SCRIPT_DIR/fixtures"
 COMMANDS="init new specify review implement code-review code-fix actualize"
 
@@ -168,7 +170,7 @@ section-empty|section;_docs/<F>/raw.md;Users
 section-no-heading|section;_docs/<F>/raw.md;Nowhere'
 
 # One line per import: <case>|<the fixture's Jira answer>|<argument;argument;…>
-# for jira-fetch.sh|<VAR=value;VAR=value> put in its environment, where `<KEY>`
+# for jira-import.sh|<VAR=value;VAR=value> put in its environment, where `<KEY>`
 # stands for the feature name of the fixture — for this family that is the issue
 # key. A case runs only in a fixture that carries the answer it names, and the
 # runner adds `--from-file` itself: no case here can reach the network, and none
@@ -177,12 +179,17 @@ section-no-heading|section;_docs/<F>/raw.md;Nowhere'
 # The environment is built from nothing: HOME points at an empty directory, so
 # ~/.config/sdd-kit/tokens.env is missing whatever the machine running the tests
 # holds, and JIRA_URL and JIRA_TOKEN are unset unless the case sets them.
+#
+# What these pin is the import: the skill run through the wrapper, the two
+# sections appended, nothing written on a stop. The request itself, the token
+# and every HTTP answer are the jira-fetch skill's, and its own suite checks
+# them over a fake curl — a --from-file run needs no token at all.
 JIRA_CASES='key|issue.json|<KEY>;--out;_docs/<KEY>/raw.md|JIRA_URL=https://jira.example.com;JIRA_TOKEN=fixture-token
 url|issue.json|https://jira.example.com/browse/<KEY>;--out;_docs/<KEY>/raw.md|JIRA_TOKEN=fixture-token
-no-token|issue.json|<KEY>;--out;_docs/<KEY>/raw.md|JIRA_URL=https://jira.example.com
 no-url|issue.json|<KEY>;--out;_docs/<KEY>/raw.md|JIRA_TOKEN=fixture-token
 empty-description|issue-empty.json|<KEY>;--out;_docs/<KEY>/raw.md|JIRA_URL=https://jira.example.com;JIRA_TOKEN=fixture-token
-mixed|issue-mixed.json|<KEY>;--out;_docs/<KEY>/raw.md|JIRA_URL=https://jira.example.com;JIRA_TOKEN=fixture-token'
+mixed|issue-mixed.json|<KEY>;--out;_docs/<KEY>/raw.md|JIRA_URL=https://jira.example.com;JIRA_TOKEN=fixture-token
+not-a-key|issue.json|Cart;--out;_docs/<KEY>/raw.md|JIRA_URL=https://jira.example.com'
 
 [[ -x "$GATE" ]]      || { printf 'ERROR=not executable: %s\n' "$GATE" >&2; exit 1; }
 [[ -x "$RENDERER" ]]  || { printf 'ERROR=not executable: %s\n' "$RENDERER" >&2; exit 1; }
@@ -417,7 +424,7 @@ run_edit_case() {
   compare "$fixture" "edit $name" "$FIXTURES/$fixture/golden-edit/$name.txt" "$actual"
 }
 
-# One jira-fetch.sh run, over its own copy of the project. The golden holds what
+# One jira-import.sh run, over its own copy of the project. The golden holds what
 # the script printed, then every path it left under _docs/, then the text of
 # the file it was told to write — the last two together are what pins a run that
 # must write nothing: the listing is empty and the file is not there.
@@ -1558,15 +1565,45 @@ JOB_NAMES=()
 # fixture whose setup failed, a `set -u` abort — leaves the 1 standing, and the
 # parent has its answer without depending on a status `wait -n` may already
 # have reaped.
-# The maven-lib-source skill has a suite of its own: it needs a Maven repository
-# built here out of javac and jar, which no fixture of this suite can hold, and
-# it is useful on its own while that script is being changed. Called from here
-# it is one job like any other, and the verdict it prints is folded into this
-# count so a failure there fails the run.
-check_lib_source() {
-  local out rc summary p f i
+# The jira-fetch skill reads no config of its own accord; jira-import.sh hands
+# it the engine's two files. What is checked is that both reach it, in the
+# engine's order — the project's .sdd/sdd.conf over the home token file — and
+# that a missing one is simply not passed. The issue's own instance is the
+# visible effect: a bare key has nowhere else to take it from.
+check_jira_tokens() {
+  local work="$TMP/jira-tokens" home="$TMP/jira-tokens-home" out rc ok
+  local json="$FIXTURES/jira/issue.json"
 
-  out="$("$SCRIPT_DIR/lib-source/run.sh" 2>&1)"; rc=$?
+  printf 'jira-tokens\n'
+  rm -rf "$work" "$home" && mkdir -p "$work/.sdd" "$home/.config/sdd-kit" || exit 1
+  printf 'JIRA_URL=https://home.example.com\nJIRA_TOKEN=t\n' > "$home/.config/sdd-kit/tokens.env"
+
+  out="$(cd "$work" && env -u JIRA_URL -u JIRA_TOKEN "HOME=$home" SDD_LOG=0 \
+        "$JIRA_SH" ABC-12345 --out _docs/ABC-12345/raw.md --from-file "$json" 2>&1)"; rc=$?
+  ok=0
+  [[ "$rc" == "0" ]] || ok=1
+  printf '%s\n' "$out" | grep -q '^URL=https://home.example.com/browse/ABC-12345$' || ok=1
+  prop_check jira-tokens "the home token file is passed; no sdd.conf is not an error" "$ok" "exit=$rc, out: $out"
+
+  printf 'SDD_BUILD_ROOT=true\nJIRA_URL=https://proj.example.com\n' > "$work/.sdd/sdd.conf"
+  out="$(cd "$work" && env -u JIRA_URL -u JIRA_TOKEN "HOME=$home" SDD_LOG=0 \
+        "$JIRA_SH" ABC-12345 --out _docs/ABC-12345/raw.md --from-file "$json" 2>&1)"; rc=$?
+  ok=0
+  [[ "$rc" == "0" ]] || ok=1
+  printf '%s\n' "$out" | grep -q '^URL=https://proj.example.com/browse/ABC-12345$' || ok=1
+  prop_check jira-tokens "the project's sdd.conf wins over the home file" "$ok" "exit=$rc, out: $out"
+}
+
+# A skill with a suite of its own: maven-lib-source needs a Maven repository
+# built here out of javac and jar, confluence-fetch and jira-fetch a fake curl
+# on PATH, and none is a shape a fixture of this suite can hold; each is useful on its own
+# while that script is being changed. Called from here it is one job like any
+# other, and the verdict it prints is folded into this count so a failure there
+# fails the run.
+check_suite() {
+  local name="$1" out rc summary p f i
+
+  out="$("$SCRIPT_DIR/$name/run.sh" 2>&1)"; rc=$?
   summary="$(printf '%s\n' "$out" | tail -1)"
   printf '%s\n' "$out" | sed '$d'
 
@@ -1574,7 +1611,7 @@ check_lib_source() {
   f="$(printf '%s' "$summary" | sed -n 's/.*, \([0-9][0-9]*\) failed$/\1/p')"
   if [[ -z "$p" || -z "$f" ]]; then
     fail
-    printf '  FAILED   lib-source — tests/lib-source/run.sh printed no verdict, exit %s\n' "$rc"
+    printf '  FAILED   %s — tests/%s/run.sh printed no verdict, exit %s\n' "$name" "$name" "$rc"
     return 0
   fi
 
@@ -1621,7 +1658,10 @@ start_job spec-verify      check_spec_verify
 start_job interrupted      check_interrupted
 start_job domains          check_domains
 start_job taken            check_taken
-start_job lib-source       check_lib_source
+start_job jira-tokens      check_jira_tokens
+start_job lib-source       check_suite lib-source
+start_job confluence-fetch check_suite confluence-fetch
+start_job jira-fetch       check_suite jira-fetch
 
 [[ -n "$SELECTED" ]] || SELECTED="$(cd "$FIXTURES" && ls -d */ 2>/dev/null | sed 's#/$##')"
 

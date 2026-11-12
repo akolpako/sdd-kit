@@ -22,6 +22,11 @@ c  .claude/settings.json = <engine>/.sdd/_claude/settings.json
 d  .claude/skills/
 d  .claude/skills/angular-practices/
 c  .claude/skills/angular-practices/SKILL.md = <engine>/.sdd/skills/angular-practices/SKILL.md
+d  .claude/skills/confluence-fetch/
+c  .claude/skills/confluence-fetch/SKILL.md = <engine>/.sdd/skills/confluence-fetch/SKILL.md
+d  .claude/skills/confluence-fetch/scripts/
+c  .claude/skills/confluence-fetch/scripts/confluence-fetch.sh = <engine>/.sdd/skills/confluence-fetch/scripts/confluence-fetch.sh
+c  .claude/skills/confluence-fetch/scripts/html-to-md.awk = <engine>/.sdd/skills/confluence-fetch/scripts/html-to-md.awk
 d  .claude/skills/java-core/
 c  .claude/skills/java-core/SKILL.md = <engine>/.sdd/skills/java-core/SKILL.md
 d  .claude/skills/java-jpa/
@@ -44,13 +49,18 @@ c  .claude/skills/java-junit/references/junit-rule-one-concept-per-test.md = <en
 c  .claude/skills/java-junit/references/junit-rule-parameterized-tests.md = <engine>/.sdd/skills/java-junit/references/junit-rule-parameterized-tests.md
 c  .claude/skills/java-junit/references/junit-rule-real-data-carriers.md = <engine>/.sdd/skills/java-junit/references/junit-rule-real-data-carriers.md
 c  .claude/skills/java-junit/references/junit-rule-state-based-assertions.md = <engine>/.sdd/skills/java-junit/references/junit-rule-state-based-assertions.md
+d  .claude/skills/java-springboot/
+c  .claude/skills/java-springboot/SKILL.md = <engine>/.sdd/skills/java-springboot/SKILL.md
+d  .claude/skills/jira-fetch/
+c  .claude/skills/jira-fetch/SKILL.md = <engine>/.sdd/skills/jira-fetch/SKILL.md
+d  .claude/skills/jira-fetch/scripts/
+c  .claude/skills/jira-fetch/scripts/jira-fetch.sh = <engine>/.sdd/skills/jira-fetch/scripts/jira-fetch.sh
+c  .claude/skills/jira-fetch/scripts/wiki-to-md.awk = <engine>/.sdd/skills/jira-fetch/scripts/wiki-to-md.awk
 d  .claude/skills/maven-lib-source/
 c  .claude/skills/maven-lib-source/SKILL.md = <engine>/.sdd/skills/maven-lib-source/SKILL.md
 d  .claude/skills/maven-lib-source/scripts/
 c  .claude/skills/maven-lib-source/scripts/MavenLibSource.java = <engine>/.sdd/skills/maven-lib-source/scripts/MavenLibSource.java
 c  .claude/skills/maven-lib-source/scripts/maven-lib-source.sh = <engine>/.sdd/skills/maven-lib-source/scripts/maven-lib-source.sh
-d  .claude/skills/java-springboot/
-c  .claude/skills/java-springboot/SKILL.md = <engine>/.sdd/skills/java-springboot/SKILL.md
 f  .gitignore
 d  .sdd/
 f  .sdd/.sdd-manifest
@@ -83,7 +93,7 @@ d  .sdd/scripts/
 c  .sdd/scripts/build-command.sh = <engine>/.sdd/scripts/build-command.sh
 c  .sdd/scripts/feature-state.sh = <engine>/.sdd/scripts/feature-state.sh
 c  .sdd/scripts/gate.sh = <engine>/.sdd/scripts/gate.sh
-c  .sdd/scripts/jira-fetch.sh = <engine>/.sdd/scripts/jira-fetch.sh
+c  .sdd/scripts/jira-import.sh = <engine>/.sdd/scripts/jira-import.sh
 d  .sdd/scripts/lib/
 c  .sdd/scripts/lib/format.sh = <engine>/.sdd/scripts/lib/format.sh
 c  .sdd/scripts/lib/log.sh = <engine>/.sdd/scripts/lib/log.sh
@@ -153,6 +163,8 @@ What a role changed is read from the working tree, never from its prose.
 
 A role may consult any other project skill when it helps.
 
+`jira-fetch` and `confluence-fetch` take their tokens from the files passed with `--tokens`: pass `~/.config/sdd-kit/tokens.env`, then `.sdd/sdd.conf` when the project has one — in that order, so the project's file wins.
+
 Whatever communication style the session is set to, anything written to `_docs/**` is normal prose.
 
 ## Instructions conflicts
@@ -178,6 +190,9 @@ host	claude
 <sum>	.claude/commands/sdd-status.md
 <sum>	.claude/settings.json
 <sum>	.claude/skills/angular-practices/SKILL.md
+<sum>	.claude/skills/confluence-fetch/SKILL.md
+<sum>	.claude/skills/confluence-fetch/scripts/confluence-fetch.sh
+<sum>	.claude/skills/confluence-fetch/scripts/html-to-md.awk
 <sum>	.claude/skills/java-core/SKILL.md
 <sum>	.claude/skills/java-jpa/SKILL.md
 <sum>	.claude/skills/java-junit/SKILL.md
@@ -196,10 +211,13 @@ host	claude
 <sum>	.claude/skills/java-junit/references/junit-rule-parameterized-tests.md
 <sum>	.claude/skills/java-junit/references/junit-rule-real-data-carriers.md
 <sum>	.claude/skills/java-junit/references/junit-rule-state-based-assertions.md
+<sum>	.claude/skills/java-springboot/SKILL.md
+<sum>	.claude/skills/jira-fetch/SKILL.md
+<sum>	.claude/skills/jira-fetch/scripts/jira-fetch.sh
+<sum>	.claude/skills/jira-fetch/scripts/wiki-to-md.awk
 <sum>	.claude/skills/maven-lib-source/SKILL.md
 <sum>	.claude/skills/maven-lib-source/scripts/MavenLibSource.java
 <sum>	.claude/skills/maven-lib-source/scripts/maven-lib-source.sh
-<sum>	.claude/skills/java-springboot/SKILL.md
 <sum>	.sdd/prompts/actualize-baseline-from-feature.md
 <sum>	.sdd/prompts/code-fix-findings-backend.md
 <sum>	.sdd/prompts/code-fix-findings-frontend.md
@@ -226,7 +244,7 @@ host	claude
 <sum>	.sdd/scripts/build-command.sh
 <sum>	.sdd/scripts/feature-state.sh
 <sum>	.sdd/scripts/gate.sh
-<sum>	.sdd/scripts/jira-fetch.sh
+<sum>	.sdd/scripts/jira-import.sh
 <sum>	.sdd/scripts/lib/format.sh
 <sum>	.sdd/scripts/lib/log.sh
 <sum>	.sdd/scripts/lib/token-counter.py

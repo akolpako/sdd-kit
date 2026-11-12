@@ -1,12 +1,12 @@
 {
   "key": "ABC-12345",
   "fields": {
-    "summary": "Publish account events in the new format",
-    "description": "h2. Goals\n * Publish account events in the new REST format\n * Keep the existing XML feed running in parallel\n * Write the two formats into separate topics\n\nh2. Current situation\nh3. billing-core\n\nThis service writes outbox rows. One row per account change, with type ACCOUNT.\n\nThe row is written in the same transaction as the account itself.\nh3. billing-dispatch\n\nIn a loop:\n * read the next unpublished rows\n * push them to the broker\n * delete the rows\n\nh2. Solution design\n \nMessage:\n * add the field entityType\n\n{code:java}\nrecord AccountEvent(String id, EntityType type) {}\n{code}\n\n||Field||Required||\n|id|yes|\n|type|yes|\n\nSee [the broker notes|https://wiki.example.com/brokers] and !topology.png|thumbnail!\n\nh2. Conditions of Satisfaction\n * every message carries entityType\n * dispatch rejects rows whose type is not ACCOUNT\n",
+    "summary": "Send order confirmations by email",
+    "description": "h2. Goals\n * Send a confirmation email when an order is placed\n * Keep the existing on-screen confirmation\n * Send the email and the receipt as separate messages\n\nh2. Current situation\nh3. order-service\n\nThis service stores the orders. One row per order, with status PLACED.\n\nThe row is written in the same transaction as the payment.\nh3. mail-sender\n\nIn a loop:\n * read the next unsent messages\n * hand them to the mail server\n * mark them as sent\n\nh2. Solution design\n \nMessage:\n * add the field orderId\n\n{code:java}\nrecord OrderPlaced(String id, OrderStatus status) {}\n{code}\n\n||Field||Required||\n|id|yes|\n|status|yes|\n\nSee [the mail server notes|https://wiki.example.com/mail] and !flow.png|thumbnail!\n\nh2. Conditions of Satisfaction\n * every message carries orderId\n * the sender skips orders whose status is not PLACED",
     "attachment": [
       {
-        "filename": "topology.png",
-        "content": "https://jira.example.com/secure/attachment/90001/topology.png",
+        "filename": "flow.png",
+        "content": "https://jira.example.com/secure/attachment/90001/flow.png",
         "mimeType": "image/png",
         "size": 20480
       },

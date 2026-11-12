@@ -1,0 +1,8 @@
+{
+  "key": "ABC-7",
+  "fields": {
+    "summary": "Move report generation into its own service",
+    "description": "h2. Solution design\n # Add a new module {*}report-worker{*}. It builds a runnable jar:\n ** The build file produces an image out of that jar.\n ** It keeps the {{{}StartupCondition{}}} start conditions, and {{WORKER_GROUP{}}} with them.\n #* A nested bullet whose marker spells the level above it.\n #  Reconfigure {*}web-app{*} to run no worker.\n \n\n * A list of its own\n ** nested under a bullet, two columns in\nh3. Flush heading\n{quote}\nQuoted *text* with {color:red}colour{color}.\n{quote}\n{noformat}\n  keep   *this*  _as is_\n{noformat}\n\n\n\nA closing paragraph naming SOME_CONST_NAME and {*}one bold run{*}. \n",
+    "attachment": []
+  }
+}
