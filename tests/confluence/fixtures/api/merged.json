@@ -1,0 +1,35 @@
+{
+  "id": "123456",
+  "type": "page",
+  "title": "Kafka messages",
+  "space": {
+    "key": "PAY",
+    "name": "Payments"
+  },
+  "version": {
+    "number": 29,
+    "when": "2026-11-13T10:00:00.000+01:00",
+    "by": {
+      "displayName": "Anna Smith"
+    }
+  },
+  "body": {
+    "storage": {
+      "representation": "storage",
+      "value": "<p>Field mapping:</p><table><tbody><tr><th>Type</th><th>Field</th><th>Getter</th></tr><tr><td rowspan=\"2\">Both</td><td><code>ADDITIONAL_CUSTOMER_IDS</code></td><td><code>getRefTKIDs()</code></td></tr><tr><td><code>CKM</code></td><td><code>getCkm()</code></td></tr><tr><td>Person</td><td><code>INN</code></td></tr></tbody></table>"
+    },
+    "export_view": {
+      "representation": "export_view",
+      "value": "<p>Field mapping:</p><div class=\"table-wrap\"><table class=\"confluenceTable\"><tbody><tr><th class=\"confluenceTh\">Type</th><th class=\"confluenceTh\">Field</th><th class=\"confluenceTh\">Getter</th></tr><tr><td rowspan=\"2\" class=\"confluenceTd\">Both</td><td class=\"confluenceTd\"><code>ADDITIONAL_CUSTOMER_IDS</code></td><td class=\"confluenceTd\"><code>getRefTKIDs()</code></td></tr><tr><td class=\"confluenceTd\"><code>CKM</code></td><td class=\"confluenceTd\"><code>getCkm()</code></td></tr><tr><td class=\"confluenceTd\">Person</td><td class=\"confluenceTd\"><code>INN</code></td></tr></tbody></table></div>"
+    }
+  },
+  "ancestors": [
+    {
+      "title": "Architecture"
+    }
+  ],
+  "_links": {
+    "base": "https://confluence.example.com",
+    "webui": "/spaces/PAY/pages/123456/Kafka+messages"
+  }
+}

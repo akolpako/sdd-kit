@@ -1,0 +1,15 @@
+CONFLUENCE=ok
+CQL=siteSearch ~ "order email" and type = page
+TOTAL=5
+SHOWN=2
+NEXT=--start 2
+
+RESULTS:
+1. Payments — design
+   ID=123456 SPACE=PAY MODIFIED=2026-10-01
+   https://confluence.example.com/spaces/PAY/pages/123456/Payments+design
+   How payments flow: order & refund <-> ledger done. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco …
+
+2. Release notes
+   ID=777 SPACE=~jdoe TYPE=blogpost MODIFIED=2026-10-02
+   https://confluence.example.com/display/~jdoe/2026/10/02/Release+notes

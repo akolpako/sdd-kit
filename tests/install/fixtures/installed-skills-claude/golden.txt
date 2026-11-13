@@ -30,11 +30,16 @@ c  .claude/settings.json = <engine>/.sdd/_claude/settings.json
 d  .claude/skills/
 d  .claude/skills/angular-practices/
 c  .claude/skills/angular-practices/SKILL.md = <engine>/.sdd/skills/angular-practices/SKILL.md
-d  .claude/skills/confluence-fetch/
-c  .claude/skills/confluence-fetch/SKILL.md = <engine>/.sdd/skills/confluence-fetch/SKILL.md
-d  .claude/skills/confluence-fetch/scripts/
-c  .claude/skills/confluence-fetch/scripts/confluence-fetch.sh = <engine>/.sdd/skills/confluence-fetch/scripts/confluence-fetch.sh
-c  .claude/skills/confluence-fetch/scripts/html-to-md.awk = <engine>/.sdd/skills/confluence-fetch/scripts/html-to-md.awk
+d  .claude/skills/confluence/
+c  .claude/skills/confluence/SKILL.md = <engine>/.sdd/skills/confluence/SKILL.md
+d  .claude/skills/confluence/scripts/
+c  .claude/skills/confluence/scripts/confluence-fetch.sh = <engine>/.sdd/skills/confluence/scripts/confluence-fetch.sh
+c  .claude/skills/confluence/scripts/confluence-publish.sh = <engine>/.sdd/skills/confluence/scripts/confluence-publish.sh
+c  .claude/skills/confluence/scripts/confluence-search.sh = <engine>/.sdd/skills/confluence/scripts/confluence-search.sh
+c  .claude/skills/confluence/scripts/html-to-md.awk = <engine>/.sdd/skills/confluence/scripts/html-to-md.awk
+c  .claude/skills/confluence/scripts/md-to-storage.awk = <engine>/.sdd/skills/confluence/scripts/md-to-storage.awk
+c  .claude/skills/confluence/scripts/storage-macros.awk = <engine>/.sdd/skills/confluence/scripts/storage-macros.awk
+c  .claude/skills/confluence/scripts/table-shapes.awk = <engine>/.sdd/skills/confluence/scripts/table-shapes.awk
 d  .claude/skills/java-core/
 c  .claude/skills/java-core/SKILL.md = <engine>/.sdd/skills/java-core/SKILL.md
 d  .claude/skills/java-jpa/
@@ -59,11 +64,13 @@ c  .claude/skills/java-junit/references/junit-rule-real-data-carriers.md = <engi
 c  .claude/skills/java-junit/references/junit-rule-state-based-assertions.md = <engine>/.sdd/skills/java-junit/references/junit-rule-state-based-assertions.md
 d  .claude/skills/java-springboot/
 c  .claude/skills/java-springboot/SKILL.md = <engine>/.sdd/skills/java-springboot/SKILL.md
-d  .claude/skills/jira-fetch/
-c  .claude/skills/jira-fetch/SKILL.md = <engine>/.sdd/skills/jira-fetch/SKILL.md
-d  .claude/skills/jira-fetch/scripts/
-c  .claude/skills/jira-fetch/scripts/jira-fetch.sh = <engine>/.sdd/skills/jira-fetch/scripts/jira-fetch.sh
-c  .claude/skills/jira-fetch/scripts/wiki-to-md.awk = <engine>/.sdd/skills/jira-fetch/scripts/wiki-to-md.awk
+d  .claude/skills/jira/
+c  .claude/skills/jira/SKILL.md = <engine>/.sdd/skills/jira/SKILL.md
+d  .claude/skills/jira/scripts/
+c  .claude/skills/jira/scripts/jira-fetch.sh = <engine>/.sdd/skills/jira/scripts/jira-fetch.sh
+c  .claude/skills/jira/scripts/jira-publish.sh = <engine>/.sdd/skills/jira/scripts/jira-publish.sh
+c  .claude/skills/jira/scripts/md-to-wiki.awk = <engine>/.sdd/skills/jira/scripts/md-to-wiki.awk
+c  .claude/skills/jira/scripts/wiki-to-md.awk = <engine>/.sdd/skills/jira/scripts/wiki-to-md.awk
 d  .claude/skills/linked/
 f  .claude/skills/linked/SKILL.md
 d  .claude/skills/maven-lib-source/
@@ -171,7 +178,9 @@ What a role changed is read from the working tree, never from its prose.
 
 A role may consult any other project skill when it helps.
 
-`jira-fetch` and `confluence-fetch` take their tokens from the files passed with `--tokens`: pass `~/.config/sdd-kit/tokens.env`, then `.sdd/sdd.conf` when the project has one — in that order, so the project's file wins.
+The `jira` and `confluence` skills' scripts take their tokens from the files passed with `--tokens`: pass `~/.config/sdd-kit/tokens.env`, then `.sdd/sdd.conf` when the project has one — in that order, so the project's file wins.
+
+**Publishing is the human's call.** `jira-publish.sh` and `confluence-publish.sh` run with `--yes` only after the human has seen the dry run and said yes in the session; a role never passes `--yes`.
 
 Whatever communication style the session is set to, anything written to `_docs/**` is normal prose.
 
@@ -198,9 +207,14 @@ host	claude
 <sum>	.claude/commands/sdd-status.md
 <sum>	.claude/settings.json
 <sum>	.claude/skills/angular-practices/SKILL.md
-<sum>	.claude/skills/confluence-fetch/SKILL.md
-<sum>	.claude/skills/confluence-fetch/scripts/confluence-fetch.sh
-<sum>	.claude/skills/confluence-fetch/scripts/html-to-md.awk
+<sum>	.claude/skills/confluence/SKILL.md
+<sum>	.claude/skills/confluence/scripts/confluence-fetch.sh
+<sum>	.claude/skills/confluence/scripts/confluence-publish.sh
+<sum>	.claude/skills/confluence/scripts/confluence-search.sh
+<sum>	.claude/skills/confluence/scripts/html-to-md.awk
+<sum>	.claude/skills/confluence/scripts/md-to-storage.awk
+<sum>	.claude/skills/confluence/scripts/storage-macros.awk
+<sum>	.claude/skills/confluence/scripts/table-shapes.awk
 <sum>	.claude/skills/java-core/SKILL.md
 <sum>	.claude/skills/java-jpa/SKILL.md
 <sum>	.claude/skills/java-junit/SKILL.md
@@ -220,9 +234,11 @@ host	claude
 <sum>	.claude/skills/java-junit/references/junit-rule-real-data-carriers.md
 <sum>	.claude/skills/java-junit/references/junit-rule-state-based-assertions.md
 <sum>	.claude/skills/java-springboot/SKILL.md
-<sum>	.claude/skills/jira-fetch/SKILL.md
-<sum>	.claude/skills/jira-fetch/scripts/jira-fetch.sh
-<sum>	.claude/skills/jira-fetch/scripts/wiki-to-md.awk
+<sum>	.claude/skills/jira/SKILL.md
+<sum>	.claude/skills/jira/scripts/jira-fetch.sh
+<sum>	.claude/skills/jira/scripts/jira-publish.sh
+<sum>	.claude/skills/jira/scripts/md-to-wiki.awk
+<sum>	.claude/skills/jira/scripts/wiki-to-md.awk
 <sum>	.claude/skills/linked/SKILL.md
 <sum>	.claude/skills/maven-lib-source/SKILL.md
 <sum>	.claude/skills/maven-lib-source/scripts/MavenLibSource.java

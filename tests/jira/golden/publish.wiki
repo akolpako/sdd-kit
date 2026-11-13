@@ -1,0 +1,43 @@
+h2. Goals
+
+* Send a confirmation email when an order is placed, wrapped onto a second line
+* Keep the *existing* on-screen confirmation
+*# first nested, _ordered_
+*# second nested with {{code_span}} and a [link|https://example.com/a_b-c]
+
+h2. Design
+
+As agreed with [~jdoe], see !flow diagram.png! and the [spec|^spec.pdf].
+Escapes: \*not bold\*, a \{brace}, a \[bracket], a pipe \|, C:&#92;path, \-5 and 3-D, SOME_CONST_NAME, foo{*}bar{*}baz.
+Hi! See [https://example.com/x_y] and https://example.com/raw_url-x. Mail [mailto:me@example.com].
+
+{note}
+Mind the *queue*.
+{note}
+
+{quote}
+A plain quote
+on two lines.
+{quote}
+
+{code:java}
+record OrderPlaced(String id) {} // {code} *not bold*
+{code}
+
+{noformat}
+plain text
+{noformat}
+
+{noformat}
+indented code
+{noformat}
+
+||Field||Required||
+|{{id}}|yes \| always|
+|name|line one \\ line two|
+
+----
+
+\h1. not a heading
+\* not a list
+-gone- and _em_ and *strong*.

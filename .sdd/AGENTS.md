@@ -18,7 +18,9 @@ What a role changed is read from the working tree, never from its prose.
 
 A role may consult any other project skill when it helps.
 
-`jira-fetch` and `confluence-fetch` take their tokens from the files passed with `--tokens`: pass `~/.config/sdd-kit/tokens.env`, then `.sdd/sdd.conf` when the project has one — in that order, so the project's file wins.
+The `jira` and `confluence` skills' scripts take their tokens from the files passed with `--tokens`: pass `~/.config/sdd-kit/tokens.env`, then `.sdd/sdd.conf` when the project has one — in that order, so the project's file wins.
+
+**Publishing is the human's call.** `jira-publish.sh` and `confluence-publish.sh` run with `--yes` only after the human has seen the dry run and said yes in the session; a role never passes `--yes`.
 
 Whatever communication style the session is set to, anything written to `_docs/**` is normal prose.
 

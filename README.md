@@ -60,9 +60,9 @@ does not use.
 
 ```sh
 # ~/.config/sdd-kit/tokens.env — global, optional
-JIRA_URL=https://jira.example.com   # only for Jira import and jira-fetch (Server / Data Center); needed for bare keys
+JIRA_URL=https://jira.example.com   # only for Jira import and the jira skill (Server / Data Center); needed for bare keys
 JIRA_TOKEN=<token>
-CONFLUENCE_URL=https://confluence.example.com   # only for confluence-fetch (Data Center); needed for bare page ids
+CONFLUENCE_URL=https://confluence.example.com   # only for the confluence skill (Data Center); needed for bare page ids
 CONFLUENCE_TOKEN=<token>            # Confluence → Settings → Personal Access Tokens
 
 # .sdd/sdd.conf — per project, overrides global; created by /sdd-init
@@ -139,8 +139,8 @@ Spec files have `status: draft | ready` in their frontmatter. You can open `_doc
 | `java-jpa` | JPA / Hibernate: entities, fetching, locking, schema |
 | `java-junit` | JUnit 5, Mockito, AssertJ |
 | `maven-lib-source` | Reads a dependency's source from its jar instead of guessing |
-| `jira-fetch` | Reads a Jira issue (by link or key) into Markdown, with the attachments its description shows |
-| `confluence-fetch` | Reads a Confluence page (by link) into Markdown, with its images and attachments |
+| `jira` | Reads a Jira issue (by link or key) into Markdown, with the attachments its description shows; creates issues, replaces a description, attaches files — from Markdown, after a dry run |
+| `confluence` | Reads a Confluence page (by link) into Markdown, with its images and attachments; searches pages by text or CQL; creates and updates pages, attaches files — from Markdown, after a dry run |
 | `angular-practices` | Angular: `OnPush`, state, subscriptions |
 
 **Recommended** from [skills.sh](https://skills.sh). Agents find and load them automatically.

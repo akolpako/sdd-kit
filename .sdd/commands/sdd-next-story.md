@@ -42,7 +42,7 @@ Every step is the orchestrator's own.
 
 3. **Create `raw.md`:** run `.sdd/scripts/spec-edit.sh scaffold feature ABC-12345`. It prints `RAW=` — the path the next step writes into.
 
-4. **Download the issue:** run `.sdd/scripts/jira-import.sh <the argument, as the human typed it> --out <RAW>`. It reads the issue through the `jira-fetch` skill — the title, the link, a line with type and status, the converted description — appends the two sections the flow reads by name, and downloads the attachments the description points at.
+4. **Download the issue:** run `.sdd/scripts/jira-import.sh <the argument, as the human typed it> --out <RAW>`. It reads the issue through the `jira` skill — the title, the link, a line with type and status, the converted description — appends the two sections the flow reads by name, and downloads the attachments the description points at.
 
    This rewrites what step 3 created. To download an issue a second time the human deletes `raw.md` first.
 

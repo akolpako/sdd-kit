@@ -1,0 +1,25 @@
+{
+  "id": "78",
+  "type": "page",
+  "title": "Macros",
+  "space": {
+    "key": "PAY",
+    "name": "PAY"
+  },
+  "version": {
+    "number": 1
+  },
+  "ancestors": [],
+  "_links": {
+    "base": "https://confluence.example.com",
+    "webui": "/spaces/PAY/pages/78/Macros"
+  },
+  "body": {
+    "export_view": {
+      "value": "<p>Intro</p><div id=\"expander-1\" class=\"expand-container\"><div id=\"expander-control-1\" class=\"expand-control\"><button type=\"button\" class=\"aui-button\"><span class=\"expand-icon aui-icon\" aria-hidden=\"true\"></span><span class=\"expand-control-text conf-macro-render\">Click here to expand...</span></button></div><div id=\"expander-content-1\" class=\"expand-content\"><p>Hidden one</p></div></div><div id=\"expander-2\" class=\"expand-container\"><div id=\"expander-control-2\" class=\"expand-control\"><button type=\"button\" class=\"aui-button\"><span class=\"expand-icon aui-icon\" aria-hidden=\"true\"></span><span class=\"expand-control-text conf-macro-render\">Details &amp; <b>more</b></span></button></div><div id=\"expander-content-2\" class=\"expand-content\"><p>Hidden two</p></div></div><p><img class=\"confluence-embedded-image\" src=\"https://confluence.example.com/rest/drawio/1.0/diagram/crud/flow?type=png\" /></p><p>After</p>"
+    },
+    "storage": {
+      "value": "<p>Intro</p><ac:structured-macro ac:name=\"expand\" ac:schema-version=\"1\"><ac:rich-text-body><p>Hidden one</p></ac:rich-text-body></ac:structured-macro><ac:structured-macro ac:name=\"expand\" ac:schema-version=\"1\"><ac:parameter ac:name=\"title\">Details &amp; more</ac:parameter><ac:rich-text-body><p>Hidden two</p></ac:rich-text-body></ac:structured-macro><ac:structured-macro ac:name=\"drawio\"><ac:parameter ac:name=\"diagramName\">flow</ac:parameter></ac:structured-macro><ac:structured-macro ac:name=\"Roadmap-Planner\"><ac:parameter ac:name=\"source\">x</ac:parameter></ac:structured-macro><ac:structured-macro ac:name=\"toc\" /><p>After</p>"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "results": [],
+  "start": 0,
+  "limit": 10,
+  "size": 0,
+  "totalSize": 0,
+  "_links": {
+    "base": "https://confluence.example.com",
+    "context": ""
+  }
+}

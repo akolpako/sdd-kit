@@ -1,0 +1,28 @@
+{
+  "id": "123456",
+  "type": "page",
+  "title": "Payments — design",
+  "space": {
+    "key": "PAY"
+  },
+  "version": {
+    "number": 7,
+    "by": {
+      "displayName": "John Doe"
+    }
+  },
+  "body": {
+    "storage": {
+      "value": "<p>Hi</p><ac:structured-macro ac:name=\"jira\"><ac:parameter ac:name=\"key\">PAY-1</ac:parameter></ac:structured-macro><ac:structured-macro ac:name=\"toc\"/><ac:structured-macro ac:name=\"code\"><ac:parameter ac:name=\"language\">java</ac:parameter></ac:structured-macro><ac:layout></ac:layout><ac:inline-comment-marker ac:ref=\"x\">t</ac:inline-comment-marker>",
+      "representation": "storage"
+    },
+    "export_view": {
+      "representation": "export_view",
+      "value": "<p>Hi</p><p>PAY-1</p>"
+    }
+  },
+  "_links": {
+    "base": "https://confluence.example.com",
+    "webui": "/spaces/PAY/pages/123456/Payments+design"
+  }
+}

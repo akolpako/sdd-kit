@@ -1,0 +1,52 @@
+{
+  "results": [
+    {
+      "content": {
+        "id": "123456",
+        "type": "page",
+        "status": "current",
+        "title": "Payments — design",
+        "_links": {
+          "webui": "/spaces/PAY/pages/123456/Payments+design"
+        }
+      },
+      "title": "@@@hl@@@Payments@@@endhl@@@ — design",
+      "excerpt": "How @@@hl@@@payments@@@endhl@@@ flow:\n\n\n order &amp; refund &lt;-&gt; ledger done. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+      "url": "/spaces/PAY/pages/123456/Payments+design",
+      "resultGlobalContainer": {
+        "title": "Payments",
+        "displayUrl": "/spaces/PAY/overview"
+      },
+      "entityType": "content",
+      "lastModified": "2026-10-01T09:00:00.000+02:00"
+    },
+    {
+      "content": {
+        "id": "777",
+        "type": "blogpost",
+        "status": "current",
+        "title": "Release notes",
+        "_links": {
+          "webui": "/display/~jdoe/2026/10/02/Release+notes"
+        }
+      },
+      "title": "Release notes",
+      "excerpt": "",
+      "url": "/display/~jdoe/2026/10/02/Release+notes",
+      "resultGlobalContainer": {
+        "title": "John Doe",
+        "displayUrl": "/display/~jdoe"
+      },
+      "entityType": "content",
+      "lastModified": "2026-10-02T10:00:00.000+02:00"
+    }
+  ],
+  "start": 0,
+  "limit": 2,
+  "size": 2,
+  "totalSize": 5,
+  "_links": {
+    "base": "https://confluence.example.com",
+    "context": ""
+  }
+}

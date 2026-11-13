@@ -20,10 +20,10 @@
 # scripts it fans out to. Every other case here would pass with the log broken —
 # it is written and never read.
 #
-# The maven-lib-source, confluence-fetch and jira-fetch skills have suites of
-# their own, `lib-source/run.sh`, `confluence-fetch/run.sh` and
-# `jira-fetch/run.sh`, called from here as one job each: one builds a Maven
-# repository, the other two put a fake curl on PATH, and none is a shape a
+# The maven-lib-source, confluence and jira skills have suites of their own,
+# `lib-source/run.sh`, `confluence/run.sh`, `confluence/publish.sh` and `confluence/search.sh`,
+# `jira/run.sh` and `jira/publish.sh`, called from here as one job each: one
+# builds a Maven repository, the others put a fake curl on PATH, and none is a shape a
 # fixture of this file can hold. Run one alone while changing
 # its script; run this one to be told whether it still passes.
 #
@@ -182,7 +182,7 @@ section-no-heading|section;_docs/<F>/raw.md;Nowhere'
 #
 # What these pin is the import: the skill run through the wrapper, the two
 # sections appended, nothing written on a stop. The request itself, the token
-# and every HTTP answer are the jira-fetch skill's, and its own suite checks
+# and every HTTP answer are the jira skill's, and its own suite checks
 # them over a fake curl — a --from-file run needs no token at all.
 JIRA_CASES='key|issue.json|<KEY>;--out;_docs/<KEY>/raw.md|JIRA_URL=https://jira.example.com;JIRA_TOKEN=fixture-token
 url|issue.json|https://jira.example.com/browse/<KEY>;--out;_docs/<KEY>/raw.md|JIRA_TOKEN=fixture-token
@@ -1565,7 +1565,7 @@ JOB_NAMES=()
 # fixture whose setup failed, a `set -u` abort — leaves the 1 standing, and the
 # parent has its answer without depending on a status `wait -n` may already
 # have reaped.
-# The jira-fetch skill reads no config of its own accord; jira-import.sh hands
+# The jira skill reads no config of its own accord; jira-import.sh hands
 # it the engine's two files. What is checked is that both reach it, in the
 # engine's order — the project's .sdd/sdd.conf over the home token file — and
 # that a missing one is simply not passed. The issue's own instance is the
@@ -1595,15 +1595,15 @@ check_jira_tokens() {
 }
 
 # A skill with a suite of its own: maven-lib-source needs a Maven repository
-# built here out of javac and jar, confluence-fetch and jira-fetch a fake curl
+# built here out of javac and jar, confluence and jira a fake curl
 # on PATH, and none is a shape a fixture of this suite can hold; each is useful on its own
 # while that script is being changed. Called from here it is one job like any
 # other, and the verdict it prints is folded into this count so a failure there
 # fails the run.
 check_suite() {
-  local name="$1" out rc summary p f i
+  local name="$1" script="${2:-run.sh}" out rc summary p f i
 
-  out="$("$SCRIPT_DIR/$name/run.sh" 2>&1)"; rc=$?
+  out="$("$SCRIPT_DIR/$name/$script" 2>&1)"; rc=$?
   summary="$(printf '%s\n' "$out" | tail -1)"
   printf '%s\n' "$out" | sed '$d'
 
@@ -1660,8 +1660,11 @@ start_job domains          check_domains
 start_job taken            check_taken
 start_job jira-tokens      check_jira_tokens
 start_job lib-source       check_suite lib-source
-start_job confluence-fetch check_suite confluence-fetch
-start_job jira-fetch       check_suite jira-fetch
+start_job confluence-fetch   check_suite confluence
+start_job confluence-publish check_suite confluence publish.sh
+start_job confluence-search  check_suite confluence search.sh
+start_job jira-fetch         check_suite jira
+start_job jira-publish       check_suite jira publish.sh
 
 [[ -n "$SELECTED" ]] || SELECTED="$(cd "$FIXTURES" && ls -d */ 2>/dev/null | sed 's#/$##')"
 

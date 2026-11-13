@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The import of a Jira issue into a feature's raw.md.
 #
-# Reading the issue is the jira-fetch skill's: the request, the config keys,
+# Reading the issue is the jira skill's: the request, the config keys,
 # the wiki-markup conversion and the attachments all live in its script, and
 # this one runs it with --out pointed at raw.md. What is left here is what only
 # the flow cares about — the two sections it reads by name, appended with the
@@ -60,13 +60,13 @@ ARG="${1:-}"
 # first one found is the one run.
 SKILL_SH=""
 for dir in "$SCRIPT_DIR/../skills" "$SCRIPT_DIR/../../.claude/skills" "$SCRIPT_DIR/../../.github/skills"; do
-  if [[ -r "$dir/jira-fetch/scripts/jira-fetch.sh" ]]; then
-    SKILL_SH="$dir/jira-fetch/scripts/jira-fetch.sh"
+  if [[ -r "$dir/jira/scripts/jira-fetch.sh" ]]; then
+    SKILL_SH="$dir/jira/scripts/jira-fetch.sh"
     break
   fi
 done
 if [[ -z "$SKILL_SH" ]]; then
-  printf 'ERROR=missing: the jira-fetch skill (jira-fetch/scripts/jira-fetch.sh under .claude/skills/ or .github/skills/)\n' >&2
+  printf 'ERROR=missing: the jira skill (jira/scripts/jira-fetch.sh under .claude/skills/ or .github/skills/)\n' >&2
   printf 'hint: re-run the SDD Kit installer for this project\n' >&2
   exit 1
 fi

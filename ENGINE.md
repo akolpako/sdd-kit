@@ -85,7 +85,7 @@ other's files — one agent with two definitions, one command defined twice.
 | the protocol `.sdd/protocols/*.md` | The procedure the role performs. Reaches the role only inside the prompt; the only protocol a command names is `orchestration.md`. |
 | the agent `.sdd/agents/*.md` | Does the assignment and writes its files. Never reads a command file, never learns the flow. |
 | `spec-edit.sh` | Writes whose format, place and date are fixed. The command supplies only the words. |
-| `jira-import.sh` | The Jira issue as `raw.md`: runs the `jira-fetch` skill's script, which owns everything about Jira (config keys, REST call, wiki-markup → Markdown, attachments), then appends the two sections the flow reads by name. The only script that touches the network or needs `curl`/`jq`. |
+| `jira-import.sh` | The Jira issue as `raw.md`: runs the `jira` skill's fetch script, which owns everything about Jira (config keys, REST call, wiki-markup → Markdown, attachments), then appends the two sections the flow reads by name. The only script that touches the network or needs `curl`/`jq`. |
 
 **A command does five things and nothing else:** run `gate.sh` (a `stop` or `ask` ends the run
 there, in the gate's words); spawn each role its `SPAWN:` records name, with the prompt
@@ -213,7 +213,7 @@ flowchart LR
     CMD --> SE["spec-edit.sh"]
     CMD --> SPN["spawn-prompt.sh"]
     NS["/sdd-next-story — Jira mode"] --> JI["jira-import.sh"]
-    JI --> JF["skill jira-fetch"]
+    JI --> JF["skill jira (jira-fetch.sh)"]
     ST["/sdd-status — no gate"] --> FS["feature-state.sh"]
     SPN -->|"--prompt-data"| GATE
     GATE --> FS

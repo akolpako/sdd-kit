@@ -1,0 +1,25 @@
+{
+  "id": "77",
+  "type": "page",
+  "title": "PlantUML",
+  "space": {
+    "key": "PAY",
+    "name": "PAY"
+  },
+  "version": {
+    "number": 3
+  },
+  "ancestors": [],
+  "_links": {
+    "base": "https://confluence.example.com",
+    "webui": "/spaces/PAY/pages/77/PlantUML"
+  },
+  "body": {
+    "export_view": {
+      "value": "<p>Flow:</p><p><span class=\"confluence-embedded-file-wrapper\"><img class=\"confluence-embedded-image\" src=\"https://confluence.example.com/rest/plantuml/1.0/aaa?type=image%2Fpng\" /></span></p><ul><li>in a list<p><img class=\"confluence-embedded-image\" src=\"https://confluence.example.com/rest/plantuml/1.0/bbb?type=image%2Fpng\" /></p></li></ul><div class=\"table-wrap\"><table><tr><th>diagram</th></tr><tr><td><img src=\"https://confluence.example.com/rest/plantuml/1.0/ccc?type=image%2Fpng\" /></td></tr></table></div><p><img src=\"https://confluence.example.com/rest/plantuml/1.0/ddd?type=image%2Fpng\" /></p><p><img src=\"https://confluence.example.com/rest/plantuml/1.0/eee?type=image%2Fpng\" /></p>"
+    },
+    "storage": {
+      "value": "<p>Flow:</p><ac:structured-macro ac:name=\"plantuml\" ac:schema-version=\"1\" ac:macro-id=\"m1\"><ac:parameter ac:name=\"atlassian-macro-output-type\">INLINE</ac:parameter><ac:plain-text-body><![CDATA[@startuml\nAlice -> Bob: Request\nAlice <-- Bob: Response & \"done\"\nnote right: a ]]]]><![CDATA[> b\n@enduml]]></ac:plain-text-body></ac:structured-macro><ul><li>in a list<ac:structured-macro ac:name=\"plantuml\" ac:schema-version=\"1\"><ac:plain-text-body><![CDATA[@startuml\n  A -> B\n@enduml]]></ac:plain-text-body></ac:structured-macro></li></ul><table><tbody><tr><th>diagram</th></tr><tr><td><ac:structured-macro ac:name=\"plantuml\"><ac:plain-text-body><![CDATA[@startuml\nA | B\n@enduml]]></ac:plain-text-body></ac:structured-macro></td></tr></tbody></table><ac:structured-macro ac:name=\"plantumlrender\"><ac:parameter ac:name=\"filename\">x.puml</ac:parameter></ac:structured-macro>"
+    }
+  }
+}
