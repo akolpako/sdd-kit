@@ -72,6 +72,9 @@ description: 'Unit-test rules for JUnit 5, Mockito and AssertJ: test structure, 
 **[Use AssertJ exclusively][assertj]** 🤝 — every assertion through `assertThat(...)`, always the most specific one; JUnit-native assertions, Hamcrest and Truth are forbidden.
 ✗ `assertEquals` / `assertTrue` / `assertNull` / `assertThrows` / `assertAll` → AssertJ equivalent; `assertThat(list.size()).isEqualTo(3)` → `hasSize` (likewise `containsEntry`, `isPresent`).
 
+**Custom Assert for repeated domain checks** 🤝 — ⛔ **read [junit-rule-custom-asserts.md][custom-asserts] before creating or extending a `<Type>Assert`**: class shape, navigation between Asserts and composition are not summarized here. Using an existing Assert needs no read: use it and never rebuild its checks with plain AssertJ. A one-off check stays plain AssertJ.
+✗ the same `extracting(...)` / recursive-comparison chain, or a private `void assertXxx(actual, …)` helper, repeated in 2+ test classes → method on `<Type>Assert`; a check copied from another Assert → call that Assert.
+
 **[State-based over interaction verification][state-based]** — assert the returned value or observable state; `verify(...)` is the exception, mainly for void side effects.
 ✗ `verify(...)` mirroring a state-based assertion → remove it; `verifyNoMoreInteractions(...)` → remove unless that exact contract is the test's purpose; `argThat(...)` for a non-trivial check → `ArgumentCaptor` + AssertJ on the captured value.
 
@@ -94,6 +97,7 @@ description: 'Unit-test rules for JUnit 5, Mockito and AssertJ: test structure, 
 [setup-helpers]: references/junit-rule-named-setup-helpers.md
 [parameterized]: references/junit-rule-parameterized-tests.md
 [assertj]: references/junit-rule-assertj-only.md
+[custom-asserts]: references/junit-rule-custom-asserts.md
 [state-based]: references/junit-rule-state-based-assertions.md
 [literals]: references/junit-rule-literal-expected-values.md
 [awaitility]: references/junit-rule-async-awaitility.md

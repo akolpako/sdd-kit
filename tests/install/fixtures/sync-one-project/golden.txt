@@ -49,6 +49,7 @@ d  .claude/skills/java-junit/references/
 c  .claude/skills/java-junit/references/junit-rule-arrange-act-assert.md = <engine>/.sdd/skills/java-junit/references/junit-rule-arrange-act-assert.md
 c  .claude/skills/java-junit/references/junit-rule-assertj-only.md = <engine>/.sdd/skills/java-junit/references/junit-rule-assertj-only.md
 c  .claude/skills/java-junit/references/junit-rule-async-awaitility.md = <engine>/.sdd/skills/java-junit/references/junit-rule-async-awaitility.md
+c  .claude/skills/java-junit/references/junit-rule-custom-asserts.md = <engine>/.sdd/skills/java-junit/references/junit-rule-custom-asserts.md
 c  .claude/skills/java-junit/references/junit-rule-fakes.md = <engine>/.sdd/skills/java-junit/references/junit-rule-fakes.md
 c  .claude/skills/java-junit/references/junit-rule-first.md = <engine>/.sdd/skills/java-junit/references/junit-rule-first.md
 c  .claude/skills/java-junit/references/junit-rule-fixtures.md = <engine>/.sdd/skills/java-junit/references/junit-rule-fixtures.md
@@ -246,6 +247,7 @@ host	claude
 <sum>	.claude/skills/java-junit/references/junit-rule-arrange-act-assert.md
 <sum>	.claude/skills/java-junit/references/junit-rule-assertj-only.md
 <sum>	.claude/skills/java-junit/references/junit-rule-async-awaitility.md
+<sum>	.claude/skills/java-junit/references/junit-rule-custom-asserts.md
 <sum>	.claude/skills/java-junit/references/junit-rule-fakes.md
 <sum>	.claude/skills/java-junit/references/junit-rule-first.md
 <sum>	.claude/skills/java-junit/references/junit-rule-fixtures.md

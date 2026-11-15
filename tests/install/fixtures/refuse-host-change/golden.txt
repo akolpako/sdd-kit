@@ -45,6 +45,7 @@ d  .github/skills/java-junit/references/
 c  .github/skills/java-junit/references/junit-rule-arrange-act-assert.md = <engine>/.sdd/skills/java-junit/references/junit-rule-arrange-act-assert.md
 c  .github/skills/java-junit/references/junit-rule-assertj-only.md = <engine>/.sdd/skills/java-junit/references/junit-rule-assertj-only.md
 c  .github/skills/java-junit/references/junit-rule-async-awaitility.md = <engine>/.sdd/skills/java-junit/references/junit-rule-async-awaitility.md
+c  .github/skills/java-junit/references/junit-rule-custom-asserts.md = <engine>/.sdd/skills/java-junit/references/junit-rule-custom-asserts.md
 c  .github/skills/java-junit/references/junit-rule-fakes.md = <engine>/.sdd/skills/java-junit/references/junit-rule-fakes.md
 c  .github/skills/java-junit/references/junit-rule-first.md = <engine>/.sdd/skills/java-junit/references/junit-rule-first.md
 c  .github/skills/java-junit/references/junit-rule-fixtures.md = <engine>/.sdd/skills/java-junit/references/junit-rule-fixtures.md
@@ -216,6 +217,7 @@ host	copilot
 <sum>	.github/skills/java-junit/references/junit-rule-arrange-act-assert.md
 <sum>	.github/skills/java-junit/references/junit-rule-assertj-only.md
 <sum>	.github/skills/java-junit/references/junit-rule-async-awaitility.md
+<sum>	.github/skills/java-junit/references/junit-rule-custom-asserts.md
 <sum>	.github/skills/java-junit/references/junit-rule-fakes.md
 <sum>	.github/skills/java-junit/references/junit-rule-first.md
 <sum>	.github/skills/java-junit/references/junit-rule-fixtures.md

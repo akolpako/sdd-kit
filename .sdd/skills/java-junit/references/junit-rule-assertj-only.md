@@ -23,3 +23,4 @@ it reads better and fails with a diagnostic instead of `expected: true but was: 
 | `assertThat(map.get("k")).isEqualTo(v)` | `assertThat(map).containsEntry("k", v)`        |
 
 Prefer one chained or `.extracting(...)` assertion over many separate `assertThat(...)` calls on the same object.
+When the same chain repeats across tests, move it into a [custom Assert](junit-rule-custom-asserts.md).
