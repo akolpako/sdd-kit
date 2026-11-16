@@ -18,6 +18,7 @@ Turns a `draft` spec into a `ready` one through the checklist and an interview. 
   - the `## Open Questions` section of `new-requirements.md` and `design.md`, and the `REQ-###` headings of `new-requirements.md` for the matrix
   - nothing else of the feature's spec files — those are the roles' to read
 - **Writes,** and nothing else in either file — everything else in their bodies is the roles':
+  - the snapshot that precedes the run
   - the `status` markers of the feature's `new-requirements.md`, `design.md`, `tasks.md`
   - the `## Open Questions` section of `new-requirements.md` and `design.md` — the human's answers, appended to the lines they answer
   - never `_docs/requirements.md` — `/sdd-actualize` is what writes it
@@ -25,6 +26,8 @@ Turns a `draft` spec into a `ready` one through the checklist and an interview. 
 ## Process
 
 1. **Gate:** run `.sdd/scripts/gate.sh review <FeatureName>`. `GATE=ok` reviews. `ANOMALIES:` open the session rather than close it — several of them are exactly what this review exists to settle.
+
+   Then back up: run `.sdd/scripts/spec-edit.sh backup` — the roles rewrite the spec in place. If it exits non-zero, stop.
 
 2. **Spawn** both `SPAWN:` records: per record, run `.sdd/scripts/spawn-prompt.sh review <FeatureName> <scope>`. A role returns its `FAIL` list and what it left on the page. **The questions are read from `## Open Questions` of its file, never out of its report.**
 
