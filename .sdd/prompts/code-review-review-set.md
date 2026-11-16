@@ -24,6 +24,12 @@ a finding:
 
 {{SECTION:BLOCKED}}
 
+The build command of this project — the human's, resolved already. Tests are
+run with it and with nothing else; where it reads `(none)`, no test is run and
+the report says the tests were not run:
+
+{{SECTION:BUILD}}
+
 Specs of this run:
 
 {{SECTION:SPEC_FILES}}

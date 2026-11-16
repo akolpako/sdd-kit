@@ -41,7 +41,7 @@ Six passes over the diff, in this order:
 5. **Testing.**
 6. **Style** — `code-style.md`.
 
-Running the project's own tests is part of the testing pass — often the only way to tell a test that asserts an outcome from one that merely runs the code. Do not start the application: a server left running outlives the review and belongs to nobody.
+Running the project's own tests is part of the testing pass — often the only way to tell a test that asserts an outcome from one that merely runs the code. They are run with the build command the assignment names and with no command of your own: one that names none gets no test run, and the report says the tests were not run. Do not start the application: a server left running outlives the review and belongs to nobody.
 
 ## 4. Issue Reporting
 

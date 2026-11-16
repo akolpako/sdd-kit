@@ -29,6 +29,13 @@ a finding:
 
 (none)
 
+The build command of this project — the human's, resolved already. Tests are
+run with it and with nothing else; where it reads `(none)`, no test is run and
+the report says the tests were not run:
+
+backend: mvn clean verify
+frontend: cd web && npm run build && npm test
+
 Specs of this run:
 
 _docs/Cart/new-requirements.md

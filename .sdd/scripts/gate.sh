@@ -52,7 +52,9 @@
 # Under --prompt-data, and only there:
 #   SPEC_FILES:   the paths of this run, one per line — every command
 #   COMPILATION_ENTRIES:  review
-#   UNTRACKED:, BLOCKED:  code-review
+#   UNTRACKED:, BLOCKED:, BUILD:  code-review — BUILD: is the human's build
+#                 command, one `<stack>: <command>` line per answer, so the
+#                 reviewer runs the tests with it and with nothing of its own
 #   TODO:                 implement
 #
 # A key the command does not decide from is not printed. At GATE=stop and
@@ -296,7 +298,9 @@ case "$CMD" in
   review)      NEED_NR=1 ;;
   actualize)   NEED_NR=1 ;;
   implement)   NEED_BC=1 ;;
-  code-review) NEED_RS=1 ;;
+  # The build is the reviewer's to run, never the orchestrator's: it is read
+  # for the prompt alone.
+  code-review) NEED_RS=1; [[ $PROMPT_DATA -eq 1 ]] && NEED_BC=1 ;;
   code-fix)    NEED_RS=1; NEED_BC=1 ;;
 esac
 
@@ -1336,6 +1340,12 @@ case "$CMD" in
       [[ -n "$RS_UNTRACKED" ]] && printf '%s\n' "$RS_UNTRACKED"
       printf '\nBLOCKED:\n'
       [[ -n "$BLOCKED_RECS" ]] && printf '%s\n' "$BLOCKED_RECS"
+      # The answers as build-command.sh resolved them. A stack command standing
+      # in for nothing but the root one is the same line said twice.
+      printf '\nBUILD:\n'
+      [[ -n "$BUILD_ROOT" ]] && printf 'root: %s\n' "$BUILD_ROOT"
+      [[ -n "$BUILD_BACKEND" && "$BUILD_BACKEND" != "$BUILD_ROOT" ]] && printf 'backend: %s\n' "$BUILD_BACKEND"
+      [[ -n "$BUILD_FRONTEND" && "$BUILD_FRONTEND" != "$BUILD_ROOT" ]] && printf 'frontend: %s\n' "$BUILD_FRONTEND"
     fi
     ;;
   actualize)
