@@ -200,7 +200,11 @@ sdd_log_conf_read() {
       sub(/[[:space:]]+$/, "", key)
       sub(/^[[:space:]]+/, "", val)
       if (key !~ /^SDD_LOG(_DIR|_MAX|_HEAD|_TAIL)?$/) next
-      gsub(/^["\047]|["\047]$/, "", val)
+      # A value wrapped whole in one kind of quote loses that pair and nothing
+      # else: `-Dgroups="fast"` ends in a quote that belongs to the command.
+      q = substr(val, 1, 1)
+      if (length(val) >= 2 && (q == "\"" || q == "\047") && substr(val, length(val), 1) == q)
+        val = substr(val, 2, length(val) - 2)
       print key "=" val
     }
   ' "$1" 2>/dev/null

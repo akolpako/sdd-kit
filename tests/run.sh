@@ -819,7 +819,9 @@ two-answered|backend/pom.xml frontend/package.json|SDD_BUILD_BACKEND=cd backend 
 two-root-only|backend/pom.xml frontend/package.json|SDD_BUILD_ROOT=make all|make all|||config|SDD_BUILD_BACKEND SDD_BUILD_FRONTEND
 two-half|backend/pom.xml frontend/package.json|SDD_BUILD_BACKEND=cd backend && mvn verify||cd backend && mvn verify||config|SDD_BUILD_FRONTEND
 no-stack-answered|Makefile|SDD_BUILD_ROOT=make verify|make verify|make verify|make verify|config|
-no-stack-missing|Makefile|||||none|SDD_BUILD_ROOT'
+no-stack-missing|Makefile|||||none|SDD_BUILD_ROOT
+quote-inside|pom.xml|SDD_BUILD_ROOT=mvn verify -Dgroups="fast"|mvn verify -Dgroups="fast"|mvn verify -Dgroups="fast"||config|
+quote-around|pom.xml|SDD_BUILD_ROOT="mvn -q verify"|mvn -q verify|mvn -q verify||config|'
 
   local name files lines want_root want_be want_fe want_source want_ask
   local dir f line key old_ifs
