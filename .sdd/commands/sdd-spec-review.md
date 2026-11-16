@@ -29,6 +29,8 @@ Turns a `draft` spec into a `ready` one through the checklist and an interview. 
 
    Then back up: run `.sdd/scripts/spec-edit.sh backup` — the roles rewrite the spec in place. If it exits non-zero, stop.
 
+   Then reset: run `.sdd/scripts/spec-edit.sh status <FeatureName> draft <file ...>`, naming each file whose `STATUS_*` is `ready`, and skip the call when none is. `ready` is the verdict of this run, never one carried over: the roles are about to change those files, and a run cut short must not leave a rewritten spec marked as reviewed.
+
 2. **Spawn** both `SPAWN:` records: per record, run `.sdd/scripts/spawn-prompt.sh review <FeatureName> <scope>`. A role returns its `FAIL` list and what it left on the page. **The questions are read from `## Open Questions` of its file, never out of its report.**
 
 3. **Interview and re-spawn,** requirements first, then design. One round over one file:
