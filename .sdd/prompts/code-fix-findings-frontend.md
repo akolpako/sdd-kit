@@ -24,7 +24,9 @@ The findings to fix, by their `F-##` numbers:
 
 Fix these and nothing else. This is a list of findings, not a loop over tasks:
 write no mark in `tasks.md`, and act on no finding outside the list. A `TODO`
-marker is not yours either — the orchestrator writes those.
+marker is not yours either — the orchestrator wrote those before this run:
+leave every `TODO Code Review:` line where it stands. A line number above is
+the one the review saw; a marker written above it since moves it down.
 
 A finding you decide not to fix is reported by its number with the reason.
 Nothing drops out of the run in silence.
