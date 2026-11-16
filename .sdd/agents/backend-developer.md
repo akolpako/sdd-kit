@@ -34,7 +34,7 @@ Write and change server-side code, and test it.
 
 ## Self-Check
 
-Before returning. Work out from the project how the build is run, and run it as part of every verification — the last one included.
+Before returning. Run the build the assignment names — or, where it names none, the one this project uses — as part of every verification, the last one included.
 
 - [ ] The build passes: compilation and the full test suite, not only the tests I wrote
 - [ ] Every endpoint whose behaviour I changed has an integration test

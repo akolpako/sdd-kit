@@ -33,7 +33,7 @@ Every finding carries one of four severities. The severity decides the order fin
 | Severity | What it means | Examples |
 |---|---|---|
 | **Critical** | Blocks the merge | SQL injection, missing auth check, a secret committed to the repo, data loss, broken functionality, red tests |
-| **Major** | Fix before merge | A failure path with no error handling, business logic with no test, an N+1 query |
+| **Major** | Should be fixed before merge; named in the verdict, does not block it | A failure path with no error handling, business logic with no test, an N+1 query |
 | **Minor** | Worth fixing | Naming, duplication, an undocumented public API |
 | **Suggestion** | Optional | Formatting, verbose logging |
 

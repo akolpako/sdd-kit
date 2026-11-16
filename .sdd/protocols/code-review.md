@@ -47,6 +47,8 @@ Running the project's own tests is part of the testing pass — often the only w
 
 Severity — Critical, Major, Minor, Suggestion — decides the sort order, the reporting cap, and the verdict of §6.
 
+A `TODO Code Review:` comment in the code is a finding an earlier review deferred, with the human's agreement. It is not reported again — not as a finding, not under another severity — and its absence of a fix is not a defect of this change set.
+
 Report each issue with its **severity**, **category** (Security / Performance / Quality / Spec Deviation / Style), **location** (file and line), **description**, and **recommendation**.
 
 **Bounded.** Sort the issues by severity, Critical first, and report at most 20. If the review found more, the list ends with one line: `N more findings below the reporting threshold — re-run the review after these are fixed.` The cap is on the report, never on the review.
@@ -72,8 +74,8 @@ The report closes with one verdict and one line naming what decided it. It follo
 | Verdict | When |
 |---------|------|
 | **APPROVED** | No Critical and no Major findings |
-| **APPROVED WITH MINOR ISSUES** | No Critical findings; the Major ones are listed and named in the verdict line |
-| **BLOCKED** | Any Critical finding, or a red build or red tests, or a secret in the code |
+| **APPROVED WITH MINOR ISSUES** | No Critical findings and at least one Major; every Major is named in the verdict line. The name is the format's: Major findings are what this verdict is for |
+| **BLOCKED** | Any Critical finding, or tests the review ran that came back red, or a secret in the code |
 
 - The verdict describes the review set as it stands: `BLOCKED` says the code is not mergeable as it is.
 - A truncated review (§2) says so in the verdict.

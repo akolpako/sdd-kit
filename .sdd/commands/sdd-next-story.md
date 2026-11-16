@@ -53,7 +53,7 @@ Every step is the orchestrator's own.
    - anything in the script's `NOTES:` — an attachment that could not be fetched, an empty description, an attachment left in Jira
    - then: read `raw.md`, fill in `## Known constraints` and `## Out of scope`, and run `/sdd-specify ABC-12345`
 
-A redirect, a rejected token or a missing issue is the human's call, not something to retry differently (`.sdd/AGENTS.md`): report the script's `ERROR=` and `hint:` lines as they are.
+A redirect, a rejected token or a missing issue is the human's call, not something to retry differently — a script that fails is reported, never worked around: report the script's `ERROR=` and `hint:` lines as they are.
 
 ## Process — a feature filled in by hand
 

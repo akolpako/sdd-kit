@@ -9,8 +9,8 @@ disable-model-invocation: true
 
 This command:
 - is read-only on the code — no fix is applied here
-- runs no build, and hangs no verdict on one
-- may run the tests where that is what judging coverage takes
+- runs no build of its own
+- may run the tests where that is what judging coverage takes — and tests that come back red are what a `BLOCKED` verdict reads
 
 Safe to re-run: the report is a snapshot of the working tree, overwritten whole each time.
 `<base-ref>` is optional — pass it when the base branch cannot be detected.
