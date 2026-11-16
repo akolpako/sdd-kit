@@ -39,6 +39,6 @@ Generates the three spec files from `raw.md`, each as a draft. Re-running asks b
 
 4. **Spawn** by the `SPAWN:` records, in the order printed. A record is dropped whole when the human kept every file it writes — that role is not spawned. For every record left, run `.sdd/scripts/spawn-prompt.sh specify <FeatureName> <scope> KEPT=<the files the human kept, comma-separated, or none>`.
 
-5. **Verify:** run `.sdd/scripts/gate.sh specify <FeatureName> --verify --files=<the files this run wrote, comma-separated>` — the files the human kept are not named.
+5. **Verify after each spawn,** before the next one: run `.sdd/scripts/gate.sh specify <FeatureName> --verify --files=<the files that role was to write, comma-separated>` — of `new-requirements.md` for `requirements` and `design.md,tasks.md` for `design+tasks`, the ones this run scaffolded; a kept file is never named. `VERIFY=fail` stops the run there: the design is written from the requirements, and one written from an empty template is a second file to throw away.
 
 6. **Report the next step:** the files written and their `status: draft`, then to inspect them and run `/sdd-spec-review <FeatureName>`, which is what turns `draft` into `ready`.
