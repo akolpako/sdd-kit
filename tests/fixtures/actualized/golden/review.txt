@@ -28,6 +28,10 @@ TASK-002|done|backend|REQ-002|Add and remove items|
 TASK-003|done|backend|REQ-003|Cart totals|
 TASK-004|done|backend|REQ-002,REQ-003|Cart REST endpoints|
 
+UNCOVERED:
+
+UNDECLARED:
+
 STOP:
 
 ASK:

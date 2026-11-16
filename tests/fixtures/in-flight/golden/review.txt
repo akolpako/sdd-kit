@@ -26,6 +26,10 @@ TASKS:
 TASK-001|open|backend|REQ-004|Wishlist table and entity|
 TASK-002|open|backend|REQ-005|Move an item into the cart|
 
+UNCOVERED:
+
+UNDECLARED:
+
 STOP:
 
 ASK:

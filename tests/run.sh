@@ -1993,6 +1993,70 @@ EOF
   prop_check blocked-set "only unchecked tasks are excused" "$ok" "BLOCKED: $(printf '%s' "$out" | tr '\n' '~')"
 }
 
+# The two stops of /sdd-spec-review that used to be judged by eye: the coverage
+# matrix, and whether a file with a question still on it may be called ready.
+check_spec_review() {
+  local work="$TMP/spec-review-check" out rc ok
+
+  printf 'spec-review\n'
+  rm -rf "$work" && mkdir -p "$work/_docs/Cart" || exit 1
+  cat > "$work/_docs/Cart/new-requirements.md" <<'EOF'
+---
+status: draft
+---
+
+# Requirements — Cart
+
+## Requirements
+
+### REQ-001 — Cart total
+- **Description:** x ^req-001
+
+### REQ-002 — Promo codes
+- **Description:** y ^req-002
+
+## Open Questions
+
+<!-- hint -->
+- Which currency? — recommended: EUR, A-01
+
+## Out of Scope
+
+### REQ-003 — Gift wrapping
+EOF
+  cat > "$work/_docs/Cart/tasks.md" <<'EOF'
+---
+status: draft
+---
+
+# Tasks — Cart
+
+## Tasks
+
+- [ ] **TASK-001** — Total
+  - **Requires:** [REQ-001](new-requirements.md#^req-001), REQ-009
+  - **Type:** backend
+EOF
+
+  out="$(cd "$work" && "$SCRIPTS/feature-state.sh" Cart 2>&1)"
+  ok=0
+  [[ "$(printf '%s\n' "$out" | awk '/^[A-Z_]+:$/ { s = $0; next } s == "UNCOVERED:" && NF')" == "REQ-002|Promo codes" ]] || ok=1
+  [[ "$(printf '%s\n' "$out" | awk '/^[A-Z_]+:$/ { s = $0; next } s == "UNDECLARED:" && NF')" == "TASK-001|REQ-009" ]] || ok=1
+  prop_check spec-review "the matrix stops are computed" "$ok" "$(printf '%s' "$out" | sed -n '/^UNCOVERED:/,/^ANOMALIES:/p' | tr '\n' '~')"
+
+  out="$(cd "$work" && "$EDITOR_SH" status Cart ready new-requirements.md tasks.md 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 2 && "$out" == *"Open Questions is not empty in: _docs/Cart/new-requirements.md (1 line(s))"* ]] || ok=1
+  grep -q '^status: draft$' "$work/_docs/Cart/tasks.md" || ok=1
+  prop_check spec-review "ready is refused over an open question" "$ok" "exit $rc: $out"
+
+  out="$(cd "$work" && "$EDITOR_SH" status Cart ready new-requirements.md tasks.md --accept-open 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 0 ]] || ok=1
+  grep -q '^status: ready$' "$work/_docs/Cart/new-requirements.md" || ok=1
+  prop_check spec-review "--accept-open readies it as it stands" "$ok" "exit $rc: $out"
+}
+
 job_body() {
   local name="$1"; shift
   # Nothing a job runs has a question to ask: every case is scripted, and a
@@ -2035,6 +2099,7 @@ start_job relations        check_relations
 start_job text             check_text
 start_job raw              check_raw
 start_job blocked-set      check_blocked_set
+start_job spec-review      check_spec_review
 start_job jira-tokens      check_jira_tokens
 start_job lib-source       check_suite lib-source
 start_job confluence-fetch   check_suite confluence

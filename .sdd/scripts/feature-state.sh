@@ -67,6 +67,11 @@
 #                           status is active, draft, superseded by REQ-###,
 #                           or refined — an entry of another feature that
 #                           this one reworded
+#   UNCOVERED:              <REQ-…>|<title> — a requirement the feature
+#                           declares (Out of Scope excluded) that no task's
+#                           Requires: names
+#   UNDECLARED:             <TASK-…>|<REQ-…> — a Requires: entry naming a
+#                           requirement the feature does not declare
 #   ANOMALIES:              one per line — reported, never fixed
 #   NOTES:                  what the script could not settle on its own
 #
@@ -439,6 +444,34 @@ $(md_req_relations "$dir/new-requirements.md")
 EOF
   fi
 
+  # ── Coverage ────────────────────────────────────────────────────
+  # The requirement → task matrix, computed here so that no command counts it
+  # by eye: a requirement no task names, and a task naming one nobody declares.
+  UNCOVERED=""; UNDECLARED=""
+  if [[ "$ST_REQ" == "present" && "$ST_TSK" == "present" ]]; then
+    local requires=" " declared=" " r t_id t_req pairs="" title
+    for rec in ${TASK_RECS[@]+"${TASK_RECS[@]}"}; do
+      t_id="${rec%%|*}"; t_req="${rec#*|*|*|}"; t_req="${t_req%%|*}"
+      for r in $(printf '%s' "$t_req" | grep -oE "$MD_REQ_RE"); do
+        requires="$requires$r "
+        pairs="$pairs$t_id|$r"$'\n'
+      done
+    done
+    while IFS='|' read -r d_id _rest; do
+      [[ -n "$d_id" ]] || continue
+      declared="$declared$d_id "
+      [[ "$requires" == *" $d_id "* ]] && continue
+      title="$(md_uncomment "$dir/new-requirements.md" | awk -v id="$d_id" "$MD_AWK_DECL"'
+        md_is_req_heading($0) && md_id($0) == id {
+          sub(/^#+[[:space:]]*/, ""); sub(/^[^[:space:]]+[[:space:]]*/, "")
+          sub(/^(—|–|-)[[:space:]]*/, ""); gsub(/\|/, "/"); print; exit }')"
+      UNCOVERED="$UNCOVERED$d_id|$title"$'\n'
+    done < <(md_req_relations "$dir/new-requirements.md")
+    while IFS='|' read -r t_id r; do
+      [[ -n "$t_id" && "$declared" != *" $r "* ]] && UNDECLARED="$UNDECLARED$t_id|$r"$'\n'
+    done <<< "$pairs"
+  fi
+
   # ── The stage ───────────────────────────────────────────────────
   # Read top to bottom: the first branch whose signals hold wins, so a later
   # signal never carries the feature past a stage an earlier one contradicts.
@@ -525,6 +558,9 @@ print_feature() {
 
   printf '\nCOMPILATION_ENTRIES:\n'
   for rec in ${COMP_RECS[@]+"${COMP_RECS[@]}"}; do printf '%s\n' "$rec"; done
+
+  printf '\nUNCOVERED:\n%s' "$UNCOVERED"
+  printf '\nUNDECLARED:\n%s' "$UNDECLARED"
 }
 
 list_features() {

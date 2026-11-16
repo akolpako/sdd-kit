@@ -28,6 +28,10 @@ TASK-002|open|backend|REQ-002,REQ-003|Cart REST endpoints|
 TASK-003|open|frontend|REQ-002|Cart page|
 TASK-004|open|frontend|REQ-003|Cart total display|
 
+UNCOVERED:
+
+UNDECLARED:
+
 STOP:
 
 ASK:

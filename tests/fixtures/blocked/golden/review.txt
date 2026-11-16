@@ -27,6 +27,10 @@ TASK-001|done|backend|REQ-002|Cart table and entity|
 TASK-002|blocked|backend|REQ-002|Add and remove items|the stock service has no endpoint for reservations.
 TASK-003|open|backend|REQ-003|Cart totals|
 
+UNCOVERED:
+
+UNDECLARED:
+
 STOP:
 
 ASK:

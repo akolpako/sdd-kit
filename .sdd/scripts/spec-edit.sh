@@ -18,6 +18,9 @@
 #       added where the format did not have one. A file already carrying that
 #       status is printed under UNCHANGED: and not rewritten — whoever put the
 #       marker there did it before this call.
+#       `ready` refuses a file whose `## Open Questions` still holds a line
+#       outside comments — a spec is not ready while it asks something —
+#       unless --accept-open says the human has read those lines and agreed.
 #   verdict-stale <Feature>
 #       Rewrite the one `> Verdict:` line of review.md to
 #       `stale — fixes applied <today>`. Nothing else in the file is touched.
@@ -106,10 +109,12 @@ fi
 
 # ── Arguments ─────────────────────────────────────────────────────
 ROOT_DIR="."
+ACCEPT_OPEN=0
 ARGS=()
 while (( $# > 0 )); do
   case "$1" in
     --root) ROOT_DIR="${2:-}"; shift ;;
+    --accept-open) ACCEPT_OPEN=1 ;;
     *) ARGS+=("$1") ;;
   esac
   shift
@@ -238,6 +243,21 @@ status)
     [[ -f "$path" ]] || die2 "no such file: $path"
     [[ -n "$(md_field_line "$path" status)" ]] || die2 "$path carries no status — a status is not added where the format has none. It is the \`status\` property of the frontmatter, or the \`> Status:\` line of a document written before them"
   done
+  # Ready is the verdict of a review, and a question still on the page is one
+  # the review did not settle. Said once for every such file, before anything
+  # is written.
+  if [[ "$WANT" == "ready" && $ACCEPT_OPEN -eq 0 ]]; then
+    open_files=""
+    for name in "$@"; do
+      path="$SPECS/$FOLDER/${name##*/}"
+      n_open="$(md_uncomment "$path" | awk '
+        /^## / { inside = ($0 ~ /^## Open Questions[[:space:]]*$/); next }
+        inside && /[^[:space:]]/ { n++ }
+        END { print n + 0 }')"
+      [[ "$n_open" == "0" ]] || open_files="${open_files:+$open_files, }$path ($n_open line(s))"
+    done
+    [[ -z "$open_files" ]] || die2 "## Open Questions is not empty in: $open_files — a file with a question still on it stays draft. Pass --accept-open only when the human has read those lines and agreed to ready them as they are"
+  fi
   # A file already at that status is left byte for byte as it is: the caller
   # asked for a state, and someone else reaching it first is the answer.
   : > "$TMP/updated"; : > "$TMP/unchanged"

@@ -28,6 +28,10 @@ TASK-001|open|backend|REQ-002|Cart table and entity|
 TASK-002|open|backend|REQ-002|Add and remove items|
 TASK-003|open|backend|REQ-003|Cart totals|
 
+UNCOVERED:
+
+UNDECLARED:
+
 STOP:
 
 ASK:
