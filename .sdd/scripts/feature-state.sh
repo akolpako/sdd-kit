@@ -85,9 +85,11 @@
 #   reviewed                all three `ready`, no task done
 #   in progress N/M         some tasks done
 #   implemented             every task done
-#   actualized              implemented, and the compilation holds an entry
-#                           this feature sourced or refined, none of them
-#                           `draft`
+#   actualized              implemented, and every requirement the feature
+#                           declares is in the compilation as its
+#                           Refines:/Supersedes: line says, no entry of it
+#                           `draft`. A promotion cut short stays at
+#                           `implemented`, with NEXT=/sdd-actualize
 # The stage is the furthest one whose signals all hold. Signals that disagree
 # leave the earlier stage standing, and the disagreement goes to ANOMALIES.
 # `, K blocked` is appended to the stage whenever K > 0.
@@ -411,6 +413,32 @@ collect() {
   [[ -n "$srcdrift" ]] && \
     anom "Compilation entries name the source '$srcdrift' while the folder is '$f' — the same feature under two spellings."
 
+  # Every requirement the feature declares, against what the compilation holds —
+  # the same reading `gate.sh actualize --verify` checks a promotion with. One
+  # entry on file is not a promoted feature: /sdd-actualize writes the entries
+  # one at a time, and a run cut off after the first left the rest behind.
+  UNPROMOTED=""
+  if [[ "$COMPILATION_STATE" == "present" && "$ST_REQ" == "present" ]]; then
+    local d_id d_rel d_target t_line own_ids=" "
+    for rec in ${COMP_RECS[@]+"${COMP_RECS[@]}"}; do own_ids="$own_ids${rec%%|*} "; done
+    while IFS='|' read -r d_id d_rel d_target; do
+      [[ -n "$d_id" ]] || continue
+      case "$d_rel" in
+        new) [[ "$own_ids" == *" $d_id "* ]] || UNPROMOTED="${UNPROMOTED:+$UNPROMOTED, }$d_id" ;;
+        refines)
+          [[ -n "$d_target" && "$own_ids" == *" $d_target "* ]] || UNPROMOTED="${UNPROMOTED:+$UNPROMOTED, }$d_id" ;;
+        supersedes)
+          t_line="$(md_req_lines "$COMPILATION_FILE" "$d_target" | head -n 1)"
+          if [[ "$own_ids" != *" $d_id "* || -z "$t_line" ]] \
+             || ! sed -n "${t_line}p" "$COMPILATION_FILE" | grep -q "superseded by $d_id"; then
+            UNPROMOTED="${UNPROMOTED:+$UNPROMOTED, }$d_id"
+          fi ;;
+      esac
+    done <<EOF
+$(md_req_relations "$dir/new-requirements.md")
+EOF
+  fi
+
   # ── The stage ───────────────────────────────────────────────────
   # Read top to bottom: the first branch whose signals hold wins, so a later
   # signal never carries the feature past a stage an earlier one contradicts.
@@ -428,7 +456,7 @@ collect() {
   elif [[ $T_DONE -lt $T_TOTAL ]]; then
     STAGE="in progress $T_DONE/$T_TOTAL"; STAGE_RANK=5; NEXT="/sdd-implement $f"
   else
-    if [[ "$COMPILATION_STATE" == "present" && $N_COMP_RECS -gt 0 && $C_DRAFT -eq 0 ]]; then
+    if [[ "$COMPILATION_STATE" == "present" && $N_COMP_RECS -gt 0 && $C_DRAFT -eq 0 && -z "$UNPROMOTED" ]]; then
       STAGE="actualized"; STAGE_RANK=7; NEXT=""
     else
       STAGE="implemented"; STAGE_RANK=6
@@ -449,6 +477,13 @@ collect() {
       [[ $C_DRAFT -gt 0 ]] && anom "The compilation still holds $C_DRAFT draft entry(ies) for a feature that is implemented — /sdd-actualize is what promotes them."
       [[ "$COMPILATION_STATE" == "present" && $N_COMP_RECS -eq 0 ]] && \
         anom "Every task is done and the compilation holds no entry sourced by this feature — nothing can take it past 'implemented'; /sdd-actualize is what writes them."
+      # Part of the feature is in the compilation and part is not: a promotion
+      # cut short. A re-run of /sdd-actualize finishes it, whatever the review
+      # says about the code.
+      if [[ $N_COMP_RECS -gt 0 && -n "$UNPROMOTED" ]]; then
+        anom "The compilation holds part of this feature and not $UNPROMOTED — a promotion cut short; /sdd-actualize $f finishes it."
+        NEXT="/sdd-actualize $f"
+      fi
     fi
   fi
   [[ $T_BLOCKED -gt 0 ]] && STAGE="$STAGE, $T_BLOCKED blocked"

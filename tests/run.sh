@@ -1734,6 +1734,15 @@ EOF
   prop_check relations "a refinement leaves its trace" "$ok" \
     "the entry reads: $line"
 
+  # One entry of three is a promotion cut short, not a promoted feature.
+  out="$(cd "$work" && "$state" Checkout)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^STAGE=implemented$' || ok=1
+  printf '%s\n' "$out" | grep -q '^NEXT=/sdd-actualize Checkout$' || ok=1
+  printf '%s\n' "$out" | grep -q 'not REQ-004, REQ-005 — a promotion cut short' || ok=1
+  prop_check relations "a promotion cut short is not actualized" "$ok" \
+    "$(printf '%s' "$out" | grep -E '^(STAGE|NEXT)=|cut short' | tr '\n' '~')"
+
   ( cd "$work" \
     && "$EDITOR_SH" compile-entry Checkout REQ-004 final "Account checkout. An order needs an account." \
     && "$EDITOR_SH" compile-entry Checkout REQ-001 superseded-by:REQ-004 \
