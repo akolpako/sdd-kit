@@ -1956,6 +1956,43 @@ check_raw() {
   prop_check raw "a written description is kept" "$ok" "exit $rc: $out"
 }
 
+# The tasks a review is told are unfinished by design: the unchecked ones only.
+# A task marked [x] that kept an old BLOCKED: reason has code behind it.
+check_blocked_set() {
+  local work="$TMP/blocked-set" out ok
+
+  printf 'blocked-set\n'
+  rm -rf "$work" && mkdir -p "$work/_docs/Cart" || exit 1
+  printf 'x\n' > "$work/_docs/code-style.md"
+  printf '# Architecture\n\nA monolith.\n' > "$work/_docs/architecture.md"
+  for f in new-requirements design; do
+    printf -- '---\nstatus: ready\n---\n\n# %s\n\nBody.\n' "$f" > "$work/_docs/Cart/$f.md"
+  done
+  cat > "$work/_docs/Cart/tasks.md" <<'EOF'
+---
+status: ready
+---
+
+# Tasks — Cart
+
+## Tasks
+
+- [x] **TASK-001** — Done after a retry — BLOCKED: old reason
+  - **Requires:** REQ-001
+  - **Type:** backend
+- [ ] **TASK-002** — Still blocked — BLOCKED: no schema
+  - **Requires:** REQ-001
+  - **Type:** backend
+EOF
+  ( cd "$work" && git init -q . && git add -A && git commit -qm base \
+    && git checkout -qb feature && printf 'class A {}\n' > A.java ) >/dev/null 2>&1
+
+  out="$(cd "$work" && "$GATE" code-review Cart --prompt-data 2>&1)"
+  out="$(printf '%s\n' "$out" | awk '/^[A-Z_]+:$/ { inside = ($0 == "BLOCKED:"); next } inside && NF')"
+  ok=0; [[ "$out" == "TASK-002|Still blocked|no schema" ]] || ok=1
+  prop_check blocked-set "only unchecked tasks are excused" "$ok" "BLOCKED: $(printf '%s' "$out" | tr '\n' '~')"
+}
+
 job_body() {
   local name="$1"; shift
   # Nothing a job runs has a question to ask: every case is scripted, and a
@@ -1997,6 +2034,7 @@ start_job taken            check_taken
 start_job relations        check_relations
 start_job text             check_text
 start_job raw              check_raw
+start_job blocked-set      check_blocked_set
 start_job jira-tokens      check_jira_tokens
 start_job lib-source       check_suite lib-source
 start_job confluence-fetch   check_suite confluence

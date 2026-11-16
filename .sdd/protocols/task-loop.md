@@ -11,7 +11,7 @@ For each task **of your type** that is not marked `[x]`, in list order:
 1. Implement it following the design spec.
 2. Write tests, per your stack's testing rules. Every condition of satisfaction of the requirements in the task's `Requires:` line is covered — **covered** meaning at least one test fails if that condition breaks, `Error:` and `Edge:` conditions included. A line percentage is not coverage.
 3. Run the verification; fix what fails, within the attempt limit.
-4. Green → mark the task `[x]`. A task whose build is not green is never marked `[x]`.
+4. Green → mark the task `[x]`, and drop the ` — BLOCKED: …` an earlier run left at the end of its line: a done task carries no reason it failed. A task whose build is not green is never marked `[x]`.
 5. Out of attempts and still red → stop working on it and block it: the task stays unchecked and gains the reason at the end of its line, in this exact format and no other:
 
    ```

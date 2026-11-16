@@ -946,8 +946,11 @@ check_code_review() {
     [[ -n "$draft" ]] && \
       warn "Not reviewed: $draft. The yardstick of this review is an unreviewed spec, and the report says so. /sdd-spec-review $FEATURE is what promotes a spec to ready."
 
+    # Only what is still unchecked: a task marked [x] that kept its old
+    # BLOCKED: reason has code behind it, and the anomaly says so — handing it
+    # to the reviewer as unfinished would excuse its missing parts.
     BLOCKED_RECS="$(printf '%s\n' "$TASK_RECS" | awk -F'|' '
-      $2 == "blocked" || $2 == "done+blocked" { printf "%s|%s|%s\n", $1, $5, $6 }
+      $2 == "blocked" { printf "%s|%s|%s\n", $1, $5, $6 }
     ')"
     [[ "$T_BLOCKED" != "0" ]] && \
       warn "$T_BLOCKED task(s) are blocked. Their code is reviewed like the rest of the set — the report names them as unfinished by design, never as work that went missing."
