@@ -84,7 +84,7 @@ other's files — one agent with two definitions, one command defined twice.
 | `spawn-prompt.sh` | Renders `.sdd/prompts/<command>-<scope>.md` into one assignment, taking values from `gate.sh --prompt-data` outside the orchestrator's context. Opens every prompt with the working directory — the root of every relative path in it. |
 | the protocol `.sdd/protocols/*.md` | The procedure the role performs. Reaches the role only inside the prompt; the only protocol a command names is `orchestration.md`. |
 | the agent `.sdd/agents/*.md` | Does the assignment and writes its files. Never reads a command file, never learns the flow. |
-| `spec-edit.sh` | Writes whose format, place and date are fixed. The command supplies only the words. |
+| `spec-edit.sh` | Writes whose format, place and date are fixed. The command supplies only the words — on stdin, through a quoted here-document, never inside double quotes on a command line. Also the build answers into `.sdd/sdd.conf` (`conf-set`), a file the orchestrator never opens: it may hold a token. |
 | `jira-import.sh` | The Jira issue as `raw.md`: runs the `jira` skill's fetch script, which owns everything about Jira (config keys, REST call, wiki-markup → Markdown, attachments), then appends the two sections the flow reads by name. The only script that touches the network or needs `curl`/`jq`. |
 
 **A command does five things and nothing else:** run `gate.sh` (a `stop` or `ask` ends the run
@@ -99,13 +99,13 @@ is `orchestration.md`.
 
 | Command | Role · scope | Protocols | Orchestrator writes (via `spec-edit.sh` unless noted) |
 |---|---|---|---|
-| `/sdd-init` | architect · baseline-from-codebase — brownfield only | project-baseline, docs-format | `scaffold init` (both branches, before spawn); `arch-index` after; `.sdd/sdd.conf` — its only write outside `_docs/` |
+| `/sdd-init` | architect · baseline-from-codebase — brownfield only | project-baseline, docs-format | `scaffold init` (both branches, before spawn); `arch-index` after; `.sdd/sdd.conf` via `conf-set` — its only write outside `_docs/` |
 | `/sdd-next-story` | — | — | `scaffold feature`, then `section` or `jira-import.sh --out` (rewrites `raw.md` whole) |
 | `/sdd-specify` | requirements-engineer · requirements<br>architect · design+tasks | spec-modes, requirements-writing, docs-format<br>spec-modes, architecture-design, task-breakdown, docs-format | `backup`, then `scaffold spec` over the files this run writes |
 | `/sdd-spec-review` | same two roles and scopes | as for specify, plus spec-checklist, interview | `status` markers; answers into `## Open Questions` via `section` |
 | `/sdd-implement` | backend-developer · backend<br>frontend-developer · frontend | developer, task-loop | nothing |
 | `/sdd-code-review` | code-reviewer · review-set | code-review, docs-format | `backup`, `scaffold review` with the header (before spawn); the markers `section` after. The findings, coverage and verdict are the role's |
-| `/sdd-code-fix` | backend/frontend-developer · findings-backend/-frontend | developer | `marker` (`TODO Code Review:`), `verdict-stale` |
+| `/sdd-code-fix` | backend/frontend-developer · findings-backend/-frontend | developer | `marker` (`TODO Code Review:`) before the spawn, bottom-up; `verdict-stale` |
 | `/sdd-actualize` | architect · baseline-from-feature | project-baseline, docs-format | `backup`; after the spawn `arch-index`, then `compile-entry` into `requirements.md` per `DECLARED:` record — the last write |
 | `/sdd-status` | — | — | nothing — the report goes to chat |
 
@@ -238,7 +238,8 @@ flowchart LR
 - **Output**: `KEY=value` lines, then `SECTION:` blocks, one record per line; print what was read
   next to what was resolved.
 - **The orchestrator does not read what it does not decide from.** A spawn passes spec file
-  *paths*, not contents. `TASKS:` is the exception — the coverage matrix is the orchestrator's.
+  *paths*, not contents. `TASKS:` is the exception — the coverage matrix is the orchestrator's;
+  its stops come computed as `UNCOVERED:` and `UNDECLARED:`.
 - **A format is read in one place** — `lib/format.sh`, sourced by readers and writers.
 - **Nothing tool-specific**: both hosts run the same scripts. `review-set.sh` excludes `_docs/`,
   `.sdd/`, `.claude/` but not `.github/` — the `.gitignore` block already hides the engine there,
