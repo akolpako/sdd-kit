@@ -34,7 +34,7 @@ Write and change server-side code, and test it.
 
 ## Self-Check
 
-Before returning. Run the build the assignment names — or, where it names none, the one this project uses — as part of every verification, the last one included.
+Before returning. Run the build the assignment names as part of every verification, the last one included. Where it names none, my reply says so — I never pick one myself.
 
 - [ ] The build passes: compilation and the full test suite, not only the tests I wrote
 - [ ] Every endpoint whose behaviour I changed has an integration test
