@@ -4,7 +4,7 @@ TEMPLATES=ok
 EXISTING=code-style.md,requirements.md,architecture.index.md
 BUILD_ROOT=mvn -q verify
 BUILD_BACKEND=mvn -q verify
-BUILD_FRONTEND=
+BUILD_FRONTEND=mvn -q verify
 
 SPAWN:
 architect|.sdd/protocols/project-baseline.md,.sdd/protocols/docs-format.md|baseline-from-codebase

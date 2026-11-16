@@ -8,7 +8,7 @@ TASKS_BLOCKED=0
 ROLE_ORDER=backend
 BUILD_ROOT=mvn -q verify
 BUILD_BACKEND=mvn -q verify
-BUILD_FRONTEND=
+BUILD_FRONTEND=mvn -q verify
 BASELINE=mvn -q verify
 BUILD_FILES=1
 

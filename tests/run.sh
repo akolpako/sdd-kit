@@ -810,18 +810,18 @@ check_build() {
   # <name>|<build files, space separated>|<sdd.conf lines, ; separated>|
   # <expected ROOT>|<expected BACKEND>|<expected FRONTEND>|<expected SOURCE>|
   # <the SDD_BUILD_* keys the gate has to ask for, space separated>
-  local cases='backend-answered|pom.xml|SDD_BUILD_ROOT=mvn -q verify|mvn -q verify|mvn -q verify||config|
+  local cases='backend-answered|pom.xml|SDD_BUILD_ROOT=mvn -q verify|mvn -q verify|mvn -q verify|mvn -q verify|config|
 backend-stack-key|pom.xml|SDD_BUILD_BACKEND=mvn -q verify|mvn -q verify|mvn -q verify||config|
 backend-missing|pom.xml|||||detected|SDD_BUILD_BACKEND
-frontend-answered|package.json|SDD_BUILD_ROOT=npm test|npm test||npm test|config|
+frontend-answered|package.json|SDD_BUILD_ROOT=npm test|npm test|npm test|npm test|config|
 frontend-missing|package.json|||||detected|SDD_BUILD_FRONTEND
 two-answered|backend/pom.xml frontend/package.json|SDD_BUILD_BACKEND=cd backend && mvn verify;SDD_BUILD_FRONTEND=cd frontend && npm test||cd backend && mvn verify|cd frontend && npm test|config|
 two-root-only|backend/pom.xml frontend/package.json|SDD_BUILD_ROOT=make all|make all|||config|SDD_BUILD_BACKEND SDD_BUILD_FRONTEND
 two-half|backend/pom.xml frontend/package.json|SDD_BUILD_BACKEND=cd backend && mvn verify||cd backend && mvn verify||config|SDD_BUILD_FRONTEND
 no-stack-answered|Makefile|SDD_BUILD_ROOT=make verify|make verify|make verify|make verify|config|
 no-stack-missing|Makefile|||||none|SDD_BUILD_ROOT
-quote-inside|pom.xml|SDD_BUILD_ROOT=mvn verify -Dgroups="fast"|mvn verify -Dgroups="fast"|mvn verify -Dgroups="fast"||config|
-quote-around|pom.xml|SDD_BUILD_ROOT="mvn -q verify"|mvn -q verify|mvn -q verify||config|'
+quote-inside|pom.xml|SDD_BUILD_ROOT=mvn verify -Dgroups="fast"|mvn verify -Dgroups="fast"|mvn verify -Dgroups="fast"|mvn verify -Dgroups="fast"|config|
+quote-around|pom.xml|SDD_BUILD_ROOT="mvn -q verify"|mvn -q verify|mvn -q verify|mvn -q verify|config|'
 
   local name files lines want_root want_be want_fe want_source want_ask
   local dir f line key old_ifs
@@ -2164,6 +2164,44 @@ check_stacks() {
   printf '%s\n' "$out" | grep -q '^GATE=ask$' || ok=1
   printf '%s\n' "$out" | grep -q 'holds no SDD_BUILD_FRONTEND' || ok=1
   prop_check stacks "a frontend task asks for the frontend build" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  # The same backend-only feature under /sdd-code-fix: a finding is about this
+  # feature's code, so its stacks are the breakdown's.
+  ( cd "$work" && sed -i.bak '/TASK-002/,$d' _docs/Cart/tasks.md && rm -f _docs/Cart/tasks.md.bak \
+      && printf -- '---\nverdict: BLOCKED\n---\n\n# Review\n' > _docs/Cart/review.md )
+  out="$(cd "$work" && "$GATE" code-fix Cart 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -q 'SDD_BUILD_FRONTEND' && ok=1
+  prop_check stacks "code-fix asks only for the stacks the feature has" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  # Backend done, frontend open: the backend role is not spawned, so its build
+  # is not asked for.
+  printf -- '- [ ] **TASK-002** — b\n  - **Requires:** REQ-001\n  - **Type:** frontend\n' >> "$work/_docs/Cart/tasks.md"
+  ( cd "$work" && sed -i.bak 's/- \[ \] \*\*TASK-001/- [x] **TASK-001/' _docs/Cart/tasks.md && rm -f _docs/Cart/tasks.md.bak \
+      && printf 'SDD_BUILD_FRONTEND=npm test\n' > .sdd/sdd.conf )
+  out="$(cd "$work" && "$GATE" implement Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^GATE=ok$' || ok=1
+  printf '%s\n' "$out" | grep -q '^ROLE_ORDER=frontend$' || ok=1
+  printf '%s\n' "$out" | grep -q '^backend-developer' && ok=1
+  prop_check stacks "a stack with every task done is not spawned" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  # One package.json and backend tasks: detection sees a frontend only. The root
+  # command stands in for the backend, and with none the backend is asked for.
+  rm -f "$work/pom.xml"; rm -rf "$work/web"; printf '{}\n' > "$work/package.json"
+  ( cd "$work" && sed -i.bak 's/- \[x\] \*\*TASK-001/- [ ] **TASK-001/; s/Type:\*\* frontend/Type:** backend/' _docs/Cart/tasks.md \
+      && rm -f _docs/Cart/tasks.md.bak && printf 'SDD_BUILD_ROOT=npm test\n' > .sdd/sdd.conf )
+  out="$(cd "$work" && "$GATE" implement Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^GATE=ok$' || ok=1
+  printf '%s\n' "$out" | grep -q '^BUILD_BACKEND=npm test$' || ok=1
+  prop_check stacks "the root command stands in for an undetected stack" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  printf 'SDD_BUILD_FRONTEND=npm test\n' > "$work/.sdd/sdd.conf"
+  out="$(cd "$work" && "$GATE" implement Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^GATE=ask$' || ok=1
+  printf '%s\n' "$out" | grep -q 'No build command for the backend stack: the tasks of this feature build it' || ok=1
+  prop_check stacks "an undetected stack with no answer is asked for" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
 
   ok=0
   for f in a.rs b.php c.kts d.swift; do

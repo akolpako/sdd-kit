@@ -10,7 +10,7 @@ REVIEW_VERDICT=absent
 ROOT=
 BUILD_ROOT=mvn -q verify
 BUILD_BACKEND=mvn -q verify
-BUILD_FRONTEND=
+BUILD_FRONTEND=mvn -q verify
 
 STOP:
 _docs/Wishlist/review.md is missing — there is no report to act on. /sdd-code-review Wishlist writes one.

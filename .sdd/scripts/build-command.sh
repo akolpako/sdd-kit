@@ -34,9 +34,10 @@
 # The file only; no environment variable stands in for it, or the same project
 # would verify differently from one shell to the next.
 #
-# `SDD_BUILD_ROOT` stands in for the stack of a project that has one stack, and
-# for a project whose build no detection knows — a Makefile, a script. It does
-# NOT stand in for a missing stack key when the project has two: a role working
+# `SDD_BUILD_ROOT` stands in for every unanswered stack of a project that has
+# at most one stack detected — the stack it has, and one detection does not
+# see: a Go or Python backend beside a package.json, a Makefile, a script. It
+# does NOT stand in for a missing stack key when the project has two: a role working
 # one stack is handed that stack's command, and there is no way to cut a root
 # command down to one of them.
 #
@@ -170,8 +171,11 @@ done < <(find "$ROOT_DIR" -mindepth 1 -maxdepth 1 -type d \
 ROOT_CMD="$CFG_ROOT"; BACKEND="$CFG_BACKEND"; FRONTEND="$CFG_FRONTEND"
 
 if [[ $HAS_BACKEND -eq 0 || $HAS_FRONTEND -eq 0 ]]; then
-  [[ -z "$BACKEND"  && $HAS_FRONTEND -eq 0 ]] && BACKEND="$CFG_ROOT"
-  [[ -z "$FRONTEND" && $HAS_BACKEND  -eq 0 ]] && FRONTEND="$CFG_ROOT"
+  # Both keys, not only the detected stack's: a lone package.json reads as a
+  # frontend, and a feature whose tasks build a backend beside it is handed the
+  # root command rather than none.
+  [[ -z "$BACKEND"  ]] && BACKEND="$CFG_ROOT"
+  [[ -z "$FRONTEND" ]] && FRONTEND="$CFG_ROOT"
   # The other way round too: a one-stack project whose only answer is that
   # stack's key has that command as its whole-project verification.
   if [[ -z "$ROOT_CMD" ]]; then

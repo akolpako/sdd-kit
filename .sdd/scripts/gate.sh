@@ -672,23 +672,42 @@ ask_build() {
   fi
 }
 
-# BUILD_STACKS, when set, narrows a two-stack project to the stacks a run
-# builds — `backend`, `frontend` or both, comma-separated.
+# BUILD_STACKS, when set, narrows the check to the stacks a run builds —
+# `backend`, `frontend` or both, comma-separated. Empty is every stack the
+# project has.
 BUILD_STACKS=""
 needs_stack() { [[ -z "$BUILD_STACKS" || ",$BUILD_STACKS," == *",$1,"* ]]; }
 
+# A stack the run builds and detection did not see — backend tasks beside a
+# lone package.json. No build file proposes a command for it, and the key that
+# answers it is that stack's own or the root one, which stands in here.
+ask_undetected() {
+  local stack="$1" key="$2"
+  ask "No build command for the $stack stack: the tasks of this feature build it, .sdd/sdd.conf holds neither $key nor SDD_BUILD_ROOT, and no build file of that stack was found to propose one from. Name the command that verifies it — one line, run from the project root; the answer is written with \`spec-edit.sh conf-set $key\`. Nothing is built until it is there."
+}
+
+# Every developer the run spawns is handed a command: the check is per stack the
+# run builds, never only per stack detection found.
 check_build_config() {
+  local asked=""
   if [[ $HAS_BACKEND -eq 1 && $HAS_FRONTEND -eq 1 ]]; then
     needs_stack backend && [[ -z "$BUILD_BACKEND" ]] && ask_build SDD_BUILD_BACKEND  "the backend stack"  "$PROPOSE_BACKEND"  "$PROPOSE_BACKEND_FILE"
     needs_stack frontend && [[ -z "$BUILD_FRONTEND" ]] && ask_build SDD_BUILD_FRONTEND "the frontend stack" "$PROPOSE_FRONTEND" "$PROPOSE_FRONTEND_FILE"
     return 0
   elif [[ $HAS_BACKEND -eq 1 ]]; then
-    [[ -n "$BUILD_BACKEND"  ]] || ask_build SDD_BUILD_BACKEND  "the backend stack"  "$PROPOSE_BACKEND"  "$PROPOSE_BACKEND_FILE"
+    [[ -n "$BUILD_BACKEND"  ]] || { ask_build SDD_BUILD_BACKEND  "the backend stack"  "$PROPOSE_BACKEND"  "$PROPOSE_BACKEND_FILE"; asked="backend"; }
   elif [[ $HAS_FRONTEND -eq 1 ]]; then
-    [[ -n "$BUILD_FRONTEND" ]] || ask_build SDD_BUILD_FRONTEND "the frontend stack" "$PROPOSE_FRONTEND" "$PROPOSE_FRONTEND_FILE"
+    [[ -n "$BUILD_FRONTEND" ]] || { ask_build SDD_BUILD_FRONTEND "the frontend stack" "$PROPOSE_FRONTEND" "$PROPOSE_FRONTEND_FILE"; asked="frontend"; }
   else
+    # One answer covers every stack here: build-command.sh hands the root
+    # command to each of them.
     [[ -n "$BUILD_ROOT" ]] || ask_build SDD_BUILD_ROOT "this project" "" ""
+    return 0
   fi
+  [[ -n "$BUILD_STACKS" ]] || return 0
+  needs_stack backend  && [[ "$asked" != "backend"  && -z "$BUILD_BACKEND"  ]] && ask_undetected backend  SDD_BUILD_BACKEND
+  needs_stack frontend && [[ "$asked" != "frontend" && -z "$BUILD_FRONTEND" ]] && ask_undetected frontend SDD_BUILD_FRONTEND
+  return 0
 }
 
 # ── The review set ────────────────────────────────────────────────
@@ -924,16 +943,23 @@ check_implement() {
     fi
   fi
 
-  # The stacks the breakdown carries. A project with both stacks needs the
-  # answer only for the ones this feature builds: asking for the frontend
-  # command of a backend-only feature holds the run on a question nothing in it
-  # would ever run. A feature with no parsable task asks as before.
-  ROLE_ORDER=""
-  case "$(kv "$FS_OUT" TASK_TYPES)" in *backend*) ROLE_ORDER="backend" ;; esac
-  case "$(kv "$FS_OUT" TASK_TYPES)" in *frontend*) ROLE_ORDER="${ROLE_ORDER:+$ROLE_ORDER,}frontend" ;; esac
-  BUILD_STACKS="$ROLE_ORDER"
-  check_build_config
-  BUILD_STACKS=""
+  # The stacks this run still has work in — open or blocked tasks, never done
+  # ones: a role whose tasks are all [x] is not spawned, and its build is not
+  # asked for. A project with both stacks needs the answer only for those:
+  # asking for the frontend command of a backend-only feature holds the run on
+  # a question nothing in it would ever run. A feature with no parsable task
+  # asks as before; one with every task done asks nothing — the verdict is done.
+  ROLE_ORDER="$(printf '%s\n' "$TASK_RECS" | awk -F'|' '
+    $2 == "open" || $2 == "blocked" { want[$3] = 1 }
+    END {
+      if ("backend" in want) { printf "backend"; sep = "," }
+      if ("frontend" in want) printf "%sfrontend", sep
+    }')"
+  if [[ "$T_TOTAL" == "0" || "$T_DONE" != "$T_TOTAL" ]]; then
+    BUILD_STACKS="$ROLE_ORDER"
+    check_build_config
+    BUILD_STACKS=""
+  fi
 
   # `[x]` is the only mark that takes a task out: a blocked one is unchecked,
   # and a re-run retries it with fresh attempts.
@@ -1016,7 +1042,11 @@ check_code_fix() {
     warn "The report was taken against $R_ROOT and the code now sits on $RS_ROOT — it describes a different commit range. A fix applied to a moved line is never reported as a finding closed."
   fi
 
+  # A finding is about this feature's code, so the stacks it can need a build
+  # for are the ones its breakdown carries — done tasks included.
+  BUILD_STACKS="$(kv "$FS_OUT" TASK_TYPES | tr ',' '\n' | grep -xE 'backend|frontend' | paste -sd, -)"
   check_build_config
+  BUILD_STACKS=""
 }
 
 check_actualize() {

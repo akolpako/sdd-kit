@@ -12,7 +12,7 @@ FEATURE=Cart
 
 Build command — the verification of this run, resolved already:
 
-(none)
+mvn -q verify
 
 Files of this run:
 
