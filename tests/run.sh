@@ -1993,6 +1993,17 @@ EOF
   out="$(printf '%s\n' "$out" | awk '/^[A-Z_]+:$/ { inside = ($0 == "BLOCKED:"); next } inside && NF')"
   ok=0; [[ "$out" == "TASK-002|Still blocked|no schema" ]] || ok=1
   prop_check blocked-set "only unchecked tasks are excused" "$ok" "BLOCKED: $(printf '%s' "$out" | tr '\n' '~')"
+
+  # A fix run marks the report stale whatever it said, BLOCKED included, so a
+  # stale report holds promotion back the way a blocked one does.
+  local proj="$TMP/stale-actualize"
+  rm -rf "$proj" && mkdir -p "$proj" && cp -R "$FIXTURES/actualized/tree/." "$proj/" || exit 1
+  ( cd "$proj" && "$EDITOR_SH" verdict-stale Cart ) >/dev/null 2>&1
+  out="$(cd "$proj" && "$GATE" actualize Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^GATE=ask$' || ok=1
+  printf '%s\n' "$out" | awk '/^[A-Z_]+:$/ { inside = ($0 == "ASK:"); next } inside' | grep -q "says 'stale" || ok=1
+  prop_check blocked-set "a stale report is asked about before promotion" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
 }
 
 # The two stops of /sdd-spec-review that used to be judged by eye: the coverage

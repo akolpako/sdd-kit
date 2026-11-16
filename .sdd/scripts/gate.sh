@@ -1084,8 +1084,11 @@ EOF
       ask "The code review of $R_DATE says '$R_VERDICT' — the code was judged not mergeable as it stands. /sdd-code-fix $FEATURE acts on that report. Promoting anyway needs the human to say so in as many words." ;;
     "approved with"*)
       warn "The code review of $R_DATE says '$R_VERDICT' — it lists Major findings, and /sdd-code-fix $FEATURE is what acts on them." ;;
+    # A fix run invalidates whatever verdict it acted on, BLOCKED included: what
+    # the code is now, no review has said. Promoting over that is the human's
+    # call, as it is over a BLOCKED one.
     stale*)
-      warn "The code review report says '$R_VERDICT' — fixes were applied after it, and no review has seen the code as it now stands." ;;
+      ask "The code review report says '$R_VERDICT' — fixes were applied after it, and no review has seen the code as it now stands. /sdd-code-review $FEATURE reaches a verdict on it. Promoting anyway needs the human to say so in as many words." ;;
   esac
 }
 
