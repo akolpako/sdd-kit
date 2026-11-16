@@ -2057,6 +2057,43 @@ EOF
   [[ $rc -eq 0 ]] || ok=1
   grep -q '^status: ready$' "$work/_docs/Cart/new-requirements.md" || ok=1
   prop_check spec-review "--accept-open readies it as it stands" "$ok" "exit $rc: $out"
+
+  # ── The human's answers ─────────────────────────────────────────
+  # Line 18 is the question, 17 the hint comment, 10 a requirement.
+  local f="$work/_docs/Cart/new-requirements.md" n_before
+  n_before="$(grep -c '' "$f")"
+  out="$(cd "$work" && "$EDITOR_SH" answer _docs/Cart/new-requirements.md 18 - 2>&1 <<'SDD_TEXT'
+EUR and `USD`, $5 \d
+SDD_TEXT
+  )"; rc=$?
+  ok=0
+  [[ $rc -eq 0 ]] || ok=1
+  [[ "$(sed -n 18p "$f")" == '- Which currency? — recommended: EUR, A-01 **Answer:** EUR and `USD`, $5 \d' ]] || ok=1
+  [[ "$(grep -c '' "$f")" == "$n_before" ]] || ok=1
+  prop_check spec-review "an answer is appended to its line and moves none" "$ok" "exit $rc: $out — $(sed -n 18p "$f")"
+
+  ok=0
+  for at in 18 17 10 99 x; do
+    out="$(cd "$work" && "$EDITOR_SH" answer _docs/Cart/new-requirements.md "$at" "no" 2>&1)"; rc=$?
+    [[ $rc -eq 2 ]] || ok=1
+  done
+  [[ "$(grep -c 'Answer:' "$f")" == "1" ]] || ok=1
+  prop_check spec-review "an answer lands on an open question or nowhere" "$ok" "last: exit $rc: $out"
+
+  out="$(cd "$work" && "$EDITOR_SH" answer _docs/Cart/new-requirements.md new "REQ-002 has no task" 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 2 && "$out" == *"carries it"* ]] || ok=1
+  out="$(cd "$work" && "$EDITOR_SH" answer _docs/Cart/new-requirements.md new "REQ-002 has no task — **Answer:** not in this feature" 2>&1)"; rc=$?
+  [[ $rc -eq 0 && "$out" == *":19"* ]] || ok=1
+  [[ "$(sed -n 19p "$f")" == '- REQ-002 has no task — **Answer:** not in this feature' ]] || ok=1
+  [[ "$(sed -n 20p "$f")" == '' && "$(sed -n 21p "$f")" == '## Out of Scope' ]] || ok=1
+  prop_check spec-review "a decision nobody asked about is a line of its own" "$ok" "exit $rc: $out — $(sed -n 17,21p "$f" | tr '\n' '~')"
+
+  printf -- '---\nstatus: draft\n---\n\n## Open Questions\n' > "$work/_docs/Cart/design.md"
+  out="$(cd "$work" && "$EDITOR_SH" answer _docs/Cart/design.md new "Add a task? **Answer:** yes" 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 0 ]] || ok=1
+  [[ "$(sed -n '5,7p' "$work/_docs/Cart/design.md" | tr '\n' '~')" == '## Open Questions~~- Add a task? **Answer:** yes~' ]] || ok=1
+  prop_check spec-review "a new line goes into an empty section" "$ok" "exit $rc: $out — $(tr '\n' '~' < "$work/_docs/Cart/design.md")"
 }
 
 # The build answer goes into .sdd/sdd.conf through a script, so that whoever

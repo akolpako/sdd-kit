@@ -102,7 +102,7 @@ is `orchestration.md`.
 | `/sdd-init` | architect · baseline-from-codebase — brownfield only | project-baseline, docs-format | `scaffold init` (both branches, before spawn); `arch-index` after; `.sdd/sdd.conf` via `conf-set` — its only write outside `_docs/` |
 | `/sdd-next-story` | — | — | `scaffold feature`, then `section` or `jira-import.sh --out` (rewrites `raw.md` whole) |
 | `/sdd-specify` | requirements-engineer · requirements<br>architect · design+tasks | spec-modes, requirements-writing, docs-format<br>spec-modes, architecture-design, task-breakdown, docs-format | `backup`, then `scaffold spec` over the files this run writes |
-| `/sdd-spec-review` | same two roles and scopes | as for specify, plus spec-checklist, interview | `backup`, then `status … draft` on every `ready` file (before spawn); `status` markers after the verdict; answers into `## Open Questions` via `section` |
+| `/sdd-spec-review` | same two roles and scopes | as for specify, plus spec-checklist, interview | `backup`, then `status … draft` on every `ready` file (before spawn); `status` markers after the verdict; answers onto their lines of `## Open Questions` via `answer` |
 | `/sdd-implement` | backend-developer · backend<br>frontend-developer · frontend | developer, task-loop | nothing |
 | `/sdd-code-review` | code-reviewer · review-set | code-review, docs-format | `backup`, `scaffold review` with the header (before spawn); the markers `section` after. The findings, coverage and verdict are the role's |
 | `/sdd-code-fix` | backend/frontend-developer · findings-backend/-frontend | developer | `marker` (`TODO Code Review:`) before the spawn, bottom-up; `verdict-stale` |
@@ -133,7 +133,7 @@ is `orchestration.md`.
 flowchart LR
     s["spawn the scope"] --> q["role writes<br>## Open Questions"]
     q --> a["orchestrator asks,<br>one question per message"]
-    a --> w["answer written back<br>spec-edit.sh section"]
+    a --> w["answer appended to its line<br>spec-edit.sh answer"]
     w --> s
     q -->|"section empty"| d["file done"]
 ```

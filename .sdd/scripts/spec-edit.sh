@@ -83,6 +83,18 @@
 #   section <file> <heading> [<text>]
 #       Replace the body of `## <heading>` with the text as given. No text
 #       leaves the section as it is — the template's hint stays in place.
+#   answer <file> <line> <text>
+#       Append ` **Answer:** <text>` to that line of `## Open Questions` — the
+#       human's answer to the question a role wrote there. Nothing else in the
+#       file moves: no line is added, so the line numbers of the other
+#       questions stay what they were when the section was read. A line outside
+#       the section, inside a comment, not a `- ` list line, or already carrying
+#       an answer is a stop.
+#   answer <file> new <text>
+#       Add `- <text>` as the last line of `## Open Questions`: a decision the
+#       human took that no role asked about — a requirement no task covers.
+#       The text carries `**Answer:**`, or the role would read it as a question
+#       still open.
 #
 # Every <text> above may be `-`: the text is then read from stdin. That is how
 # words a human or a role wrote are passed — through a quoted here-document,
@@ -90,8 +102,8 @@
 #   …
 #   SDD_TEXT
 # where nothing in them is shell syntax. Inside double quotes on a command
-# line a backtick runs a command and a `$` expands. The text of `marker` and of
-# `compile-entry` is one line: a newline in it is a stop.
+# line a backtick runs a command and a `$` expands. The text of `marker`, of
+# `compile-entry` and of `answer` is one line: a newline in it is a stop.
 #
 # Prints KEY=value lines, then SECTION: blocks. Exit codes: 0 — the edit was
 # made (or there was nothing to do and that is said); 1 — the environment is
@@ -130,8 +142,8 @@ set -- ${ARGS[@]+"${ARGS[@]}"}
 
 OP="${1:-}"
 case "$OP" in
-  backup|status|verdict-stale|scaffold|arch-index|marker|compile-entry|conf-set|section) shift ;;
-  "") printf 'ERROR=no operation: spec-edit.sh <op> — backup, status, verdict-stale, scaffold, arch-index, marker, compile-entry, conf-set, section\n' >&2; exit 1 ;;
+  backup|status|verdict-stale|scaffold|arch-index|marker|compile-entry|conf-set|section|answer) shift ;;
+  "") printf 'ERROR=no operation: spec-edit.sh <op> — backup, status, verdict-stale, scaffold, arch-index, marker, compile-entry, conf-set, section, answer\n' >&2; exit 1 ;;
   *)  printf 'ERROR=unknown operation: %s\n' "$OP" >&2; exit 1 ;;
 esac
 
@@ -690,6 +702,57 @@ section)
   ' "$FILE" > "$TMP/f" || exit 1
   replace_file "$FILE" "$TMP/f"
   printf 'SECTION=%s\nCHANGED=yes\nFILE=%s\n' "$HEADING" "$FILE"
+  ;;
+
+# ── answer ────────────────────────────────────────────────────────
+answer)
+  FILE="${1:-}"; AT="${2:-}"; TEXT="$(text_arg "${3:-}")"
+  [[ -n "$FILE" && -n "$AT" && -n "$TEXT" ]] || die2 "answer <file> <line>|new <text>"
+  one_line "$TEXT" answer
+  [[ -f "$FILE" ]] || die2 "no such file: $FILE"
+  # The section as a reader sees it: a heading inside a comment is the template
+  # showing a format. md_uncomment keeps one line per line, so its numbers are
+  # the file's.
+  md_uncomment "$FILE" > "$TMP/u"
+  START="$(awk '/^## Open Questions[[:space:]]*$/ { print NR; exit }' "$TMP/u")"
+  [[ -n "$START" ]] || die2 "$FILE has no section \`## Open Questions\`"
+  END_LINE="$(awk -v s="$START" '
+    NR > s && /^## / { print NR; found = 1; exit }
+    END { if (!found) print NR + 1 }
+  ' "$TMP/u")"
+
+  if [[ "$AT" == "new" ]]; then
+    [[ "$TEXT" == *'**Answer:**'* ]] || die2 "a new line is a decision the human took, and carries it: <question> **Answer:** <answer> — without it the line reads as a question still open"
+    # Below everything already in the section, the hint comment included.
+    last="$(awk -v s="$START" -v e="$END_LINE" '
+      NR > s && NR < e && /[^[:space:]]/ { l = NR }
+      END { print (l ? l : s) }
+    ' "$FILE")"
+    SDD_LINE="- $TEXT" awk -v n="$last" -v s="$START" '
+      { print }
+      NR == n { if (n == s) print ""; print ENVIRON["SDD_LINE"] }
+    ' "$FILE" > "$TMP/f" || exit 1
+    replace_file "$FILE" "$TMP/f"
+    printf 'ANSWER=%s:%s\nACTION=added\n' "$FILE" "$(( last == START ? last + 2 : last + 1 ))"
+    exit 0
+  fi
+
+  case "$AT" in *[!0-9]*) die2 "not a line number: $AT — a line of ## Open Questions, or \`new\`" ;; esac
+  AT=$(( 10#$AT ))
+  (( AT > START && AT < END_LINE )) || die2 "line $AT of $FILE is not in its \`## Open Questions\` (lines $(( START + 1 ))–$(( END_LINE - 1 )))"
+  seen="$(sed -n "${AT}p" "$TMP/u")"
+  raw="$(sed -n "${AT}p" "$FILE")"
+  # The question as the role wrote it, whole: a list line, and none of it
+  # inside a comment.
+  [[ "$seen" == "$raw" && "${raw#"${raw%%[![:space:]]*}"}" == "- "* ]] || \
+    die2 "line $AT of $FILE is not a question — a question is a \`- \` line outside comments: $raw"
+  [[ "$raw" != *'**Answer:**'* ]] || die2 "line $AT of $FILE is answered already — the role folds it in on its next pass: $raw"
+  raw="${raw%"${raw##*[![:space:]]}"}"
+  SDD_LINE="$raw **Answer:** $TEXT" awk -v n="$AT" '
+    NR == n { print ENVIRON["SDD_LINE"]; next } { print }
+  ' "$FILE" > "$TMP/f" || exit 1
+  replace_file "$FILE" "$TMP/f"
+  printf 'ANSWER=%s:%s\nACTION=appended\n' "$FILE" "$AT"
   ;;
 
 esac

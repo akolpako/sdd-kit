@@ -34,9 +34,9 @@ Turns a `draft` spec into a `ready` one through the checklist and an interview. 
 2. **Spawn** both `SPAWN:` records: per record, run `.sdd/scripts/spawn-prompt.sh review <FeatureName> <scope>`. A role returns its `FAIL` list and what it left on the page. **The questions are read from `## Open Questions` of its file, never out of its report.**
 
 3. **Interview and re-spawn,** requirements first, then design. One round over one file:
-   - **Read `## Open Questions`** out of that file. Nothing there, and nothing raised by the round before it, means the file is done — go on to step 4.
+   - **Read `## Open Questions`** out of that file, with its line numbers. Nothing there, and nothing raised by the round before it, means the file is done — go on to step 4.
    - **Ask the human** one line of that section at a time, the role's own recommendation first among the options.
-   - **Write the answers back:** `.sdd/scripts/spec-edit.sh section <file> "Open Questions" -`, the text on stdin. The script replaces the section body whole, so the text carries **every** line of the section, in its own order — a line left out of the call is deleted. Append `**Answer:**` and nothing else; the wording of the question is the role's (`.sdd/protocols/spec-modes.md`).
+   - **Write each answer back** as it arrives: `.sdd/scripts/spec-edit.sh answer <file> <line> -`, the answer on stdin. The script appends `**Answer:**` and the text to that line and to nothing else — the wording of the question is the role's — and adds no line, so the numbers read above hold for every answer of the round.
    - **Spawn the same scope again** — the same `SPAWN:` record, the same `spawn-prompt.sh` call, the same prompt. Nothing here tells the role which round it is on: what it does with an answered line is its own protocol's.
    - Then round two, from the top.
    - **The design follows the requirements.** Once a round changed `new-requirements.md`, the design scope is spawned at least once more after the requirements file is done, even when its own `## Open Questions` is empty: the design and the breakdown were written against the text that changed.
@@ -44,7 +44,7 @@ Turns a `draft` spec into a `ready` one through the checklist and an interview. 
    At most three rounds per file per session, per `.sdd/protocols/interview.md`. What is still open at that ceiling stays on the page, and the verdict of step 7 accounts for it.
 
 4. **Conflicts are settled inside the loop of step 3, not after it.** Finding them is the roles': a new requirement that overlaps or contradicts an entry of `_docs/requirements.md`, and a design decision that contradicts the architecture baseline, each arrive as a line of `## Open Questions` like any other question.
-   - For a requirement the question is always the same one — is it a **refinement** of the existing entry or its **replacement** — and the answer is written back onto its line by the same `spec-edit.sh section` call. The role then records it as the `Refines:` / `Supersedes:` line under the requirement's heading; that line is what `/sdd-actualize` applies to the compilation. Nothing is written into `new-requirements.md` by hand here.
+   - For a requirement the question is always the same one — is it a **refinement** of the existing entry or its **replacement** — and the answer is written back onto its line by the same `spec-edit.sh answer` call. The role then records it as the `Refines:` / `Supersedes:` line under the requirement's heading; that line is what `/sdd-actualize` applies to the compilation. Nothing is written into `new-requirements.md` by hand here.
    - No conflict is left unresolved: a conflict line still unanswered when the rounds are spent is a critical gap, and the verdict of step 7 is `NOT READY`.
 
 5. **Re-run the gate:** the roles have been rewriting `tasks.md` since step 1, so the `TASKS:` records the matrix of step 6 reads come from this run, never from the first one.
@@ -58,7 +58,7 @@ Turns a `draft` spec into a `ready` one through the checklist and an interview. 
 
    **A requirement with no task is a stop.** The gate of step 5 lists them under `UNCOVERED:` — that list, not a count made off the table, is what is asked about: every one of them, and the human says which it is. A `requires` entry naming a `REQ-###` that `new-requirements.md` does not declare is under `UNDECLARED:`, with the task that names it, and is reported the same way.
 
-   Both replies are answers like any other: each is written into the `## Open Questions` of the file whose role applies it, by the same `spec-edit.sh section` call as step 3, and the round that follows applies it.
+   Both replies are answers like any other, except that no role asked them: each becomes a line of its own in the `## Open Questions` of the file whose role applies it — `.sdd/scripts/spec-edit.sh answer <file> new -`, with `<the requirement or task> — <what is wrong> **Answer:** <the human's words>` on stdin — and the round that follows applies it.
    - **Missing task** — into `design.md`, where the next round adds the task.
    - **Not in this feature after all** — into `new-requirements.md`, where the next round moves the requirement to `## Out of Scope`. Its number goes with it and is not reused.
 

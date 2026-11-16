@@ -43,8 +43,8 @@ A step's result is read the same way — `.sdd/scripts/gate.sh <command> <Featur
 **Words go to a script on stdin, never on its command line.** Whatever a human or a role wrote — an answer, a finding, the wording of an entry, the sweep of markers — is passed as `-` with a quoted here-document, whose closing word appears nowhere in the text:
 
 ```
-.sdd/scripts/spec-edit.sh section <file> "Open Questions" - <<'SDD_TEXT'
-- Which currencies? — recommended: EUR only, A-03 **Answer:** EUR and `USD`
+.sdd/scripts/spec-edit.sh answer <file> <line> - <<'SDD_TEXT'
+EUR and `USD`
 SDD_TEXT
 ```
 
