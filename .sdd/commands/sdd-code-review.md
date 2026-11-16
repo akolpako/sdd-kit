@@ -36,7 +36,7 @@ Safe to re-run: the report is a snapshot of the working tree, overwritten whole 
 
 3. **Spawn** the `SPAWN:` record, once: run `.sdd/scripts/spawn-prompt.sh code-review <FeatureName> review-set`, adding `BASE=<base-ref>` when the human passed one. **The role writes its report into `REVIEW_PATH` itself** — the review set, the findings numbered `F-01` upward, the coverage, the verdict. Nothing of it is retyped here: what the role returns is a summary, and the file is the report. The `F-##` numbers in it are what `/sdd-code-fix` triages by.
 
-   **The last section** is this run's own work: the `TODO Code Review:` markers standing in the working tree, each with its file, line and date. They are reported, never removed and never re-raised as new findings. Sweep as step 3a says, then write the result with `.sdd/scripts/spec-edit.sh section <REVIEW_PATH> "Older TODO Code Review markers" "<text>"`.
+   **The last section** is this run's own work: the `TODO Code Review:` markers standing in the working tree, each with its file, line and date. They are reported, never removed and never re-raised as new findings. Sweep as step 3a says, then write the result with `.sdd/scripts/spec-edit.sh section <REVIEW_PATH> "Older TODO Code Review markers" -`, the text on stdin.
 
    **3a. The sweep.** In a git repository: `git grep -n --untracked "TODO Code Review:" -- . ':(exclude)_docs/'`. Where there is no repository: `grep -rn --exclude-dir={.git,node_modules,dist,build,target,_docs} "TODO Code Review:" .`
 

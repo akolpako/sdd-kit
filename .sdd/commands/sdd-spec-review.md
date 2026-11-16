@@ -31,7 +31,7 @@ Turns a `draft` spec into a `ready` one through the checklist and an interview. 
 3. **Interview and re-spawn,** requirements first, then design. One round over one file:
    - **Read `## Open Questions`** out of that file. Nothing there, and nothing raised by the round before it, means the file is done — go on to step 4.
    - **Ask the human** one line of that section at a time, the role's own recommendation first among the options.
-   - **Write the answers back:** `.sdd/scripts/spec-edit.sh section <file> "Open Questions" "<text>"`. The script replaces the section body whole, so `<text>` carries **every** line of the section, in its own order — a line left out of the call is deleted. Append `**Answer:**` and nothing else; the wording of the question is the role's (`.sdd/protocols/spec-modes.md`).
+   - **Write the answers back:** `.sdd/scripts/spec-edit.sh section <file> "Open Questions" -`, the text on stdin. The script replaces the section body whole, so the text carries **every** line of the section, in its own order — a line left out of the call is deleted. Append `**Answer:**` and nothing else; the wording of the question is the role's (`.sdd/protocols/spec-modes.md`).
    - **Spawn the same scope again** — the same `SPAWN:` record, the same `spawn-prompt.sh` call, the same prompt. Nothing here tells the role which round it is on: what it does with an answered line is its own protocol's.
    - Then round two, from the top.
 

@@ -40,6 +40,16 @@ Every command but `/sdd-status` opens with `.sdd/scripts/gate.sh`. **Its output 
 
 A step's result is read the same way — `.sdd/scripts/gate.sh <command> <Feature> --verify`; `VERIFY=fail` relays every `FAIL:` line and stops. **Nothing is written by hand in place of what did not get written** — not a file, not a marker, not a task mark.
 
+**Words go to a script on stdin, never on its command line.** Whatever a human or a role wrote — an answer, a finding, the wording of an entry, the sweep of markers — is passed as `-` with a quoted here-document, whose closing word appears nowhere in the text:
+
+```
+.sdd/scripts/spec-edit.sh section <file> "Open Questions" - <<'SDD_TEXT'
+- Which currencies? — recommended: EUR only, A-03 **Answer:** EUR and `USD`
+SDD_TEXT
+```
+
+Inside double quotes on a command line a backtick runs a command and a `$` expands, so the file gets something nobody wrote. `spawn-prompt.sh` takes such values the same way, as `KEY:` blocks after a `-` (its header comment shows the shape).
+
 **Before any overwrite, `.sdd/scripts/spec-edit.sh backup`.** A non-zero exit is a stop: nothing is overwritten without its copy, and no role is spawned to write it.
 
 **The command file never reaches the role** — what the role needs is in the spawn prompt (`.sdd/AGENTS.md`). `.sdd/scripts/spawn-prompt.sh` renders it from the gate's `SPAWN:` record; relay it word for word, adding only the `KEY=value` a script could not know and editing nothing inside.

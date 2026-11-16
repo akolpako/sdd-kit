@@ -40,9 +40,11 @@ Promotes what a finished feature decided into the project-level files. Safe to r
 
    | Relation | Calls |
    |---|---|
-   | `new` | `spec-edit.sh compile-entry <FeatureName> <REQ-###> final "<short title>. <one-sentence description>."` |
+   | `new` | `spec-edit.sh compile-entry <FeatureName> <REQ-###> final -`, with `<short title>. <one-sentence description>.` on stdin |
    | `refines` | the same `final` call with the new wording, but on `REQ-NNN`, not on the new number. The entry keeps its number and its source and gains `refined by <FeatureName>`; the new number gets no entry of its own. |
    | `supersedes` | the `new` call for `<REQ-###>`, then `spec-edit.sh compile-entry <FeatureName> REQ-NNN superseded-by:<REQ-###>` |
+
+   The wording goes on stdin, as `orchestration.md` says — it is one line.
 
    `COMPILATION_ENTRIES:` from the gate lists the entries this feature already has in the file — `refined` marks one it reworded. On a re-run, that is what a half-finished run left behind.
 

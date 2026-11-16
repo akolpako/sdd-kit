@@ -1831,7 +1831,7 @@ EOF
 # Words reach spec-edit.sh from a human or a role and are written as given:
 # a backslash, a backtick, a dollar sign or a quote is text, never syntax.
 check_text() {
-  local work="$TMP/text-check" out line ok
+  local work="$TMP/text-check" out line ok rc
   local nasty='Matches \d+ in C:\new\table, `code` and $HOME "quoted"'
 
   printf 'text\n'
@@ -1857,6 +1857,62 @@ EOF
   [[ "$(grep -c '' "$work/A.java")" == "3" ]] || ok=1
   prop_check text "an argument is written byte for byte" "$ok" \
     "requirements.md: $(tr '\n' '~' < "$work/_docs/requirements.md") A.java: $(tr '\n' '~' < "$work/A.java")"
+
+  # ── On stdin ────────────────────────────────────────────────────
+  # The way the commands pass words: `-`, and a quoted here-document.
+  printf '# Raw\n\n## Problem\n\n<!-- hint -->\n\n## Users\n' > "$work/_docs/Cart/raw.md"
+  ( cd "$work" && "$EDITOR_SH" section _docs/Cart/raw.md Problem - <<'SDD_TEXT'
+- Does `REQ-001` cost $5? \d+ **Answer:** yes
+second line
+SDD_TEXT
+  ) >/dev/null 2>&1
+  ( cd "$work" && printf '%s\n' "Stdin. $nasty" | "$EDITOR_SH" compile-entry Cart REQ-003 final - \
+              && printf '%s\n' "$nasty" | "$EDITOR_SH" marker A.java 1 - ) >/dev/null 2>&1
+  ok=0
+  grep -qF -- '- Does `REQ-001` cost $5? \d+ **Answer:** yes' "$work/_docs/Cart/raw.md" || ok=1
+  grep -qx 'second line' "$work/_docs/Cart/raw.md" || ok=1
+  grep -qF -- "**REQ-003** — Stdin. $nasty" "$work/_docs/requirements.md" || ok=1
+  [[ "$(head -1 "$work/A.java")" == "// TODO Code Review: $nasty ("* ]] || ok=1
+  prop_check text "'-' reads the text from stdin" "$ok" \
+    "raw.md: $(tr '\n' '~' < "$work/_docs/Cart/raw.md") A.java: $(tr '\n' '~' < "$work/A.java")"
+
+  out="$(cd "$work" && printf 'a\nb\n' | "$EDITOR_SH" marker A.java 1 - 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 2 && "$out" == *"holds a newline"* ]] || ok=1
+  [[ "$(grep -c '' "$work/A.java")" == "4" ]] || ok=1
+  prop_check text "a marker of two lines is a stop" "$ok" "exit $rc: $out"
+
+  # ── spawn-prompt.sh, values on stdin ────────────────────────────
+  local proj="$TMP/text-prompt" a b
+  rm -rf "$proj" && mkdir -p "$proj" && cp -R "$FIXTURES/actualized/tree/." "$proj/" || exit 1
+  a="$(cd "$proj" && "$RENDERER" code-fix Cart findings-backend "TRIAGE=Fix all." "FINDINGS=F-01 a.java:1 — x
+F-02 b.java:2 — y" 2>&1)"
+  b="$(cd "$proj" && "$RENDERER" code-fix Cart findings-backend - 2>&1 <<'SDD_VALUES'
+
+TRIAGE:
+Fix all.
+
+FINDINGS:
+F-01 a.java:1 — x
+F-02 b.java:2 — y
+
+SDD_VALUES
+  )"
+  ok=0; [[ -n "$a" && "$a" == "$b" ]] || ok=1
+  prop_check text "stdin blocks render as the arguments do" "$ok" "$(diff <(printf '%s\n' "$a") <(printf '%s\n' "$b") | tr '\n' '~')"
+
+  b="$(cd "$proj" && "$RENDERER" code-fix Cart findings-backend - 2>&1 <<'SDD_VALUES'
+TRIAGE:
+Keep `$HOME` and \d+ as written.
+FINDINGS:
+F-01 a.java:1 — x
+SDD_VALUES
+  )"
+  ok=0; printf '%s\n' "$b" | grep -qxF 'Keep `$HOME` and \d+ as written.' || ok=1
+  prop_check text "a stdin value is not expanded" "$ok" "$(printf '%s' "$b" | tr '\n' '~')"
+
+  out="$(cd "$proj" && printf 'TRIAGE:\nx\nFINDINGS:\ny\n' | "$RENDERER" code-fix Cart findings-backend - "TRIAGE=z" 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 1 && "$out" == *"given twice"* ]] || ok=1
+  prop_check text "a key given twice is refused" "$ok" "exit $rc: $out"
 }
 
 job_body() {

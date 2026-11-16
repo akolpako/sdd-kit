@@ -74,6 +74,15 @@
 #       Replace the body of `## <heading>` with the text as given. No text
 #       leaves the section as it is — the template's hint stays in place.
 #
+# Every <text> above may be `-`: the text is then read from stdin. That is how
+# words a human or a role wrote are passed — through a quoted here-document,
+#   spec-edit.sh section <file> "Open Questions" - <<'SDD_TEXT'
+#   …
+#   SDD_TEXT
+# where nothing in them is shell syntax. Inside double quotes on a command
+# line a backtick runs a command and a `$` expands. The text of `marker` and of
+# `compile-entry` is one line: a newline in it is a stop.
+#
 # Prints KEY=value lines, then SECTION: blocks. Exit codes: 0 — the edit was
 # made (or there was nothing to do and that is said); 1 — the environment is
 # wrong; 2 — the project is not in a state this edit applies to, and no file
@@ -119,6 +128,15 @@ cd "$ROOT_DIR" || exit 1
 SPECS="_docs"
 
 die2() { printf 'ERROR=%s\n' "$1" >&2; exit 2; }
+
+# `-` in the place of a text is the text on stdin, read whole. The trailing
+# newlines of a here-document go, as they would from a command substitution.
+text_arg() {
+  if [[ "${1:-}" == "-" ]]; then cat; else printf '%s' "${1:-}"; fi
+}
+one_line() {
+  [[ "$1" != *$'\n'* ]] || die2 "the text of $2 is one line, and this one holds a newline — it would be written as two"
+}
 
 # The folder on disk, matched without regard to case: a feature typed `cart`
 # and a folder named `Cart` are the same feature.
@@ -417,8 +435,9 @@ scaffold)
 
 # ── marker ────────────────────────────────────────────────────────
 marker)
-  FILE="${1:-}"; LINE="${2:-}"; TEXT="${3:-}"
+  FILE="${1:-}"; LINE="${2:-}"; TEXT="$(text_arg "${3:-}")"
   [[ -n "$FILE" && -n "$LINE" && -n "$TEXT" ]] || die2 "marker <file> <line> <text>"
+  one_line "$TEXT" marker
   [[ -f "$FILE" ]] || die2 "no such file: $FILE"
   case "$LINE" in ''|*[!0-9]*) die2 "not a line number: $LINE" ;; esac
   total=$(grep -c '' "$FILE" || true)
@@ -449,7 +468,8 @@ marker)
 
 # ── compile-entry ─────────────────────────────────────────────────
 compile-entry)
-  FEATURE="${1:-}"; REQ="${2:-}"; MODE="${3:-}"; TEXT="${4:-}"
+  FEATURE="${1:-}"; REQ="${2:-}"; MODE="${3:-}"; TEXT="$(text_arg "${4:-}")"
+  one_line "$TEXT" compile-entry
   [[ -n "$FEATURE" && -n "$REQ" && -n "$MODE" ]] || die2 "compile-entry <Feature> <REQ-###> final|superseded-by:<REQ-###> [<text>]"
   # Both forms of an id are accepted, the plain `REQ-003` and the domained
   # `REQ-ACC-003` — which one a project writes is the project's decision, and
@@ -569,7 +589,7 @@ compile-entry)
 
 # ── section ───────────────────────────────────────────────────────
 section)
-  FILE="${1:-}"; HEADING="${2:-}"; TEXT="${3:-}"
+  FILE="${1:-}"; HEADING="${2:-}"; TEXT="$(text_arg "${3:-}")"
   # The caller names the heading either as the file writes it — `## Problem` —
   # or bare. Both are the same section, and the answer names it bare.
   HEADING="$(printf '%s' "$HEADING" | sed 's/^#*[[:space:]]*//; s/[[:space:]]*$//')"

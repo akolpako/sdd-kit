@@ -17,6 +17,18 @@
 #                   from the argument: it is handed to the gate as its base-ref
 #                   — two detections of a review set produce two sets — and what
 #                   the prompt carries is the base the gate resolved.
+#   -               the values that are somebody's words — TRIAGE=, FINDINGS= —
+#                   read from stdin instead, as blocks under a `KEY:` line of
+#                   their own, passed through a quoted here-document:
+#                     spawn-prompt.sh code-fix Cart findings-backend - <<'SDD_VALUES'
+#                     TRIAGE:
+#                     the human's answer
+#                     FINDINGS:
+#                     F-01 …
+#                     SDD_VALUES
+#                   On a command line inside double quotes, a backtick in
+#                   them would run and a `$` would expand. A key given both
+#                   ways is an error.
 #
 # Every prompt opens with the working directory, written by this script rather
 # than by a template: a role is handed `.sdd/...` and `_docs/...` paths by the
@@ -79,8 +91,12 @@ VALS="$TMP/values"; SECS="$TMP/sections"; ARGS="$TMP/arguments"
 mkdir -p "$VALS" "$SECS" "$ARGS"
 
 BASE_ARG=""
+FROM_STDIN=0
 while (( $# > 0 )); do
   case "$1" in
+    -)
+      FROM_STDIN=1
+      ;;
     [A-Z]*=*)
       key="${1%%=*}"; val="${1#*=}"
       case "$key" in
@@ -99,6 +115,40 @@ while (( $# > 0 )); do
   esac
   shift
 done
+
+# The blocks of stdin: a `KEY:` line opens one, and everything up to the next
+# such line is its value, with the blank lines around it trimmed.
+if [[ $FROM_STDIN -eq 1 ]]; then
+  cat > "$TMP/stdin"
+  mkdir -p "$TMP/stdin.d" || exit 1
+  awk -v dir="$TMP/stdin.d" '
+    /^[A-Z][A-Z0-9_]*:$/ { key = substr($0, 1, length($0) - 1); n[key] = 0; order[++k] = key; next }
+    key == "" { if (NF) { bad = 1 }; next }
+    { n[key]++; line[key, n[key]] = $0 }
+    END {
+      if (bad) { print "ERROR=stdin holds text before its first KEY: line" > "/dev/stderr"; exit 1 }
+      for (i = 1; i <= k; i++) {
+        key = order[i]; first = 1; last = n[key]
+        while (first <= last && line[key, first] ~ /^[[:space:]]*$/) first++
+        while (last >= first && line[key, last] ~ /^[[:space:]]*$/) last--
+        f = dir "/" key
+        printf "" > f
+        for (j = first; j <= last; j++) print line[key, j] > f
+        close(f)
+      }
+    }
+  ' "$TMP/stdin" || exit 1
+  for f in "$TMP/stdin.d"/*; do
+    [[ -f "$f" ]] || continue
+    key="${f##*/}"
+    [[ -s "$f" ]] || { printf 'ERROR=empty value: %s: on stdin — write `none` where there is nothing\n' "$key" >&2; exit 1; }
+    [[ "$key" != "BASE" ]] || { printf 'ERROR=BASE= is an argument, never a block of stdin\n' >&2; exit 1; }
+    [[ ! -f "$ARGS/$key" ]] || { printf 'ERROR=%s is given twice, as an argument and on stdin\n' "$key" >&2; exit 1; }
+    # The file holds the value with its last newline; a value is compared and
+    # rendered without it, as an argument would be.
+    printf '%s' "$(cat "$f")" > "$ARGS/$key"
+  done
+fi
 
 TEMPLATE="$PROMPTS/$CMD-$SCOPE.md"
 if [[ ! -f "$TEMPLATE" ]]; then

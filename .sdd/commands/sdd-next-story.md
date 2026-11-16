@@ -65,7 +65,7 @@ Every step is the orchestrator's own.
 
 3. **Offer to fill it in:** ask the human whether to fill the description in now or to edit the file themselves — two options to choose between.
    - Filling it in now: ask about `## Problem`, `## Users`, `## What the feature does`, `## Out of scope` — in that order, phrasing each question from that section's hint comment in the template. These four have nothing to choose between: each is asked as plain prose.
-   - Each answer is written as it arrives: run `.sdd/scripts/spec-edit.sh section <RAW> <heading> <the human's words>` — their own words, unedited, never paraphrased into requirement language.
+   - Each answer is written as it arrives: run `.sdd/scripts/spec-edit.sh section <RAW> <heading> -` with the human's words on stdin — their own words, unedited, never paraphrased into requirement language.
    - `## Known constraints` and `## Open questions` are not asked about.
    - A skipped answer is the same call with no text: the section keeps its hint.
 
