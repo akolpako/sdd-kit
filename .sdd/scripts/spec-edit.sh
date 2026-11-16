@@ -437,8 +437,11 @@ marker)
   esac
 
   indent="$(sed -n "${LINE}p" "$FILE" | sed 's/[^[:space:]].*//')"
-  awk -v n="$LINE" -v m="$indent$open TODO Code Review: $TEXT ($TODAY)$close" '
-    NR == n { print m } { print }
+  # The line reaches awk through the environment, never through `-v`: `-v` runs
+  # its value through escape processing, and a finding quoting `\d+` or a path
+  # with `\n` in it would come out altered or split over two lines.
+  SDD_LINE="$indent$open TODO Code Review: $TEXT ($TODAY)$close" awk -v n="$LINE" '
+    NR == n { print ENVIRON["SDD_LINE"] } { print }
   ' "$FILE" > "$TMP/f" || exit 1
   replace_file "$FILE" "$TMP/f"
   printf 'MARKER=%s:%s\nDATE=%s\n' "$FILE" "$LINE" "$TODAY"
@@ -521,7 +524,8 @@ compile-entry)
       action="refined"
     fi
     new="- **$REQ** — $body *(Source: $src$refined$suffix)*$tail"
-    awk -v n="$at" -v line="$new" 'NR == n { print line; next } { print }' "$FILE" > "$TMP/f" || exit 1
+    # Through the environment, for the reason `marker` gives.
+    SDD_LINE="$new" awk -v n="$at" 'NR == n { print ENVIRON["SDD_LINE"]; next } { print }' "$FILE" > "$TMP/f" || exit 1
     replace_file "$FILE" "$TMP/f"
   else
     [[ -n "$TEXT" ]] || die2 "$REQ has no entry yet, so its wording has to come with it: compile-entry $FEATURE $REQ $MODE <text>"
@@ -534,9 +538,9 @@ compile-entry)
       END { if (inside && !found) print NR + 1 }
     ')"
     [[ -n "$at" ]] || die2 "$FILE has no \`## Requirements\` section — an entry is never written where the format has no place for it"
-    awk -v n="$at" -v line="$new" '
-      NR == n { print line; print "" } { print }
-      END { if (n > NR) print line }
+    SDD_LINE="$new" awk -v n="$at" '
+      NR == n { print ENVIRON["SDD_LINE"]; print "" } { print }
+      END { if (n > NR) print ENVIRON["SDD_LINE"] }
     ' "$FILE" > "$TMP/f" || exit 1
     replace_file "$FILE" "$TMP/f"
     action="appended"

@@ -1828,6 +1828,36 @@ EOF
     "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
 }
 
+# Words reach spec-edit.sh from a human or a role and are written as given:
+# a backslash, a backtick, a dollar sign or a quote is text, never syntax.
+check_text() {
+  local work="$TMP/text-check" out line ok
+  local nasty='Matches \d+ in C:\new\table, `code` and $HOME "quoted"'
+
+  printf 'text\n'
+  rm -rf "$work" && mkdir -p "$work/_docs/Cart" || exit 1
+  cat > "$work/_docs/requirements.md" <<'EOF'
+# Requirements Compilation
+
+<!-- Next free number: REQ-002 -->
+
+## Requirements
+
+- **REQ-001** — Old. Old wording. *(Source: Cart)* ^req-001
+EOF
+  printf 'int a;\nint b;\n' > "$work/A.java"
+
+  # ── As an argument ──────────────────────────────────────────────
+  ( cd "$work" && "$EDITOR_SH" compile-entry Cart REQ-002 final "New. $nasty" \
+              && "$EDITOR_SH" compile-entry Cart REQ-001 final "Old. $nasty" \
+              && "$EDITOR_SH" marker A.java 2 "$nasty" ) >/dev/null 2>&1
+  ok=0
+  [[ "$(grep -cF -- "$nasty" "$work/_docs/requirements.md")" == "2" ]] || ok=1
+  grep -qF -- "// TODO Code Review: $nasty (" "$work/A.java" || ok=1
+  [[ "$(grep -c '' "$work/A.java")" == "3" ]] || ok=1
+  prop_check text "an argument is written byte for byte" "$ok" \
+    "requirements.md: $(tr '\n' '~' < "$work/_docs/requirements.md") A.java: $(tr '\n' '~' < "$work/A.java")"
+}
 
 job_body() {
   local name="$1"; shift
@@ -1868,6 +1898,7 @@ start_job interrupted      check_interrupted
 start_job domains          check_domains
 start_job taken            check_taken
 start_job relations        check_relations
+start_job text             check_text
 start_job jira-tokens      check_jira_tokens
 start_job lib-source       check_suite lib-source
 start_job confluence-fetch   check_suite confluence
