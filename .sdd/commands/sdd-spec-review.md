@@ -31,15 +31,14 @@ Turns a `draft` spec into a `ready` one through the checklist and an interview. 
 
    Then reset: run `.sdd/scripts/spec-edit.sh status <FeatureName> draft <file ...>`, naming each file whose `STATUS_*` is `ready`, and skip the call when none is. `ready` is the verdict of this run, never one carried over: the roles are about to change those files, and a run cut short must not leave a rewritten spec marked as reviewed.
 
-2. **Spawn** both `SPAWN:` records: per record, run `.sdd/scripts/spawn-prompt.sh review <FeatureName> <scope>`. A role returns its `FAIL` list and what it left on the page. **The questions are read from `## Open Questions` of its file, never out of its report.**
+2. **Spawn** the `SPAWN:` records one at a time, in the order printed, and the next only once the file of the one before is done (step 3): per record, run `.sdd/scripts/spawn-prompt.sh review <FeatureName> <scope>`. The design is reviewed against requirements that no longer move — spawned before them, it would ask about text that is about to change and have to run again. A role returns its `FAIL` list and what it left on the page. **The questions are read from `## Open Questions` of its file, never out of its report.**
 
-3. **Interview and re-spawn,** requirements first, then design. One round over one file:
-   - **Read `## Open Questions`** out of that file, with its line numbers. Nothing there, and nothing raised by the round before it, means the file is done — go on to step 4.
+3. **Interview and re-spawn,** one file at a time — requirements, then design. One round over one file:
+   - **Read `## Open Questions`** out of that file, with its line numbers. Nothing there, and nothing raised by the round before it, means the file is done — spawn the next record (step 2), or after the last one go on to step 4.
    - **Ask the human** one line of that section at a time, the role's own recommendation first among the options.
    - **Write each answer back** as it arrives: `.sdd/scripts/spec-edit.sh answer <file> <line> -`, the answer on stdin. The script appends `**Answer:**` and the text to that line and to nothing else — the wording of the question is the role's — and adds no line, so the numbers read above hold for every answer of the round.
    - **Spawn the same scope again** — the same `SPAWN:` record, the same `spawn-prompt.sh` call, the same prompt. Nothing here tells the role which round it is on: what it does with an answered line is its own protocol's.
    - Then round two, from the top.
-   - **The design follows the requirements.** Once a round changed `new-requirements.md`, the design scope is spawned at least once more after the requirements file is done, even when its own `## Open Questions` is empty: the design and the breakdown were written against the text that changed.
 
    At most three rounds per file per session, per `.sdd/protocols/interview.md`. What is still open at that ceiling stays on the page, and the verdict of step 7 accounts for it.
 
@@ -62,7 +61,7 @@ Turns a `draft` spec into a `ready` one through the checklist and an interview. 
    - **Missing task** — into `design.md`, where the next round adds the task.
    - **Not in this feature after all** — into `new-requirements.md`, where the next round moves the requirement to `## Out of Scope`. Its number goes with it and is not reused.
 
-   An answer written here sends the run back to step 3 for one more round, inside the same three-round ceiling, and the matrix is printed again off a fresh step 5.
+   An answer written here sends the run back to step 3 for one more round, inside the same three-round ceiling, and the matrix is printed again off a fresh step 5. A round that changed `new-requirements.md` is followed by one more spawn of the design scope: the breakdown was written against the text that changed.
 
 7. **Close with a verdict** — exactly one of three, printed to the chat and never into a spec file, before any `status` marker is set:
 
