@@ -45,14 +45,14 @@ Writes the project-level spec files. No arguments. Safe to re-run: a file that a
 
    Whatever comes back is the answer, unread and unjudged: a different command, a profile, a wrapper, a flag.
 
-   **Where the answer goes** — `.sdd/sdd.conf` at the project root, one `KEY=value` line per answer:
+   **Where the answer goes** — `.sdd/scripts/spec-edit.sh conf-set <KEY> -`, the command on stdin, one call per answer:
 
    | The project | Keys written |
    |---|---|
    | both stacks | `SDD_BUILD_BACKEND`, `SDD_BUILD_FRONTEND` |
    | everything else | `SDD_BUILD_ROOT` |
 
-   Create the file if it is not there, and leave every line already in it — the `SDD_LOG*` keys are the human's too. A key already carrying the same answer is left alone rather than written twice.
+   The script creates `.sdd/sdd.conf` when it is not there, rewrites only the line of that key, and leaves an answer already on file alone. The file itself is never opened here: it may hold a `JIRA_TOKEN`.
 
 7. **Verify:** run `.sdd/scripts/gate.sh init --verify`.
 

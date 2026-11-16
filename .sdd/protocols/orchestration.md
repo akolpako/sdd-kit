@@ -50,6 +50,8 @@ SDD_TEXT
 
 Inside double quotes on a command line a backtick runs a command and a `$` expands, so the file gets something nobody wrote. `spawn-prompt.sh` takes such values the same way, as `KEY:` blocks after a `-` (its header comment shows the shape).
 
+**`.sdd/sdd.conf` is never read or edited by hand.** It may hold a token. The build answers go in through `.sdd/scripts/spec-edit.sh conf-set`, and every value a step needs comes out of a script.
+
 **Before any overwrite, `.sdd/scripts/spec-edit.sh backup`.** A non-zero exit is a stop: nothing is overwritten without its copy, and no role is spawned to write it.
 
 **The command file never reaches the role** — what the role needs is in the spawn prompt (`.sdd/AGENTS.md`). `.sdd/scripts/spawn-prompt.sh` renders it from the gate's `SPAWN:` record; relay it word for word, adding only the `KEY=value` a script could not know and editing nothing inside.

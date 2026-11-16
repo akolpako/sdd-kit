@@ -22,7 +22,7 @@ Safe to re-run: `[x]` is the only mark that takes a task out of the work, so a b
 
 1. **Gate:** run `.sdd/scripts/gate.sh implement <FeatureName>`.
    - `ask` starts only on an explicit yes to each line. An unreviewed spec accepted this way is named again in the final report, in those words.
-   - An `ask` about the build command is the exception: no yes answers it, only the line landing in `.sdd/sdd.conf`. Nothing is built or spawned until it is there.
+   - An `ask` about the build command is the exception: no yes answers it, only the human's command, written with `.sdd/scripts/spec-edit.sh conf-set <KEY> -` (the command on stdin). Nothing is built or spawned until it is there.
    - `done` means every task is `[x]`.
 
 2. **Baseline build:**

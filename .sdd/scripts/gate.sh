@@ -662,9 +662,9 @@ BASELINE="$BUILD_ROOT"
 ask_build() {
   local key="$1" what="$2" proposal="$3" file="$4"
   if [[ -n "$proposal" ]]; then
-    ask "No build command for $what: .sdd/sdd.conf holds no $key, and $file says this project has that stack. Detection proposes \`$proposal\` — accept it or name another, and write the line into .sdd/sdd.conf as $key=<command>. A command is one line run from the project root; nothing is built until it is there, because a proposal is not an answer."
+    ask "No build command for $what: .sdd/sdd.conf holds no $key, and $file says this project has that stack. Detection proposes \`$proposal\` — accept it or name another; the answer is written with \`spec-edit.sh conf-set $key\`. A command is one line run from the project root; nothing is built until it is there, because a proposal is not an answer."
   else
-    ask "No build command for $what: .sdd/sdd.conf holds no $key, and no pom.xml, build.gradle or package.json was found to propose one from. Write the command that verifies this project into .sdd/sdd.conf as $key=<command> — one line, run from the project root. Nothing is built until it is there."
+    ask "No build command for $what: .sdd/sdd.conf holds no $key, and no pom.xml, build.gradle or package.json was found to propose one from. Name the command that verifies this project — one line, run from the project root; the answer is written with \`spec-edit.sh conf-set $key\`. Nothing is built until it is there."
   fi
 }
 

@@ -25,7 +25,7 @@ Acts on the report `/sdd-code-review <FeatureName>` wrote. It applies findings, 
 
 1. **Gate:** run `.sdd/scripts/gate.sh code-fix <FeatureName>`.
    - `ok` fixes.
-   - `ask` is always the same question: this project has not said how a stack of it is verified. No yes answers it — put the line to the human, and go on only once the answer is in `.sdd/sdd.conf`.
+   - `ask` is always the same question: this project has not said how a stack of it is verified. No yes answers it — put the line to the human, write the answer with `.sdd/scripts/spec-edit.sh conf-set <KEY> -` (the command on stdin), and go on only then.
    - `ROOT` differing from `REVIEW_ROOT` says the code has moved since the review, and a finding may be about a line that is no longer there.
 
 2. **Triage — the orchestrator's own.** Read `REVIEW_PATH`; its findings, by their `F-##` numbers, are the work of this run.

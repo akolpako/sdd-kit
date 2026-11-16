@@ -73,6 +73,13 @@
 #       entry gains `refined by <Feature>` after its source, which is the only
 #       trace on disk that the feature was promoted at all. A number carried by
 #       two entries is a stop.
+#   conf-set <KEY> <value>
+#       Write `KEY=value` into .sdd/sdd.conf: the line already carrying KEY is
+#       rewritten, otherwise one is appended, and the file is created when it
+#       is not there. Only SDD_BUILD_ROOT, SDD_BUILD_BACKEND, SDD_BUILD_FRONTEND
+#       — the human's answers about the build. Every other line stays byte for
+#       byte, and none of it is printed: the file may hold a JIRA_TOKEN, and
+#       whoever writes the answer has no business reading it.
 #   section <file> <heading> [<text>]
 #       Replace the body of `## <heading>` with the text as given. No text
 #       leaves the section as it is — the template's hint stays in place.
@@ -123,8 +130,8 @@ set -- ${ARGS[@]+"${ARGS[@]}"}
 
 OP="${1:-}"
 case "$OP" in
-  backup|status|verdict-stale|scaffold|arch-index|marker|compile-entry|section) shift ;;
-  "") printf 'ERROR=no operation: spec-edit.sh <op> — backup, status, verdict-stale, scaffold, arch-index, marker, compile-entry, section\n' >&2; exit 1 ;;
+  backup|status|verdict-stale|scaffold|arch-index|marker|compile-entry|conf-set|section) shift ;;
+  "") printf 'ERROR=no operation: spec-edit.sh <op> — backup, status, verdict-stale, scaffold, arch-index, marker, compile-entry, conf-set, section\n' >&2; exit 1 ;;
   *)  printf 'ERROR=unknown operation: %s\n' "$OP" >&2; exit 1 ;;
 esac
 
@@ -609,6 +616,48 @@ compile-entry)
     replace_file "$FILE" "$TMP/f"
   fi
   printf 'ENTRY=%s\nACTION=%s\nNEXT_FREE=%s\nFILE=%s\n' "$REQ" "$action" "$free" "$FILE"
+  ;;
+
+# ── conf-set ──────────────────────────────────────────────────────
+conf-set)
+  KEY="${1:-}"; VALUE="$(text_arg "${2:-}")"
+  case "$KEY" in
+    SDD_BUILD_ROOT|SDD_BUILD_BACKEND|SDD_BUILD_FRONTEND) ;;
+    *) die2 "not a key this op writes: ${KEY:-<empty>} — SDD_BUILD_ROOT, SDD_BUILD_BACKEND or SDD_BUILD_FRONTEND" ;;
+  esac
+  [[ -n "$VALUE" ]] || die2 "no value: conf-set $KEY <command>"
+  one_line "$VALUE" conf-set
+  CONF=".sdd/sdd.conf"
+  mkdir -p .sdd || exit 1
+  [[ -f "$CONF" ]] || : > "$CONF" || exit 1
+  # The line that counts is the one build-command.sh reads: the first
+  # uncommented KEY=, leading blanks allowed. Its value is compared as that
+  # reader would see it, so an answer already there is not written twice.
+  at="$(awk -v k="$KEY" '
+    /^[[:space:]]*#/ { next }
+    { l = $0; sub(/^[[:space:]]+/, "", l) }
+    index(l, k "=") == 1 || l ~ ("^" k "[[:space:]]+=") { print NR; exit }
+  ' "$CONF")"
+  action="added"
+  if [[ -n "$at" ]]; then
+    current="$(awk -v n="$at" 'NR == n {
+        l = $0; sub(/\r$/, "", l); sub(/^[^=]*=[[:space:]]*/, "", l); sub(/[[:space:]]+$/, "", l)
+        q = substr(l, 1, 1)
+        if (length(l) >= 2 && (q == "\"" || q == "\047") && substr(l, length(l), 1) == q) l = substr(l, 2, length(l) - 2)
+        print l; exit }' "$CONF")"
+    if [[ "$current" == "$VALUE" ]]; then
+      action="unchanged"
+    else
+      SDD_LINE="$KEY=$VALUE" awk -v n="$at" 'NR == n { print ENVIRON["SDD_LINE"]; next } { print }' "$CONF" > "$TMP/f" || exit 1
+      replace_file "$CONF" "$TMP/f"
+      action="replaced"
+    fi
+  else
+    # A file whose last line has no newline would run the new line into it.
+    [[ -s "$CONF" && -n "$(tail -c 1 "$CONF")" ]] && printf '\n' >> "$CONF"
+    printf '%s=%s\n' "$KEY" "$VALUE" >> "$CONF" || exit 1
+  fi
+  printf 'CONF=%s\nKEY=%s\nACTION=%s\n' "$CONF" "$KEY" "$action"
   ;;
 
 # ── section ───────────────────────────────────────────────────────

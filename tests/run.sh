@@ -2059,6 +2059,38 @@ EOF
   prop_check spec-review "--accept-open readies it as it stands" "$ok" "exit $rc: $out"
 }
 
+# The build answer goes into .sdd/sdd.conf through a script, so that whoever
+# writes it never reads a file that may hold a token.
+check_conf_set() {
+  local work="$TMP/conf-set" out rc ok
+
+  printf 'conf-set\n'
+  rm -rf "$work" && mkdir -p "$work" || exit 1
+
+  out="$(cd "$work" && printf '%s\n' 'mvn verify -Dgroups="fast"' | "$EDITOR_SH" conf-set SDD_BUILD_ROOT - 2>&1)"
+  ok=0
+  [[ "$out" == *"ACTION=added"* ]] || ok=1
+  [[ "$(cat "$work/.sdd/sdd.conf")" == 'SDD_BUILD_ROOT=mvn verify -Dgroups="fast"' ]] || ok=1
+  [[ "$("$SCRIPTS/build-command.sh" "$work" | sed -n 's/^ROOT=//p')" == 'mvn verify -Dgroups="fast"' ]] || ok=1
+  prop_check conf-set "creates the file, and the reader reads it back" "$ok" "$out / $(tr '\n' '~' < "$work/.sdd/sdd.conf")"
+
+  printf 'JIRA_TOKEN=secret\n# a comment\nSDD_BUILD_ROOT=old\nSDD_LOG=0' > "$work/.sdd/sdd.conf"
+  out="$(cd "$work" && "$EDITOR_SH" conf-set SDD_BUILD_ROOT 'make all' 2>&1)"
+  ok=0
+  [[ "$out" == *"ACTION=replaced"* && "$out" != *secret* ]] || ok=1
+  [[ "$(cat "$work/.sdd/sdd.conf")" == $'JIRA_TOKEN=secret\n# a comment\nSDD_BUILD_ROOT=make all\nSDD_LOG=0' ]] || ok=1
+  out="$(cd "$work" && "$EDITOR_SH" conf-set SDD_BUILD_FRONTEND 'npm test' 2>&1)"
+  [[ "$(tail -2 "$work/.sdd/sdd.conf")" == $'SDD_LOG=0\nSDD_BUILD_FRONTEND=npm test' ]] || ok=1
+  out="$(cd "$work" && "$EDITOR_SH" conf-set SDD_BUILD_ROOT 'make all' 2>&1)"
+  [[ "$out" == *"ACTION=unchanged"* ]] || ok=1
+  prop_check conf-set "rewrites one line, appends, and leaves an answer alone" "$ok" "$out / $(tr '\n' '~' < "$work/.sdd/sdd.conf")"
+
+  out="$(cd "$work" && "$EDITOR_SH" conf-set JIRA_TOKEN x 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 2 ]] || ok=1
+  grep -q '^JIRA_TOKEN=secret$' "$work/.sdd/sdd.conf" || ok=1
+  prop_check conf-set "writes build keys only" "$ok" "exit $rc: $out"
+}
+
 job_body() {
   local name="$1"; shift
   # Nothing a job runs has a question to ask: every case is scripted, and a
@@ -2102,6 +2134,7 @@ start_job text             check_text
 start_job raw              check_raw
 start_job blocked-set      check_blocked_set
 start_job spec-review      check_spec_review
+start_job conf-set         check_conf_set
 start_job jira-tokens      check_jira_tokens
 start_job lib-source       check_suite lib-source
 start_job confluence-fetch   check_suite confluence
