@@ -289,7 +289,7 @@ verdict-stale)
   FOLDER="$(resolve_folder "${1:-}")" || exit 2
   path="$SPECS/$FOLDER/review.md"
   [[ -f "$path" ]] || die2 "no such file: $path — there is no report to invalidate"
-  [[ -n "$(md_field_line "$path" verdict)" ]] || die2 "$path carries no \`> Verdict:\` line"
+  [[ -n "$(md_field_line "$path" verdict)" ]] || die2 "$path carries no verdict — it is the \`verdict\` property of the frontmatter, or the \`> Verdict:\` line of a report written before them"
   line="stale — fixes applied $TODAY"
   md_field_set "$path" Verdict "$line" > "$TMP/f" || exit 1
   replace_file "$path" "$TMP/f"
@@ -478,7 +478,7 @@ marker)
   case "$base" in *.*) ext="${base##*.}" ;; *) ext="" ;; esac
   open=""; close=""
   case "$ext" in
-    java|kt|ts|tsx|js|jsx|scss|go|c|cpp|h|cs) open="//" ;;
+    java|kt|kts|groovy|gradle|scala|swift|rs|php|dart|ts|tsx|js|jsx|mjs|cjs|scss|go|c|cpp|h|hpp|cs) open="//" ;;
     sql)                                      open="--" ;;
     sh|bash|py|rb|yaml|yml|toml|properties)   open="#"  ;;
     html|xml|md)                              open="<!--"; close=" -->" ;;

@@ -30,7 +30,7 @@ Safe to re-run: `[x]` is the only mark that takes a task out of the work, so a b
    | `BASELINE` | What to run |
    |---|---|
    | set | `BASELINE` |
-   | empty | `BUILD_BACKEND`, then `BUILD_FRONTEND` |
+   | empty | `BUILD_BACKEND`, then `BUILD_FRONTEND` — an empty one is a stack this feature has no task in, and is not run |
 
    | Result | What happens |
    |---|---|
@@ -45,6 +45,6 @@ Safe to re-run: `[x]` is the only mark that takes a task out of the work, so a b
 
 4. **Verify:**
    - When a role returns, run `.sdd/scripts/gate.sh implement <FeatureName> --verify --scope=<the scope of that role>`.
-   - When every role has returned, run the build of step 2 again. Green — the feature is implemented. Red — the failure belongs to a `BLOCKED` task whose role has already spent its attempts; do not restart that loop, and report the red build with the Blocker Report.
+   - When every role has returned, run the build of step 2 again. Green — the feature is implemented. Red — report the failing output with the Blocker Reports, and do not restart a loop: a red that traces to a `BLOCKED` task is attempts already spent, and a red that traces to none of them is said to be exactly that.
 
 5. **Report the next step:** re-run `.sdd/scripts/gate.sh implement <FeatureName>` for `TASKS_DONE`/`TASKS_TOTAL` and any new `ANOMALIES:`, then the tasks the roles reported blocked, by name from their Blocker Reports, then `/sdd-code-review <FeatureName>`. It and `/sdd-actualize <FeatureName>` are optional.

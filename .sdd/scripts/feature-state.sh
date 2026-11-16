@@ -342,9 +342,9 @@ collect() {
     anom "review.md exists but is empty — counted as missing, and the review it should hold has to be run again."
   if [[ "$ST_REVIEW" == "present" ]]; then
     [[ -z "$R_ROOT" ]] && \
-      anom "review.md carries no '> Root:' line — there is no way to tell whether it still describes the current code."
+      anom "review.md carries no root — there is no way to tell whether it still describes the current code."
     [[ "$R_VERDICT" == "absent" ]] && \
-      anom "review.md carries no '> Verdict:' line — the report says nothing about whether the code is mergeable."
+      anom "review.md carries no verdict — the report says nothing about whether the code is mergeable."
   fi
 
   for name in new-requirements.md design.md tasks.md; do

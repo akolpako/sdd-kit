@@ -2091,6 +2091,41 @@ check_conf_set() {
   prop_check conf-set "writes build keys only" "$ok" "exit $rc: $out"
 }
 
+# A two-stack project asks for the build of the stacks a feature builds, and
+# no more; a marker goes into the languages a brownfield tree is told by.
+check_stacks() {
+  local work="$TMP/stacks-check" out ok f
+
+  printf 'stacks\n'
+  rm -rf "$work" && mkdir -p "$work/_docs/Cart" "$work/web" "$work/.sdd" || exit 1
+  printf '<project/>\n' > "$work/pom.xml"; printf '{}\n' > "$work/web/package.json"
+  printf 'SDD_BUILD_BACKEND=mvn verify\n' > "$work/.sdd/sdd.conf"
+  for f in new-requirements design; do
+    printf -- '---\nstatus: ready\n---\n\n# %s\n\nBody.\n' "$f" > "$work/_docs/Cart/$f.md"
+  done
+  printf -- '---\nstatus: ready\n---\n\n# Tasks\n\n## Tasks\n\n- [ ] **TASK-001** — a\n  - **Requires:** REQ-001\n  - **Type:** backend\n' \
+    > "$work/_docs/Cart/tasks.md"
+
+  out="$(cd "$work" && "$GATE" implement Cart 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -q '^GATE=ok$' || ok=1
+  prop_check stacks "a backend-only feature needs no frontend build" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  printf -- '- [ ] **TASK-002** — b\n  - **Requires:** REQ-001\n  - **Type:** frontend\n' >> "$work/_docs/Cart/tasks.md"
+  out="$(cd "$work" && "$GATE" implement Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^GATE=ask$' || ok=1
+  printf '%s\n' "$out" | grep -q 'holds no SDD_BUILD_FRONTEND' || ok=1
+  prop_check stacks "a frontend task asks for the frontend build" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  ok=0
+  for f in a.rs b.php c.kts d.swift; do
+    printf 'x\n' > "$work/$f"
+    ( cd "$work" && "$EDITOR_SH" marker "$f" 1 note ) >/dev/null 2>&1 || ok=1
+    grep -q '^// TODO Code Review: note' "$work/$f" || ok=1
+  done
+  prop_check stacks "markers in rs, php, kts, swift" "$ok" "$(head -1 "$work/a.rs")"
+}
+
 job_body() {
   local name="$1"; shift
   # Nothing a job runs has a question to ask: every case is scripted, and a
@@ -2135,6 +2170,7 @@ start_job raw              check_raw
 start_job blocked-set      check_blocked_set
 start_job spec-review      check_spec_review
 start_job conf-set         check_conf_set
+start_job stacks           check_stacks
 start_job jira-tokens      check_jira_tokens
 start_job lib-source       check_suite lib-source
 start_job confluence-fetch   check_suite confluence

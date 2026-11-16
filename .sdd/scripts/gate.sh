@@ -668,10 +668,16 @@ ask_build() {
   fi
 }
 
+# BUILD_STACKS, when set, narrows a two-stack project to the stacks a run
+# builds — `backend`, `frontend` or both, comma-separated.
+BUILD_STACKS=""
+needs_stack() { [[ -z "$BUILD_STACKS" || ",$BUILD_STACKS," == *",$1,"* ]]; }
+
 check_build_config() {
   if [[ $HAS_BACKEND -eq 1 && $HAS_FRONTEND -eq 1 ]]; then
-    [[ -n "$BUILD_BACKEND"  ]] || ask_build SDD_BUILD_BACKEND  "the backend stack"  "$PROPOSE_BACKEND"  "$PROPOSE_BACKEND_FILE"
-    [[ -n "$BUILD_FRONTEND" ]] || ask_build SDD_BUILD_FRONTEND "the frontend stack" "$PROPOSE_FRONTEND" "$PROPOSE_FRONTEND_FILE"
+    needs_stack backend && [[ -z "$BUILD_BACKEND" ]] && ask_build SDD_BUILD_BACKEND  "the backend stack"  "$PROPOSE_BACKEND"  "$PROPOSE_BACKEND_FILE"
+    needs_stack frontend && [[ -z "$BUILD_FRONTEND" ]] && ask_build SDD_BUILD_FRONTEND "the frontend stack" "$PROPOSE_FRONTEND" "$PROPOSE_FRONTEND_FILE"
+    return 0
   elif [[ $HAS_BACKEND -eq 1 ]]; then
     [[ -n "$BUILD_BACKEND"  ]] || ask_build SDD_BUILD_BACKEND  "the backend stack"  "$PROPOSE_BACKEND"  "$PROPOSE_BACKEND_FILE"
   elif [[ $HAS_FRONTEND -eq 1 ]]; then
@@ -914,17 +920,22 @@ check_implement() {
     fi
   fi
 
+  # The stacks the breakdown carries. A project with both stacks needs the
+  # answer only for the ones this feature builds: asking for the frontend
+  # command of a backend-only feature holds the run on a question nothing in it
+  # would ever run. A feature with no parsable task asks as before.
+  ROLE_ORDER=""
+  case "$(kv "$FS_OUT" TASK_TYPES)" in *backend*) ROLE_ORDER="backend" ;; esac
+  case "$(kv "$FS_OUT" TASK_TYPES)" in *frontend*) ROLE_ORDER="${ROLE_ORDER:+$ROLE_ORDER,}frontend" ;; esac
+  BUILD_STACKS="$ROLE_ORDER"
   check_build_config
+  BUILD_STACKS=""
 
   # `[x]` is the only mark that takes a task out: a blocked one is unchecked,
   # and a re-run retries it with fresh attempts.
   TODO_RECS="$(printf '%s\n' "$TASK_RECS" | awk -F'|' '
     $2 == "open" || $2 == "blocked" { printf "%s|%s|%s|%s|%s\n", $1, $2, $3, $5, $6 }
   ')"
-
-  ROLE_ORDER=""
-  case "$(kv "$FS_OUT" TASK_TYPES)" in *backend*) ROLE_ORDER="backend" ;; esac
-  case "$(kv "$FS_OUT" TASK_TYPES)" in *frontend*) ROLE_ORDER="${ROLE_ORDER:+$ROLE_ORDER,}frontend" ;; esac
 
   # What a baseline is measured with is BASELINE, not the build files: a project
   # built by make or a script carries no file this engine detects, and its
@@ -989,7 +1000,7 @@ check_code_fix() {
     esac
 
     case "$(printf '%s' "$R_VERDICT" | tr '[:upper:]' '[:lower:]')" in
-      stale*) warn "The report says '> Verdict: $R_VERDICT' — it was already applied on the date it names, and its findings may be fixed already. A fresh /sdd-code-review $FEATURE is the reliable list." ;;
+      stale*) warn "The report's verdict is '$R_VERDICT' — it was already applied on the date it names, and its findings may be fixed already. A fresh /sdd-code-review $FEATURE is the reliable list." ;;
     esac
   fi
 
