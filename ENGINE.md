@@ -13,7 +13,7 @@ Each path below holds exactly this, and a fact lives in one of them (see *Where 
 
 | Path | Holds |
 |------|-------|
-| `AGENTS.md` | Only what *every* role needs — loaded into the orchestrator and all five roles. |
+| `AGENTS.md` | Only what *every* role needs — loaded into the orchestrator and all five roles; every spawn prompt opens by naming it, for a host that does not load it into a sub-agent. |
 | `commands/*.md` | The nine `/sdd-*` steps: step order and the points where the human decides. What every command does alike is in `protocols/orchestration.md`. |
 | `agents/*.md` | The five roles — what tells each apart (see *Agent files*). |
 | `protocols/*.md` | The procedures, each naming its addressee in its first line. |
@@ -44,17 +44,19 @@ other's files — one agent with two definitions, one command defined twice.
 | `.agents/skills/<name>/` in the clone | — | `.github/skills/<name>/` |
 | `.sdd/_claude/settings.json` | `.claude/settings.json` | — |
 | `.sdd/_gitignore.<host>` | block in `.gitignore` | block in `.gitignore` |
-| `.sdd/AGENTS.md` | block in `CLAUDE.md` | block in `.github/copilot-instructions.md` |
+| `.sdd/AGENTS.md` | block in `CLAUDE.md` **and** the same path | block in `.github/copilot-instructions.md` **and** the same path |
 
 - Every file is a **real copy**, not a link, and **nothing is generated per host** — one file
   per role and per command serves both; what that costs is under *Adapters*. The two blocks are
   merged between markers (`merge_md`, `remove_block`); the files they land in belong to the
   project.
-- **`rules/` is the only entry that adds a destination instead of replacing one.** Roles are told
-  the `.sdd/rules/` path, valid on every host; the second copy makes it always-on for the main
-  session. Copilot recognises `.github/instructions/` files only by the `.instructions.md` suffix.
+- **`rules/` and `AGENTS.md` are the entries that add a destination instead of replacing one.**
+  Every spawn prompt names `.sdd/AGENTS.md` and the `.sdd/rules/` files, paths valid on every
+  host; the second copy makes them always-on for the main session. Copilot recognises
+  `.github/instructions/` files only by the `.instructions.md` suffix.
 - The core is merged **once**. Copilot CLI reads both `AGENTS.md` and `CLAUDE.md`, so writing
-  both would load it twice. A host that reads only `AGENTS.md` (Codex…) sees no engine.
+  both would load it twice; `.sdd/AGENTS.md` sits where neither host loads it on its own. A host
+  that reads only a root `AGENTS.md` (Codex…) sees no engine.
 - **`.sdd/.sdd-manifest`** — the host, then `path<TAB>checksum` per copied file, sorted.
   Directories and merged files are not listed. Every mode works from it:
 
@@ -277,7 +279,7 @@ How the hosts differ where it matters (*measured* = checked by a run, not taken 
 
 | Mechanism | Claude Code | Copilot CLI | VS Code Copilot |
 |---|---|---|---|
-| Core (`CLAUDE.md` / `copilot-instructions.md`) in a sub-agent | yes — `AGENTS.md` is paid for in six contexts | no channel at all (measured) | yes |
+| Core (`CLAUDE.md` / `copilot-instructions.md`) in a sub-agent | yes — `AGENTS.md` is paid for in six contexts | no channel (measured) — the prompt names `.sdd/AGENTS.md` and the role reads it | yes |
 | `.sdd/rules/` in a sub-agent | inherited | not inherited (measured) — the prompt names the path | yes |
 | `disable-model-invocation` on commands | hidden from the model | hidden interactively (measured); under `-p` the command is gone | not measured |
 | `disallowed-tools` on `sdd-status` | enforced | inert | inert |

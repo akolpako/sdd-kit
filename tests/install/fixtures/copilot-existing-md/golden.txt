@@ -80,6 +80,7 @@ c  .github/skills/sdd-status/SKILL.md = <engine>/.sdd/commands/sdd-status.md
 f  .gitignore
 d  .sdd/
 f  .sdd/.sdd-manifest
+c  .sdd/AGENTS.md = <engine>/.sdd/AGENTS.md
 d  .sdd/prompts/
 c  .sdd/prompts/actualize-baseline-from-feature.md = <engine>/.sdd/prompts/actualize-baseline-from-feature.md
 c  .sdd/prompts/code-fix-findings-backend.md = <engine>/.sdd/prompts/code-fix-findings-backend.md
@@ -239,6 +240,7 @@ host	copilot
 <sum>	.github/skills/sdd-spec-review/SKILL.md
 <sum>	.github/skills/sdd-specify/SKILL.md
 <sum>	.github/skills/sdd-status/SKILL.md
+<sum>	.sdd/AGENTS.md
 <sum>	.sdd/prompts/actualize-baseline-from-feature.md
 <sum>	.sdd/prompts/code-fix-findings-backend.md
 <sum>	.sdd/prompts/code-fix-findings-frontend.md

@@ -808,8 +808,10 @@ adapter_dest() {
 
 # Handled outside the .sdd/ walk: every directory either host's map claims —
 # including one this host does not install at all, which must not fall back to
-# .sdd/ — and the three files that are merged into the project rather than
-# copied. rules is the exception, and the map says so with MAP_KEEP: the walk
+# .sdd/ — and the two .gitignore blocks, which are merged into the project
+# rather than copied. AGENTS.md is both: merged into the file the host reads,
+# and copied to .sdd/AGENTS.md for a sub-agent the host does not hand the core
+# to — Copilot CLI's — which every spawn prompt points at. rules is the exception, and the map says so with MAP_KEEP: the walk
 # installs it at .sdd/rules/ and the map adds the host's copy on top of that.
 #
 # log/ and sdd.conf are skipped for a different reason: the engine ships
@@ -825,7 +827,7 @@ adapter_dest() {
 sdd_walk_skips() {
   local name="$1" host
   case "$name" in
-    AGENTS.md|_gitignore.claude|_gitignore.copilot) return 0 ;;
+    _gitignore.claude|_gitignore.copilot) return 0 ;;
     log|sdd.conf|.venv) return 0 ;;
   esac
   for host in claude copilot; do

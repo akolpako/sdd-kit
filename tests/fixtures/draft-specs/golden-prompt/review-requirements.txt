@@ -1,3 +1,6 @@
+The rules every role works under: `.sdd/AGENTS.md`. Read them first, unless your
+instructions already carry them.
+
 Working directory: <tmp>/draft-specs
 Every `.sdd/...` and `_docs/...` path below and in the protocols it names is
 relative to it.

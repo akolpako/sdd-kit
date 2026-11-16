@@ -78,6 +78,7 @@ c  .claude/skills/maven-lib-source/scripts/maven-lib-source.sh = <engine>/.sdd/s
 f  .gitignore
 d  .sdd/
 f  .sdd/.sdd-manifest
+c  .sdd/AGENTS.md = <engine>/.sdd/AGENTS.md
 d  .sdd/prompts/
 c  .sdd/prompts/actualize-baseline-from-feature.md = <engine>/.sdd/prompts/actualize-baseline-from-feature.md
 c  .sdd/prompts/code-fix-findings-backend.md = <engine>/.sdd/prompts/code-fix-findings-backend.md
@@ -237,6 +238,7 @@ host	claude
 <sum>	.claude/skills/maven-lib-source/SKILL.md
 <sum>	.claude/skills/maven-lib-source/scripts/MavenLibSource.java
 <sum>	.claude/skills/maven-lib-source/scripts/maven-lib-source.sh
+<sum>	.sdd/AGENTS.md
 <sum>	.sdd/prompts/actualize-baseline-from-feature.md
 <sum>	.sdd/prompts/code-fix-findings-backend.md
 <sum>	.sdd/prompts/code-fix-findings-frontend.md

@@ -30,8 +30,11 @@
 #                   them would run and a `$` would expand. A key given both
 #                   ways is an error.
 #
-# Every prompt opens with the working directory, written by this script rather
-# than by a template: a role is handed `.sdd/...` and `_docs/...` paths by the
+# Every prompt opens with two lines written by this script rather than by a
+# template. The first names the core every role works under — `.sdd/AGENTS.md`
+# and any `.sdd/rules/*.md` — to be read unless the host already loaded it: a
+# Copilot CLI sub-agent is handed neither, and nothing else would tell it that
+# nobody commits. The second is the working directory: a role is handed `.sdd/...` and `_docs/...` paths by the
 # assignment and by every protocol it carries, and nothing else in the prompt
 # says what they are relative to. One that cannot resolve a path widens its
 # search until it finds something, and widening ends at `/`.
@@ -281,6 +284,11 @@ RENDERED="$TMP/prompt.txt"
 # script was run in, which is the project root the command was typed in — the
 # same one the gate read `_docs/` from a moment ago. Written here so that a
 # prompt added later cannot be the one that leaves it out.
+CORE='`.sdd/AGENTS.md`'
+for r in .sdd/rules/*.md; do
+  [[ -f "$r" ]] && CORE="$CORE, \`$r\`"
+done
+printf 'The rules every role works under: %s. Read them first, unless your\ninstructions already carry them.\n\n' "$CORE" >> "$RENDERED"
 printf 'Working directory: %s\nEvery `.sdd/...` and `_docs/...` path below and in the protocols it names is\nrelative to it.\n\n' "$PWD" >> "$RENDERED"
 
 while IFS= read -r line || [[ -n "$line" ]]; do
