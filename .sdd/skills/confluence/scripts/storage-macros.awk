@@ -10,14 +10,16 @@
 #                       the count stays in step with the images
 #   <dir>/expand        one line per expand macro: 1 when it has a title of its
 #                       own, 0 when Confluence shows its default text instead
+#   <dir>/toc           one line per table of contents macro: its parameters,
+#                       "name=value", tab-separated; empty for none
 #   <dir>/macros        the name of every macro, one per line
-# Prints "<plantuml count> <expand count>".
+# Prints "<plantuml count> <expand count> <toc count>".
 
 { s = s $0 "\n" }
 
 END {
-  all = s; np = 0; ne = 0
-  printf "" > (dir "/expand"); printf "" > (dir "/macros")
+  all = s; np = 0; ne = 0; nt = 0
+  printf "" > (dir "/expand"); printf "" > (dir "/macros"); printf "" > (dir "/toc")
   while ((p = index(s, "<ac:structured-macro")) > 0) {
     s = substr(s, p)
     e = index(s, ">")
@@ -48,6 +50,20 @@ END {
       continue
     }
 
+    if (name == "toc") {
+      nt++; line = ""; v = seg
+      while ((b = index(v, "<ac:parameter ac:name=\"")) > 0) {
+        v = substr(v, b + 23)
+        c = index(v, "\">"); if (c == 0) break
+        k = substr(v, 1, c - 1); v = substr(v, c + 2)
+        c = index(v, "</ac:parameter>"); if (c == 0) break
+        line = line (line == "" ? "" : "\t") k "=" unesc(substr(v, 1, c - 1))
+        v = substr(v, c + 15)
+      }
+      print line > (dir "/toc")
+      continue
+    }
+
     if (name !~ /^plantuml/) continue
     body = ""
     b = index(seg, "<ac:plain-text-body>")
@@ -70,8 +86,8 @@ END {
       print tolower(t) > (dir "/macros")
     }
   }
-  close(dir "/expand"); close(dir "/macros")
-  print np, ne
+  close(dir "/expand"); close(dir "/macros"); close(dir "/toc")
+  print np, ne, nt
 }
 
 # The text of a plain-text body: CDATA sections as they are — a body holding

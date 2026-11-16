@@ -58,7 +58,11 @@ Usage: confluence-publish.sh <action> [arguments] [options]
 A dry run of update also writes DIFF=: the page as it is now, read as
 Markdown, against the file. It warns when the file was read at an older
 version than the page is at (FILE_VERSION=), and when a table loses its
-merged cells or changes shape.
+merged cells or changes shape. With no text change, it says whether the
+macros change, or that publishing would change nothing at all.
+
+The report of create and update has MACROS=: the macros the body holds, counted
+by name (jira 7, code 2, date 1).
 
 Config: CONFLUENCE_URL and CONFLUENCE_TOKEN (a personal access token), read from
 the --tokens files; the environment fills in what no file set.
@@ -280,14 +284,13 @@ add_upload() {
   UP_PATH+=("$full"); UP_NAME+=("$name"); N_UP=$(( N_UP + 1 ))
 }
 
-if [[ -n "$MD_FILE" ]]; then
-  MD_DIR="$(cd "$(dirname "$MD_FILE")" && pwd)"
-  split_md "$MD_FILE" "$TMP/title.txt" "$TMP/fversion.txt" > "$TMP/body.md" || die 4 "cannot read $MD_FILE"
-  [[ -f "$TMP/title.txt" ]] && TITLE="$(cat "$TMP/title.txt")"
-  [[ -f "$TMP/fversion.txt" ]] && FILE_VERSION="$(cat "$TMP/fversion.txt")"
-
-  : > "$TMP/refs.tsv"
-  LC_ALL=C awk -v refs="$TMP/refs.tsv" -f "$SCRIPT_DIR/md-to-storage.awk" \
+# The body converted to $XML; the side facts go to $1. With $2, the Jira
+# servers Confluence is linked to, links to their issues become the Jira
+# issue macro.
+convert() {
+  local refs="$1" rc
+  : > "$refs"
+  LC_ALL=C awk -v refs="$refs" -v jira="${2:-}" -f "$SCRIPT_DIR/md-to-storage.awk" \
     < "$TMP/body.md" > "$XML" 2> "$TMP/convert.err"
   rc=$?
   if (( rc != 0 )) || [[ -s "$TMP/convert.err" ]]; then
@@ -303,6 +306,16 @@ if [[ -n "$MD_FILE" ]]; then
     xmllint --noout "$TMP/check.xml" 2> "$TMP/xmllint.err" \
       || die 4 "$MD_FILE converted to a body that is not well-formed XML: $(head -n 1 "$TMP/xmllint.err")"
   fi
+  return 0
+}
+
+if [[ -n "$MD_FILE" ]]; then
+  MD_DIR="$(cd "$(dirname "$MD_FILE")" && pwd)"
+  split_md "$MD_FILE" "$TMP/title.txt" "$TMP/fversion.txt" > "$TMP/body.md" || die 4 "cannot read $MD_FILE"
+  [[ -f "$TMP/title.txt" ]] && TITLE="$(cat "$TMP/title.txt")"
+  [[ -f "$TMP/fversion.txt" ]] && FILE_VERSION="$(cat "$TMP/fversion.txt")"
+
+  convert "$TMP/refs.tsv"
 
   # A local reference is uploaded only from inside the folder of the
   # Markdown file. A body can come from anywhere — a fetched page, a file
@@ -339,11 +352,34 @@ done
 # temporary directory is gone when the script ends; this one stays.
 PREVIEW=""
 DIFF=""
+SAME_BODY=0; TITLE_CHANGES=0
 preview_dir() {
   local d="${TMPDIR:-/tmp}/confluence-publish/$1"
   mkdir -p "$d" 2>/dev/null || die 1 "cannot create $d"
   cat "$XML" > "$d/body.xml" || die 1 "cannot write $d/body.xml"
   PREVIEW="$d/body.xml"
+}
+
+# The macros a storage-format body holds, counted by name, most first:
+# "jira 7, date 1, code 2" — "none" for none. A date is the <time> element.
+macro_counts() {
+  LC_ALL=C awk '
+    { s = s $0 "\n" }
+    END {
+      t = s
+      while (match(t, /<ac:(structured-)?macro [^>]*ac:name="[^"]*"/)) {
+        m = substr(t, RSTART, RLENGTH); t = substr(t, RSTART + RLENGTH)
+        sub(/.*ac:name="/, "", m); sub(/"$/, "", m); C[m]++
+      }
+      t = s
+      while (match(t, /<time[ \t\/>]/)) { C["date"]++; t = substr(t, RSTART + RLENGTH) }
+      for (m in C) print C[m] "\t" m
+    }' "$1" | LC_ALL=C sort -k1,1nr -k2,2
+}
+macro_list() {
+  local l
+  l="$(macro_counts "$1" | LC_ALL=C awk -F '\t' '{ printf "%s%s %s", (NR > 1 ? ", " : ""), $2, $1 }')"
+  printf '%s' "${l:-none}"
 }
 
 # ── The report ────────────────────────────────────────────────────
@@ -360,6 +396,7 @@ report() {
   printf 'URL=%s\n' "$URL"
   [[ -n "$PREVIEW" ]] && printf 'PREVIEW=%s\n' "$PREVIEW"
   [[ -n "$DIFF" ]] && printf 'DIFF=%s\n' "$DIFF"
+  [[ "$state" == dry-run || "$state" == published ]] && [[ -s "$XML" ]] && printf 'MACROS=%s\n' "$(macro_list "$XML")"
   printf '\nATTACHMENTS:\n'
   if [[ "$state" == published || "$state" == partial ]]; then
     (( N_DONE > 0 )) && printf '%s\n' "${DONE_UP[@]}"
@@ -372,8 +409,10 @@ report() {
 }
 
 if (( CONVERT_ONLY )); then
+  LC_ALL=C grep -q '^jira'$'\t' "$TMP/refs.tsv" 2>/dev/null \
+    && note "Links to Jira issues stay links here: which Jira servers Confluence is linked to is learnt only when publishing, where they become the Jira issue macro."
   preview_dir converted
-  printf 'CONFLUENCE=converted\nACTION=%s\nTITLE=%s\nPREVIEW=%s\n' "$ACTION" "$TITLE" "$PREVIEW"
+  printf 'CONFLUENCE=converted\nACTION=%s\nTITLE=%s\nPREVIEW=%s\nMACROS=%s\n' "$ACTION" "$TITLE" "$PREVIEW" "$(macro_list "$XML")"
   printf '\nATTACHMENTS:\n'
   for (( k = 0; k < N_UP; k++ )); do printf '%s\n' "${UP_PATH[$k]}"; done
   printf '\nNOTES:\n'
@@ -435,6 +474,34 @@ need_json() {
          "check that CONFLUENCE_URL or the link points at Confluence, with its context path" ;;
   esac
   jq -e . "$1" >/dev/null 2>&1 || die 4 "the answer will not parse as JSON"
+}
+
+# Links to Jira issues become the Jira issue macro, which names the server by
+# the id of Confluence's link to that Jira. The links are listed by
+# /rest/jiraanywhere — the list the editor's Jira dialog reads, open to every
+# user, where the application links API is for admins only — and the body is
+# converted again with them. A list that cannot be read leaves the links as
+# links, and says so.
+jira_macros() {
+  [[ -n "$MD_FILE" ]] && LC_ALL=C grep -q '^jira'$'\t' "$TMP/refs.tsv" || return 0
+  local servers="$TMP/jira-servers.tsv" line seen
+  http GET "$BASE/rest/jiraanywhere/1.0/servers" "$TMP/jira-servers.json"
+  if [[ "$CODE" != 200 ]] || ! jq -e 'type == "array"' "$TMP/jira-servers.json" >/dev/null 2>&1; then
+    note "Links to Jira issues stay links: the Jira servers Confluence is linked to could not be read (HTTP $CODE from /rest/jiraanywhere/1.0/servers)."
+    return 0
+  fi
+  jq -r '.[] | select(.id != null and .id != "") | . as $s
+    | ([.url, .displayUrl, .rpcUrl] | map(select(. != null and . != "")) | unique[])
+    | [., $s.id, ($s.name // "")] | @tsv' "$TMP/jira-servers.json" > "$servers"
+  convert "$TMP/refs2.tsv" "$servers"
+  # The notes of the first run are in already; only the ones about Jira
+  # links are new.
+  seen="$(printf '%s\n' ${NOTES[@]+"${NOTES[@]}"})"
+  while IFS=$'\t' read -r kind line; do
+    [[ "$kind" == note ]] || continue
+    printf '%s\n' "$seen" | LC_ALL=C grep -qxF -- "$line" || note "$line"
+  done < "$TMP/refs2.tsv"
+  return 0
 }
 
 # A page link or id, through confluence-fetch.sh, which owns what a page link
@@ -538,8 +605,22 @@ upload_all() {
 lost_content() {
   local s="$TMP/storage.xml" list="" m
   jq -r '.body.storage.value // ""' "$1" > "$s"
-  for m in $(LC_ALL=C grep -oE '<ac:(structured-)?macro [^>]*ac:name="[^"]*"' "$s" | LC_ALL=C sed 's/.*ac:name="//; s/"$//' \
-      | LC_ALL=C grep -vxE 'code|info|tip|note|warning|plantuml' | sort -u); do
+  # A Jira macro that shows one issue comes back from its link; one that
+  # shows a query's issues does not, and is named as "jira".
+  for m in $(LC_ALL=C awk '
+      { s = s $0 "\n" }
+      END {
+        while (match(s, /<ac:(structured-)?macro [^>]*ac:name="[^"]*"/)) {
+          t = substr(s, RSTART, RLENGTH); s = substr(s, RSTART + RLENGTH)
+          sub(/.*ac:name="/, "", t); sub(/"$/, "", t)
+          if (t == "jira") {
+            e = index(s, "</ac:structured-macro>"); seg = (e > 0) ? substr(s, 1, e) : s
+            n = index(seg, "<ac:structured-macro"); if (n > 0) seg = substr(seg, 1, n)
+            if (seg ~ /ac:name="key"/ && seg !~ /ac:name="(jqlQuery|count)"/) continue
+          }
+          print t
+        }
+      }' "$s" | LC_ALL=C grep -vxE 'code|info|tip|note|warning|plantuml|toc' | sort -u); do
     list="${list:+$list, }$m"
   done
   [[ -n "$list" ]] && note "The page holds macros the Markdown cannot: $list. Publishing replaces each with what the file says in its place, which is at best its rendered text."
@@ -610,7 +691,13 @@ diff_current() {
   split_md "$cur/page.md" /dev/null /dev/null | md_tidy > "$cur/now.md"
   md_tidy < "$TMP/body.md" > "$cur/file.md"
   if diff -u "$cur/now.md" "$cur/file.md" > "$cur/raw.diff"; then
-    note "The file reads as the page does now: publishing it changes no text."
+    # Text alone does not show a link turned into a Jira macro, or a date
+    # into the date macro: the macros are compared too.
+    if [[ "$(macro_counts "$TMP/storage.xml")" != "$(macro_counts "$XML")" ]]; then
+      note "The file reads as the page does now, but its macros differ: the page has $(macro_list "$TMP/storage.xml"); the file gives $(macro_list "$XML")."
+    else
+      SAME_BODY=1   # said once the uploads are known, after sift_uploads
+    fi
     return 0
   fi
   LC_ALL=C awk -v a="page $ID, version $VERSION, as it is now" -v b="$MD_FILE" '
@@ -653,6 +740,8 @@ if [[ "$ACTION" == create ]]; then
   BASE="${BASE%/}"
   [[ -n "$BASE" ]] || die 1 "no CONFLUENCE_URL — a bare space key needs the instance" \
     "$(put_hint 'CONFLUENCE_URL=<base url>'), or pass the space link instead of the key"
+
+  jira_macros
 
   if (( HAVE_TITLE )); then PTITLE="$TITLE_ARG"; else PTITLE="$TITLE"; fi
   [[ -n "$PTITLE" ]] || die 2 "no title: pass --title, or start the file with a # title"
@@ -730,19 +819,20 @@ if [[ "$ACTION" == update ]]; then
   if [[ "$FILE_VERSION" =~ ^[0-9]+$ ]] && (( FILE_VERSION < VERSION )); then
     note_first "The file was read at version $FILE_VERSION; the page is at version $VERSION now, last changed by $(jq -r '.version.by.displayName // "someone"' "$TMP/page.json")$(jq -r '.version.when // "" | if . == "" then "" else ", " + .[0:10] end' "$TMP/page.json"). Publishing the file takes back whatever changed since: read the page again, carry the edit over, and dry-run again."
   fi
-  NEW_TITLE="$PTITLE"
+  NEW_TITLE="$PTITLE"; TITLE_CHANGES=0
   if (( HAVE_TITLE )) && [[ "$TITLE_ARG" != "$PTITLE" ]]; then
     if title_taken "$TITLE_ARG" "$ID"; then
       die 5 "space $SKEY already has another page titled \"$TITLE_ARG\" (id $TAKEN_ID)" "pick another title"
     fi
     note "The title changes from \"$PTITLE\"."
-    NEW_TITLE="$TITLE_ARG"
+    NEW_TITLE="$TITLE_ARG"; TITLE_CHANGES=1
   elif [[ -n "$TITLE" && "$TITLE" != "$PTITLE" ]] && (( ! HAVE_TITLE )); then
     note "The file's title differs from the page's; the title was left as it is. Pass --title to change it."
   fi
   if [[ -n "$MD_FILE" ]]; then
     LC_ALL=C grep -q '[^[:space:]]' "$XML" || die 2 "$MD_FILE holds no body; publishing it would empty the page" \
       "write the page's text into the file"
+    jira_macros
     lost_content "$TMP/page.json"
     table_shapes
     preview_dir "$ID"
@@ -757,6 +847,14 @@ http GET "$BASE/rest/api/content/$ID/child/attachment?limit=200" "$TMP/attachmen
 expect "list the attachments of page $ID" "$TMP/attachments.json" 200
 need_json "$TMP/attachments.json"
 sift_uploads "$TMP/attachments.json"
+
+if (( SAME_BODY )); then
+  if (( ! TITLE_CHANGES && N_UP == 0 )); then
+    note "Publishing changes nothing: the file reads as the page does now, with the same macros, and there is no new title or file. It would only make version $(( VERSION + 1 )) with no change in it — do not publish, unless a note above names something on the page that is meant to go."
+  else
+    note "The file reads as the page does now, with the same macros: publishing changes no text."
+  fi
+fi
 
 if (( ! YES )); then report dry-run; exit 0; fi
 

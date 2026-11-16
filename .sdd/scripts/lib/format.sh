@@ -32,6 +32,9 @@
 #   md_req_lines <file> <REQ-…>    the line numbers of the entries carrying it
 #   md_req_declared <file>         the ids of the requirements a feature's
 #                                  new-requirements.md declares, in file order
+#   md_req_relations <file>       one record per requirement it declares:
+#                                  `<REQ-…>|new|`, `<REQ-…>|refines|<REQ-…>`
+#                                  or `<REQ-…>|supersedes|<REQ-…>`
 #   md_counter <file> [<domain>]   REQ-… the `<!-- Next free number: -->`
 #                                  marker of that domain says; empty when there
 #                                  is none. The default domain is the empty one
@@ -306,6 +309,41 @@ md_req_lines() {
 md_req_declared() {
   md_uncomment "$1" | awk "$MD_AWK_DECL"'
     md_is_req_heading($0) { print md_id($0) }
+  '
+}
+
+# What each declared requirement is to the compilation, which is what
+# /sdd-actualize acts on: an entry of its own, a rewording of an entry already
+# there, or the replacement of one. The relation is a line under the heading,
+# the format `.sdd/templates/new-requirements.md` fixes:
+#
+#   ### REQ-031 — Guest checkout
+#   - **Supersedes:** [REQ-012](../requirements.md#^req-012)
+#
+# and a requirement carrying neither line is `new`. The target is the first id
+# after the key, so the link text and a bare `REQ-012` read the same. A key with
+# no id behind it comes back with an empty target — the caller says so rather
+# than this reader guessing which of the two the line meant to be.
+#
+# A requirement moved under `## Out of Scope` is not among them: its heading
+# still holds the number, which is `md_req_declared`'s business, and nothing of
+# it is promoted.
+md_req_relations() {
+  md_uncomment "$1" | awk "$MD_AWK_DECL"'
+    function flush() { if (id != "") print id "|" rel "|" target; id = "" }
+    /^##[[:space:]]/ { oos = (tolower($0) ~ /^##[[:space:]]+out of scope/) }
+    md_is_req_heading($0) {
+      flush()
+      if (!oos) { id = md_id($0); rel = "new"; target = "" }
+      next
+    }
+    /^#+[[:space:]]/ { flush(); next }
+    id != "" && rel == "new" && match($0, /\*\*(Refines|Supersedes):\*\*/) {
+      key = substr($0, RSTART, RLENGTH); rest = substr($0, RSTART + RLENGTH)
+      rel = (key ~ /Refines/) ? "refines" : "supersedes"
+      target = md_id(rest)
+    }
+    END { flush() }
   '
 }
 

@@ -1,5 +1,6 @@
 VERIFY=fail
 
 FAIL:
+REQ-003 is declared by _docs/Cart/new-requirements.md and _docs/requirements.md holds no entry for it — it was not promoted.
 Still draft in _docs/requirements.md: REQ-002, REQ-002. An entry stays draft until its wording matches the final new-requirements.md, and a draft entry keeps the feature short of actualized.
 ### exit=2

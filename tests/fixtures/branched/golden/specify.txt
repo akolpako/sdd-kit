@@ -25,7 +25,7 @@ REQ_DUPLICATES:
 STOP:
 
 ASK:
-These files already hold a spec: new-requirements.md (ready), design.md (ready), tasks.md (ready). Which of them may this run overwrite? Generation does not start until the human answers, and a file marked ready carries the result of a /sdd-spec-review session that overwriting throws away.
+These files already hold a spec: new-requirements.md (ready), design.md (ready), tasks.md (ready). Which of them may this run overwrite? Generation does not start until the human answers, and a file marked ready carries the result of a /sdd-spec-review session that overwriting throws away. tasks.md carries 2 task(s) marked [x] and 0 blocked — the only record of what was implemented. Overwriting it resets every one of them while the code stays in the tree.
 
 WARN:
 

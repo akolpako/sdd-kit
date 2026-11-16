@@ -71,7 +71,11 @@
 #   code-fix     REVIEW, REVIEW_PATH, REVIEW_DATE, REVIEW_ROOT, REVIEW_VERDICT,
 #                ROOT, BUILD_ROOT, BUILD_BACKEND, BUILD_FRONTEND
 #   actualize    REQUIREMENTS, DESIGN, COMPILATION, NEXT_REQ, REQ_DOMAINS:,
-#                COMPILATION_ENTRIES:
+#                COMPILATION_ENTRIES:, and DECLARED: — one record per
+#                requirement the feature declares, `<REQ-…>|new|`,
+#                `<REQ-…>|refines|<REQ-…>` or `<REQ-…>|supersedes|<REQ-…>`:
+#                what each of them is to the compilation, read off the
+#                `**Refines:**` / `**Supersedes:**` line under its heading
 #
 # Prints under --verify, and nothing else:
 #   VERIFY=ok|fail
@@ -85,9 +89,12 @@
 #                human kept were not written by this run and are not named
 #   implement    --scope=backend|frontend: no task of that type is left `open`;
 #                the ones that are are named
-#   code-review  review.md exists, holds something, and carries `> Verdict:`
-#   actualize    no entry this feature sourced is still `draft`, and the
-#                compilation counter stands past every number handed out
+#   code-review  review.md exists, holds something, and carries a verdict
+#                somebody reached — not the template's placeholder
+#   actualize    every requirement the feature declares is in the compilation
+#                as what DECLARED: says it is, no entry this feature sourced is
+#                still `draft`, and the compilation counter stands past every
+#                number handed out
 #   review, code-fix have no --verify: what they leave behind is the human's
 #   yes and the writes of spec-edit.sh, and both are mechanical already.
 #   Whether the text is any good is not checked here at all — that is the work
@@ -470,6 +477,10 @@ verify_code_review() {
         fail "_docs/$FOLDER/review.md holds nothing but the template it was copied from — the scaffold created it and the report was never written into it."
       elif [[ -z "$R_VERDICT" || "$R_VERDICT" == "absent" ]]; then
         fail "_docs/$FOLDER/review.md carries no verdict — a report is not one until it says what it concluded. It is the \`verdict\` property of the frontmatter, or the \`> Verdict:\` line of a report written before them."
+      elif [[ "$R_VERDICT" == "<"* ]]; then
+        # The body was written and the property was not: the template's own
+        # `<APPROVED | … | BLOCKED>` is a value, and it answers the check above.
+        fail "_docs/$FOLDER/review.md still carries the template's placeholder as its verdict — the report was written and what it concluded was not."
       fi ;;
     empty) fail "_docs/$FOLDER/review.md is there and holds nothing — the report was not written." ;;
     *)     fail "_docs/$FOLDER/review.md is not on disk — the report was not written." ;;
@@ -482,6 +493,31 @@ verify_actualize() {
     fail "_docs/requirements.md is not on disk — nothing of this feature was promoted into it."
     return 0
   fi
+  # Every requirement the feature declares, against what the compilation now
+  # holds. A draft entry is only one way a promotion stays unfinished: an entry
+  # never written and a refinement never applied leave no draft behind at all.
+  local d_id d_rel d_target t_line
+  while IFS='|' read -r d_id d_rel d_target; do
+    [[ -n "$d_id" ]] || continue
+    case "$d_rel" in
+      new)
+        [[ -n "$(md_req_lines "$SPECS/requirements.md" "$d_id")" ]] || \
+          fail "$d_id is declared by _docs/$FOLDER/new-requirements.md and _docs/requirements.md holds no entry for it — it was not promoted." ;;
+      supersedes)
+        [[ -n "$(md_req_lines "$SPECS/requirements.md" "$d_id")" ]] || \
+          fail "$d_id is declared by _docs/$FOLDER/new-requirements.md and _docs/requirements.md holds no entry for it — it was not promoted."
+        t_line="$(md_req_lines "$SPECS/requirements.md" "$d_target" | head -n 1)"
+        if [[ -n "$t_line" ]] && ! sed -n "${t_line}p" "$SPECS/requirements.md" | grep -q "superseded by $d_id"; then
+          fail "$d_id supersedes $d_target, and the entry of $d_target in _docs/requirements.md does not say so — it still reads as a requirement in force."
+        fi ;;
+      refines)
+        printf '%s\n' "$COMP_RECS" | grep -q "^$d_target|" || \
+          fail "$d_id refines $d_target, and the entry of $d_target in _docs/requirements.md carries no trace of this feature — the new wording was not written into it." ;;
+    esac
+  done <<EOF
+$(md_req_relations "$SPECS/$FOLDER/new-requirements.md")
+EOF
+
   local drafts counter highest
   drafts="$(printf '%s\n' "$COMP_RECS" | awk -F'|' '
     $2 == "draft" { printf "%s%s", sep, $1; sep = ", " }
@@ -799,7 +835,13 @@ check_specify() {
     present="$present, $file ($marker)"
   done
   if [[ -n "$present" ]]; then
-    ask "These files already hold a spec:${present#,}. Which of them may this run overwrite? Generation does not start until the human answers, and a file marked ready carries the result of a /sdd-spec-review session that overwriting throws away."
+    # The marks are the one thing in a spec no regeneration brings back: the
+    # code they stand for stays in the tree, and the record of it does not.
+    local marks=""
+    if [[ "$present" == *"tasks.md"* && ( "$T_DONE" != "0" || "$T_BLOCKED" != "0" ) ]]; then
+      marks=" tasks.md carries $T_DONE task(s) marked [x] and $T_BLOCKED blocked — the only record of what was implemented. Overwriting it resets every one of them while the code stays in the tree."
+    fi
+    ask "These files already hold a spec:${present#,}. Which of them may this run overwrite? Generation does not start until the human answers, and a file marked ready carries the result of a /sdd-spec-review session that overwriting throws away.$marks"
   fi
 
   arch_present || \
@@ -824,6 +866,12 @@ check_review() {
 
   [[ "$ST_RAW" == "present" ]] || \
     warn "_docs/$FOLDER/raw.md is $ST_RAW — the intent coverage pass of the checklist cannot run, and the session says so."
+  # A review rewrites the breakdown, and by now part of it is code. The marks
+  # are the implementer's and stay where they are; what the human has to hear is
+  # that a requirement changed here is a requirement already built.
+  if [[ "$T_DONE" != "0" || "$T_BLOCKED" != "0" ]]; then
+    warn "$T_DONE task(s) are marked [x] and $T_BLOCKED blocked — this spec already has code behind it. The marks stay as they are through the review; a change to what a done task covers becomes a new task, and /sdd-implement $FEATURE is what builds it."
+  fi
   [[ "$COMPILATION" == "present" ]] || \
     warn "_docs/requirements.md is not there — the requirements of this feature cannot be compared against the ones the project already has."
   arch_present || \
@@ -970,11 +1018,60 @@ check_actualize() {
     stop "${NR_ERRLINE#ERROR=} — no number is issued from a count made by hand."
     RC2=1
   fi
+
+  # What each declared requirement is to the compilation. The relation is read
+  # here, off the line the role wrote under the heading, so that the step that
+  # edits requirements.md acts on a record and not on its own reading of prose.
+  local d_id d_rel d_target
+  [[ "$ST_REQ" == "present" ]] && DECLARED_RECS="$(md_req_relations "$SPECS/$FOLDER/new-requirements.md")"
+  while IFS='|' read -r d_id d_rel d_target; do
+    [[ -n "$d_id" && "$d_rel" != "new" ]] || continue
+    if [[ -z "$d_target" ]]; then
+      stop "$d_id says it $d_rel a requirement and names none — the line under its heading in _docs/$FOLDER/new-requirements.md carries no REQ id. Which entry it is about is not guessed."
+    elif [[ "$d_target" == "$d_id" ]]; then
+      stop "$d_id says it $d_rel itself — the line under its heading in _docs/$FOLDER/new-requirements.md names its own number where an entry of _docs/requirements.md belongs."
+    elif [[ "$COMPILATION" == "present" && -z "$(md_req_lines "$SPECS/requirements.md" "$d_target")" ]]; then
+      stop "$d_id $d_rel $d_target, and _docs/requirements.md holds no entry $d_target — there is nothing to ${d_rel%s} there. Fix the line in _docs/$FOLDER/new-requirements.md."
+    fi
+  done <<EOF
+$DECLARED_RECS
+EOF
+  [[ "$ST_REQ" == "present" && -z "$DECLARED_RECS" ]] && \
+    warn "_docs/$FOLDER/new-requirements.md declares no requirement — nothing of it reaches _docs/requirements.md, and only the architecture baseline is promoted."
+
+  # Promotion is the one step nothing later reviews: an entry written here is
+  # what every next feature is specified against. So whatever says the feature
+  # is not finished goes to the human before a line of it is written.
+  local pair marker file draft=""
+  for pair in "$ST_REQ:$S_REQ:new-requirements.md" "$ST_DES:$S_DES:design.md" "$ST_TSK:$S_TSK:tasks.md"; do
+    [[ "${pair%%:*}" == "present" ]] || continue
+    marker="${pair#*:}"; file="${marker#*:}"; marker="${marker%%:*}"
+    [[ "$marker" == "ready" ]] && continue
+    [[ "$marker" == "absent" ]] && marker="no status"
+    draft="$draft, $file ($marker)"
+  done
+  [[ -n "$draft" ]] && \
+    ask "Not reviewed: ${draft#, }. /sdd-spec-review $FEATURE is what promotes a spec to ready. Promoting anyway writes requirements nobody approved into _docs/requirements.md as final — it needs the human to say so in as many words, and the final report then says the baseline was written from an unreviewed spec."
+
+  if [[ "$ST_TSK" != "present" ]]; then
+    ask "_docs/$FOLDER/tasks.md is $ST_TSK — nothing on disk says this feature was implemented. Promoting anyway records its requirements as what the project does; it needs the human to say so in as many words."
+  elif [[ "$T_TOTAL" == "0" || "$T_DONE" != "$T_TOTAL" ]]; then
+    ask "Not implemented: $T_DONE of $T_TOTAL task(s) are [x], $T_BLOCKED blocked. /sdd-implement $FEATURE is what finishes them. Promoting anyway records requirements the code does not meet as what the project does — it needs the human to say so in as many words, and the final report names the tasks left open."
+  fi
+
+  case "$(printf '%s' "$R_VERDICT" | tr '[:upper:]' '[:lower:]')" in
+    blocked*)
+      ask "The code review of $R_DATE says '$R_VERDICT' — the code was judged not mergeable as it stands. /sdd-code-fix $FEATURE acts on that report. Promoting anyway needs the human to say so in as many words." ;;
+    "approved with"*)
+      warn "The code review of $R_DATE says '$R_VERDICT' — it lists Major findings, and /sdd-code-fix $FEATURE is what acts on them." ;;
+    stale*)
+      warn "The code review report says '$R_VERDICT' — fixes were applied after it, and no review has seen the code as it now stands." ;;
+  esac
 }
 
 PROJECT=""; TEMPLATES=""; EXISTING=""
 NAME_OK=""; NAME_WARN=""; FEATURES=""
-TODO_RECS=""; ROLE_ORDER=""; BLOCKED_RECS=""
+TODO_RECS=""; ROLE_ORDER=""; BLOCKED_RECS=""; DECLARED_RECS=""
 
 # Two shapes of the same baseline on disk at once is the one state no reader
 # resolves, and it holds for every command — so it is raised here rather than
@@ -1221,6 +1318,11 @@ case "$CMD" in
     if [[ $SPAWNING -eq 1 ]]; then
       printf '\nCOMPILATION_ENTRIES:\n'
       [[ -n "$COMP_RECS" ]] && printf '%s\n' "$COMP_RECS"
+      # What this run writes into requirements.md, one record per requirement:
+      # the command makes one call per record and reads no relation out of the
+      # spec for itself.
+      printf '\nDECLARED:\n'
+      [[ -n "$DECLARED_RECS" ]] && printf '%s\n' "$DECLARED_RECS"
     fi
     ;;
 esac

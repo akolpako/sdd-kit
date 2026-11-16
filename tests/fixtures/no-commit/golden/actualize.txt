@@ -1,4 +1,4 @@
-GATE=ok
+GATE=ask
 FEATURE=Cart
 FOLDER=Cart
 STAGE=in progress 2/4
@@ -17,9 +17,15 @@ COMPILATION_ENTRIES:
 REQ-002|draft
 REQ-003|draft
 
+DECLARED:
+REQ-002|new|
+REQ-003|new|
+
 STOP:
 
 ASK:
+Not implemented: 2 of 4 task(s) are [x], 0 blocked. /sdd-implement Cart is what finishes them. Promoting anyway records requirements the code does not meet as what the project does — it needs the human to say so in as many words, and the final report names the tasks left open.
+The code review of 2026-01-15 says 'BLOCKED' — the code was judged not mergeable as it stands. /sdd-code-fix Cart acts on that report. Promoting anyway needs the human to say so in as many words.
 
 WARN:
 

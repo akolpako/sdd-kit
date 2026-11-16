@@ -17,6 +17,10 @@ COMPILATION_ENTRIES:
 REQ-002|active
 REQ-003|active
 
+DECLARED:
+REQ-002|new|
+REQ-003|new|
+
 STOP:
 
 ASK:

@@ -14,6 +14,7 @@ STOP:
 _docs/architecture.index.md is not there — there is nothing to promote a decision into. /sdd-init owns creating it.
 
 ASK:
+Not implemented: 1 of 3 task(s) are [x], 1 blocked. /sdd-implement Cart is what finishes them. Promoting anyway records requirements the code does not meet as what the project does — it needs the human to say so in as many words, and the final report names the tasks left open.
 
 WARN:
 

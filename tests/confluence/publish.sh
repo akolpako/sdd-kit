@@ -95,7 +95,7 @@ mkdir -p "$TMP/fetched/attachments" && cp "$SCRIPT_DIR/golden/page.md" "$TMP/fet
   && : > "$TMP/fetched/attachments/flow diagram.png" && : > "$TMP/fetched/attachments/spec.pdf"
 cp_ update "$PAGE" "$TMP/fetched/page.md" --convert-only
 [[ $RC -eq 0 ]] && has "$OUT" "TITLE=Payments — design" \
-  && [[ "$(sed 's/></>\n</g' "$CONVERTED" | head -n 1)" == "<h1>Overview</h1>" ]] \
+  && [[ "$(sed 's/></>\n</g' "$CONVERTED" | head -n 3 | tr -d '\n')" == '<ac:structured-macro ac:name="toc" ac:schema-version="1"></ac:structured-macro><h1>Overview</h1>' ]] \
   && ! grep -q 'Space: Payments' "$CONVERTED"
 check "convert: a fetched file loses its header" $? "exit=$RC, out: $OUT, err: $ERR"
 
@@ -122,8 +122,8 @@ cp_ update "$PAGE" "$STORY"
 [[ $RC -eq 0 && "$(methods)" == "GET GET" ]] && has "$OUT" "CONFLUENCE=dry-run" && has "$OUT" "VERSION=7" \
   && has "$OUT" "TITLE=Payments — design" && has "$OUT" "SPACE=PAY"
 check "update dry run: reads, sends nothing" $? "exit=$RC, out: $OUT, err: $ERR, log: $(log)"
-has "$OUT" "macros the Markdown cannot: jira, toc." && has "$OUT" "columns or sections" && has "$OUT" "inline comments"
-check "update dry run: what the page loses is named" $? "out: $OUT"
+! has "$OUT" "macros the Markdown cannot" && has "$OUT" "columns or sections" && has "$OUT" "inline comments"
+check "update dry run: what the page loses is named — not the toc, which [TOC] keeps" $? "out: $OUT"
 has "$OUT" "the title was left as it is" && has "$OUT" '`flow diagram.png` is attached already, with the same size' \
   && has "$OUT" '`spec.pdf` is attached already, with another size; it is uploaded as its next version'
 check "update dry run: title and attachments noted" $? "out: $OUT"
@@ -202,7 +202,7 @@ has "$F" "A table has merged cells" && has "$F" 'The table "Type | Field | Gette
 check "fetch: merged cells and a short row are named" $? "out: $F, md: $(cat "$TMP/merged/page.md")"
 
 cp_ update "$PAGE" "$TMP/merged/page.md"
-[[ $RC -eq 0 ]] && has "$OUT" "FILE_VERSION=29" && ! has "$OUT" "DIFF=" && has "$OUT" "publishing it changes no text" \
+[[ $RC -eq 0 ]] && has "$OUT" "FILE_VERSION=29" && ! has "$OUT" "DIFF=" && has "$OUT" "Publishing changes nothing" && has "$OUT" "MACROS=none" \
   && ! has "$OUT" "was read at version" \
   && has "$OUT" "Table 1 of the page (Type | Field | Getter) has merged cells, which Markdown cannot hold" \
   && has "$OUT" "has rows with fewer cells than it is wide (row 4, the header being row 1)" && ! has "$OUT" "changes shape"
@@ -265,6 +265,75 @@ check "create --yes: an upload refused after the create is partial and names the
 cp_ create "$STORY"
 [[ $RC -eq 2 ]] && has "$ERR" "needs --space or --parent"
 check "create: needs a space or a parent" $? "exit=$RC, err: $ERR"
+
+# ── Jira links ────────────────────────────────────────────────────
+# A link that shows only an issue becomes the Jira issue macro, naming the
+# server Confluence links to that Jira by; a link with text of its own, or
+# to a Jira Confluence is not linked to, stays a link.
+tokens "CONFLUENCE_TOKEN=tok"
+printf '%s\n' '# J' '' '- Feature: [PAY-42](https://jira.example.com/browse/PAY-42)' \
+  '- bare https://jira.example.com/browse/PAY-43 and <https://jira.example.com/browse/PAY-44?src=confmacro>' \
+  '- [the refunds](https://jira.example.com/browse/PAY-45), [X-1](https://jira.other.com/browse/X-1)' > "$DOC/jira.md"
+GET_JIRA="/rest/jiraanywhere/1.0/servers|200|application/json|-|$API/jira-servers.json|GET"
+MACRO='<ac:structured-macro ac:name="jira" ac:schema-version="1"><ac:parameter ac:name="server">Example Jira</ac:parameter><ac:parameter ac:name="serverId">srv-1</ac:parameter><ac:parameter ac:name="key">'
+
+table "$GET_PAGE" "$GET_JIRA" "$GET_ATT" "$PUT_PAGE"
+cp_ update "$PAGE" "$DOC/jira.md"
+P="$(printf '%s\n' "$OUT" | sed -n 's/^PREVIEW=//p')"
+[[ $RC -eq 0 && "$(methods)" == "GET GET GET" ]] && grep -q 'jiraanywhere/1.0/servers' "$FAKE_CURL_LOG" \
+  && grep -qF "${MACRO}PAY-42</ac:parameter></ac:structured-macro>" "$P" \
+  && grep -qF "${MACRO}PAY-43</ac:parameter></ac:structured-macro>" "$P" \
+  && grep -qF "${MACRO}PAY-44</ac:parameter></ac:structured-macro>" "$P" \
+  && grep -qF '<a href="https://jira.example.com/browse/PAY-45">the refunds</a>' "$P" \
+  && grep -qF '<a href="https://jira.other.com/browse/X-1">X-1</a>' "$P" \
+  && has "$OUT" "A link to an issue on https://jira.other.com stays a link"
+check "update dry run: links to issues become the Jira macro" $? "exit=$RC, out: $OUT, err: $ERR, log: $(log), body: $(cat "$P" 2>/dev/null)"
+
+table "$GET_PAGE" "$GET_ATT"
+cp_ update "$PAGE" "$DOC/jira.md"
+P="$(printf '%s\n' "$OUT" | sed -n 's/^PREVIEW=//p')"
+[[ $RC -eq 0 ]] && has "$OUT" "Links to Jira issues stay links: the Jira servers Confluence is linked to could not be read (HTTP 404" \
+  && ! grep -q 'ac:name="jira"' "$P" && grep -qF '<a href="https://jira.example.com/browse/PAY-42">PAY-42</a>' "$P"
+check "update dry run: no Jira server list — the links stay links, and it is said" $? "exit=$RC, out: $OUT, err: $ERR"
+
+cp_ create --convert-only "$DOC/jira.md"
+[[ $RC -eq 0 ]] && has "$OUT" "Links to Jira issues stay links here" && ! grep -q 'ac:name="jira"' "$CONVERTED"
+check "convert: Jira links are named, the macro is left to publishing" $? "exit=$RC, out: $OUT"
+
+table "$GET_PAGE" "$GET_JIRA" "$GET_ATT"
+cp_ update "$PAGE" "$STORY"
+[[ $RC -eq 0 ]] && ! grep -q 'jiraanywhere' "$FAKE_CURL_LOG"
+check "update dry run: no Jira links, no Jira request" $? "log: $(log)"
+
+# ── dates ─────────────────────────────────────────────────────────
+printf '%s\n' '# D' '' '- as of <time>2026-11-16</time>, **<time datetime="2026-12-01">1 Dec</time>**, <time datetime="2027-01-02"/>' \
+  '- `<time>2026-11-16</time>` and <time>16.11.2026</time>' '' '| d |' '|---|' '| <time>2026-03-04</time> |' > "$DOC/dates.md"
+cp_ create --convert-only "$DOC/dates.md"
+[[ $RC -eq 0 ]] && grep -qF 'as of <time datetime="2026-11-16"/>, <strong><time datetime="2026-12-01"/></strong>, <time datetime="2027-01-02"/>' "$CONVERTED" \
+  && grep -qF '<code>&lt;time&gt;2026-11-16&lt;/time&gt;</code> and &lt;time&gt;16.11.2026&lt;/time&gt;' "$CONVERTED" \
+  && grep -qF '<td><time datetime="2026-03-04"/></td>' "$CONVERTED"
+check "convert: <time> dates become the date macro; code and other text stay text" $? "exit=$RC, body: $(cat "$CONVERTED")"
+has "$OUT" "MACROS=date 4"
+check "convert: MACROS= counts the macros the body gets" $? "out: $OUT"
+
+# ── table of contents ─────────────────────────────────────────────
+printf '%s\n' '# C' '' 'Intro' '[TOC maxLevel=2 exclude="A & B"]' '' '[TOC] and text' > "$DOC/toc.md"
+cp_ create --convert-only "$DOC/toc.md"
+[[ $RC -eq 0 ]] && grep -qF '<p>Intro</p><ac:structured-macro ac:name="toc" ac:schema-version="1"><ac:parameter ac:name="maxLevel">2</ac:parameter><ac:parameter ac:name="exclude">A &amp; B</ac:parameter></ac:structured-macro><p>[TOC] and text</p>' "$CONVERTED" \
+  && has "$OUT" "MACROS=toc 1"
+check "convert: [TOC] on a line of its own is the toc macro, with its settings" $? "exit=$RC, out: $OUT, body: $(cat "$CONVERTED")"
+
+# ── a body that changes no text ───────────────────────────────────
+# A link turned into the Jira macro reads the same as Markdown: the macros
+# tell the change.
+jq '.version.number = 3 | .body.storage.value = "<p>See <a href=\"https://jira.example.com/browse/PAY-42\">PAY-42</a></p>" | .body.export_view.value = .body.storage.value' "$API/page.json" > "$TMP/link.json"
+"$ENGINE/.sdd/skills/confluence/scripts/confluence-fetch.sh" 123456 --from-file "$TMP/link.json" --out "$TMP/link/page.md" >/dev/null 2>&1
+tokens "CONFLUENCE_TOKEN=tok"
+table "/rest/api/content/123456?expand=body.storage|200|application/json|-|$TMP/link.json|GET" "$GET_JIRA" "$GET_ATT"
+cp_ update "$PAGE" "$TMP/link/page.md"
+[[ $RC -eq 0 ]] && ! has "$OUT" "DIFF=" && has "$OUT" "MACROS=jira 1" \
+  && has "$OUT" "but its macros differ: the page has none; the file gives jira 1." && ! has "$OUT" "Publishing changes nothing"
+check "update dry run: no text change, but a link becomes a macro — said" $? "exit=$RC, out: $OUT, err: $ERR"
 
 # ── attach ────────────────────────────────────────────────────────
 tokens "CONFLUENCE_TOKEN=tok"

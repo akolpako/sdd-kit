@@ -104,9 +104,9 @@ is `orchestration.md`.
 | `/sdd-specify` | requirements-engineer · requirements<br>architect · design+tasks | spec-modes, requirements-writing, docs-format<br>spec-modes, architecture-design, task-breakdown, docs-format | `backup`, then `scaffold spec` over the files this run writes |
 | `/sdd-spec-review` | same two roles and scopes | as for specify, plus spec-checklist, interview | `status` markers; answers into `## Open Questions` via `section` |
 | `/sdd-implement` | backend-developer · backend<br>frontend-developer · frontend | developer, task-loop | nothing |
-| `/sdd-code-review` | code-reviewer · review-set | code-review, docs-format | `backup`, `scaffold review`, then the report |
+| `/sdd-code-review` | code-reviewer · review-set | code-review, docs-format | `backup`, `scaffold review` with the header (before spawn); the markers `section` after. The findings, coverage and verdict are the role's |
 | `/sdd-code-fix` | backend/frontend-developer · findings-backend/-frontend | developer | `marker` (`TODO Code Review:`), `verdict-stale` |
-| `/sdd-actualize` | architect · baseline-from-feature | project-baseline, docs-format | `backup`, `compile-entry` into `requirements.md`; `arch-index` after |
+| `/sdd-actualize` | architect · baseline-from-feature | project-baseline, docs-format | `backup`; after the spawn `arch-index`, then `compile-entry` into `requirements.md` per `DECLARED:` record — the last write |
 | `/sdd-status` | — | — | nothing — the report goes to chat |
 
 - **Scaffold before spawn**: a role opens a file already on disk rather than looking for the
@@ -117,6 +117,15 @@ is `orchestration.md`.
   `task-loop.md`, so `tasks.md` marks are untouched.
 - **One protocol set per role per kind of assignment**, and it is the whole of what the agent
   does under it.
+- **The write that marks a step as done is its last one**: `status` in `/sdd-spec-review`,
+  `verdict-stale` in `/sdd-code-fix`, `compile-entry` in `/sdd-actualize`. A run cut short leaves
+  the feature at the stage it was on, never one ahead.
+- **A relation between requirements is a line on the page**: `**Refines:**` / `**Supersedes:**`
+  under the heading in `new-requirements.md`, written by the role, read by `lib/format.sh`,
+  handed to `/sdd-actualize` as `DECLARED:`. A refinement leaves `refined by <Feature>` on the
+  entry it reworded — the only trace of a feature that added no entry of its own.
+- **The report of a code review is written by the reviewer**, into the scaffolded `review.md`.
+  It is the one file that role writes; the orchestrator never retypes a finding.
 
 **`/sdd-spec-review` loops per scope; no role stays alive across rounds.**
 

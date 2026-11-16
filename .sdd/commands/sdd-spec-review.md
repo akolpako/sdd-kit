@@ -15,8 +15,8 @@ Turns a `draft` spec into a `ready` one through the checklist and an interview. 
   - `.sdd/protocols/orchestration.md`
   - the output of `.sdd/scripts/gate.sh review`
   - the prompts `.sdd/scripts/spawn-prompt.sh` renders
-  - `_docs/requirements.md`, for overlaps and conflicts
-  - never the feature's spec files — those are the roles' to read
+  - the `## Open Questions` section of `new-requirements.md` and `design.md`, and the `REQ-###` headings of `new-requirements.md` for the matrix
+  - nothing else of the feature's spec files — those are the roles' to read
 - **Writes,** and nothing else in either file — everything else in their bodies is the roles':
   - the `status` markers of the feature's `new-requirements.md`, `design.md`, `tasks.md`
   - the `## Open Questions` section of `new-requirements.md` and `design.md` — the human's answers, appended to the lines they answer
@@ -37,9 +37,9 @@ Turns a `draft` spec into a `ready` one through the checklist and an interview. 
 
    At most three rounds per file per session, per `.sdd/protocols/interview.md`. What is still open at that ceiling stays on the page, and the verdict of step 7 accounts for it.
 
-4. **Resolve conflicts.** No conflict is left unresolved.
-   - A new requirement conflicting with one in `requirements.md` goes to the human, who says which of the two it is: a **refinement** of the existing requirement or its **replacement**. Record the answer in the feature's `new-requirements.md` next to the requirement — `refines REQ-NNN` / `supersedes REQ-NNN` — and `/sdd-actualize` applies it to the compilation.
-   - A new architecture decision conflicting with the architecture baseline goes to the human the same way.
+4. **Conflicts are settled inside the loop of step 3, not after it.** Finding them is the roles': a new requirement that overlaps or contradicts an entry of `_docs/requirements.md`, and a design decision that contradicts the architecture baseline, each arrive as a line of `## Open Questions` like any other question.
+   - For a requirement the question is always the same one — is it a **refinement** of the existing entry or its **replacement** — and the answer is written back onto its line by the same `spec-edit.sh section` call. The role then records it as the `Refines:` / `Supersedes:` line under the requirement's heading; that line is what `/sdd-actualize` applies to the compilation. Nothing is written into `new-requirements.md` by hand here.
+   - No conflict is left unresolved: a conflict line still unanswered when the rounds are spent is a critical gap, and the verdict of step 7 is `NOT READY`.
 
 5. **Re-run the gate:** the roles have been rewriting `tasks.md` since step 1, so the `TASKS:` records the matrix of step 6 reads come from this run, never from the first one.
 

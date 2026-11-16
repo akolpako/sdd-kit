@@ -1,0 +1,18 @@
+ENTRY=REQ-001
+ACTION=refined
+NEXT_FREE=REQ-002
+FILE=_docs/requirements.md
+### exit=0
+### tree
+diff -ru -x .git <tmp>/domained/_docs/requirements.md <tmp>/edit/_docs/requirements.md
+--- <tmp>/domained/_docs/requirements.md
++++ <tmp>/edit/_docs/requirements.md
+@@ -8,7 +8,7 @@
+ 
+ ## Requirements
+ 
+-- **REQ-001** — Catalog listing. A shopper browses the products on offer. *(Source: Catalog)*
++- **REQ-001** — Catalog listing. A shopper browses and filters the products on offer. *(Source: Catalog, refined by Cart)* ^req-001
+ - **REQ-ACC-001** — Sign-up. A visitor opens an account with an email address. *(Source: Account)*
+ - **REQ-ACC-003** — Password reset. An account holder sets a new password over a mailed link. *(Source: Account)*
+ - **REQ-CART-001** — Cart holds items. A shopper keeps picked items until checkout. *(Source: Cart, draft)*

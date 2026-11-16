@@ -1,0 +1,17 @@
+ENTRY=REQ-001
+ACTION=refined
+NEXT_FREE=REQ-004
+FILE=_docs/requirements.md
+### exit=0
+### tree
+diff -ru -x .git <tmp>/commented/_docs/requirements.md <tmp>/edit/_docs/requirements.md
+--- <tmp>/commented/_docs/requirements.md
++++ <tmp>/edit/_docs/requirements.md
+@@ -14,6 +14,6 @@
+ - **REQ-012** — Guest checkout. A guest can order without an account. *(Source: Cart, superseded by REQ-031)*
+ -->
+ 
+-- **REQ-001** — Catalog listing. A shopper browses the products on offer. *(Source: Catalog)*
++- **REQ-001** — Catalog listing. A shopper browses and filters the products on offer. *(Source: Catalog, refined by Cart)* ^req-001
+ - **REQ-002** — Cart holds items. A shopper keeps picked items until checkout. *(Source: Cart, draft)* <!-- wording reviewed 2026-01-20 -->
+ - **REQ-003** — Cart totals. A cart shows the sum of its items. *(Source: Cart, draft)*

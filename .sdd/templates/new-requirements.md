@@ -27,6 +27,23 @@ and whose it is. Detail belongs in the requirements below, not here. -->
   - Error: when <invalid input or failure>, then <error response>
   - Edge: when <boundary case>, then <expected behaviour>
 
+A requirement that rewords or replaces an entry `_docs/requirements.md` already
+holds says so in one line directly under its heading — one of the two, never
+both, and neither when the requirement is simply new:
+
+### REQ-### — <short title>
+- **Refines:** [REQ-NNN](../requirements.md#^req-nnn)
+- **Description:** …
+
+### REQ-### — <short title>
+- **Supersedes:** [REQ-NNN](../requirements.md#^req-nnn)
+- **Description:** …
+
+`Refines` — the existing entry keeps its number and takes this wording.
+`Supersedes` — the existing entry is retired and this requirement stands in its
+place under its own number. The line is read by the engine: it is what
+/sdd-actualize acts on.
+
 Requirements describe *what* and *why*, never *how*.
 One behaviour per condition — "and" inside a condition means it should be split.
 At least two conditions per requirement, one of them an `Error:` condition.

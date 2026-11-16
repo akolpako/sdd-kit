@@ -156,6 +156,7 @@ scaffold-spec-all|scaffold;spec;<F>;new-requirements.md;design.md;tasks.md
 scaffold-spec-one|scaffold;spec;<F>;design.md
 scaffold-spec-unknown-file|scaffold;spec;<F>;raw.md
 scaffold-review|scaffold;review;<F>
+scaffold-review-header|scaffold;review;<F>;main;deadbeef
 marker-java|marker;src/main/java/com/example/CartService.java;3;The total ignores the discount.
 marker-unknown-type|marker;web/package.json;2;No comment syntax here.
 marker-past-end|marker;_docs/<F>/raw.md;9999;Nowhere near a line.
@@ -164,6 +165,7 @@ compile-entry-new|compile-entry;<F>;REQ-900;final;Saved carts. A shopper keeps a
 compile-entry-superseded|compile-entry;<F>;REQ-002;superseded-by:REQ-900
 compile-entry-no-text|compile-entry;<F>;REQ-900;final
 compile-entry-domained|compile-entry;<F>;REQ-ACC-900;final;Password reset. An account holder sets a new password over a mailed link.
+compile-entry-refined|compile-entry;<F>;REQ-001;final;Catalog listing. A shopper browses and filters the products on offer.
 section-text|section;_docs/<F>/raw.md;Problem;Shoppers lose the cart when the session drops.
 section-heading-hashes|section;_docs/<F>/raw.md;## Problem;Shoppers lose the cart when the session drops.
 section-empty|section;_docs/<F>/raw.md;Users
@@ -1619,6 +1621,213 @@ check_suite() {
   for (( i = 0; i < f; i++ )); do fail; done
 }
 
+# What one requirement is to another, end to end. A relation is written by a
+# role as a line under a heading, read by lib/format.sh, handed to
+# /sdd-actualize by the gate, applied by spec-edit.sh, and read back by
+# feature-state.sh as the stage of the feature — five scripts over one line, and
+# a fixture records one of them at a time. This walks a promotion through all
+# five, a feature that only refines among them: that one leaves no entry of its
+# own, and used to stay at `implemented` for good.
+check_relations() {
+  local work="$TMP/relations-check" state="$SCRIPTS/feature-state.sh"
+  local out rc ok v line
+
+  printf 'relations\n'
+  rm -rf "$work" && mkdir -p "$work/_docs/Checkout" "$work/_docs/Promo" || exit 1
+
+  cat > "$work/_docs/requirements.md" <<'EOF'
+# Requirements Compilation
+
+<!-- Next free number: REQ-003 -->
+
+## Requirements
+
+- **REQ-001** — Guest checkout. A guest can order without an account. *(Source: Catalog)*
+- **REQ-002** — Cart holds items. A shopper keeps picked items until checkout. *(Source: Cart)*
+EOF
+  printf '# Architecture\n\nA monolith.\n' > "$work/_docs/architecture.md"
+
+  cat > "$work/_docs/Checkout/new-requirements.md" <<'EOF'
+---
+status: ready
+---
+
+# Requirements — Checkout
+
+## Requirements
+
+### REQ-003 — Cart size
+- **Refines:** [REQ-002](../requirements.md#^req-002)
+- **Description:** A shopper keeps up to 50 items until checkout. ^req-003
+
+### REQ-004 — Account checkout
+- **Supersedes:** [REQ-001](../requirements.md#^req-001)
+- **Description:** An order needs an account. It replaces REQ-002 nowhere. ^req-004
+
+### REQ-005 — Order summary
+- **Description:** A shopper sees the order before paying. ^req-005
+
+<!--
+### REQ-099 — An example
+- **Refines:** REQ-001
+-->
+
+## Out of Scope
+
+### REQ-006 — Gift wrapping
+EOF
+  printf -- '---\nstatus: ready\n---\n\n# Design — Checkout\n\nBody.\n' > "$work/_docs/Checkout/design.md"
+  cat > "$work/_docs/Checkout/tasks.md" <<'EOF'
+---
+status: ready
+---
+
+# Tasks — Checkout
+
+## Tasks
+
+- [x] **TASK-001** — Checkout service
+  - **Requires:** REQ-003, REQ-004, REQ-005
+  - **Type:** backend
+EOF
+  printf -- '---\nreviewed: 2026-01-15\nbase: main\nroot: deadbeef\nverdict: APPROVED WITH MINOR ISSUES\n---\n\n# Code Review — Checkout\n\nBody.\n' \
+    > "$work/_docs/Checkout/review.md"
+
+  # ── The reader ──────────────────────────────────────────────────
+  out="$(md_req_relations "$work/_docs/Checkout/new-requirements.md" | tr '\n' ' ')"
+  ok=0; [[ "$out" == "REQ-003|refines|REQ-002 REQ-004|supersedes|REQ-001 REQ-005|new| " ]] || ok=1
+  prop_check relations "read off the page" "$ok" \
+    "md_req_relations printed '$out' — three records, the commented example and the requirement under Out of Scope in none of them"
+
+  # ── The gate hands them over ────────────────────────────────────
+  out="$(cd "$work" && "$GATE" actualize Checkout 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^GATE=ok$' || ok=1
+  printf '%s\n' "$out" | grep -q '^REQ-003|refines|REQ-002$' || ok=1
+  printf '%s\n' "$out" | grep -q '^REQ-004|supersedes|REQ-001$' || ok=1
+  printf '%s\n' "$out" | grep -q 'lists Major findings' || ok=1
+  prop_check relations "gate prints DECLARED:" "$ok" \
+    "gate.sh actualize did not answer ok with the three records and the warning about the review: $(printf '%s' "$out" | tr '\n' '~')"
+
+  # `APPROVED WITH MINOR ISSUES` lists Major findings: the next step is the fix.
+  v="$(cd "$work" && "$state" Checkout | sed -n 's/^NEXT=//p')"
+  ok=0; [[ "$v" == "/sdd-code-fix Checkout" ]] || ok=1
+  prop_check relations "approved with issues goes to the fix" "$ok" \
+    "feature-state.sh says NEXT=$v for a report whose verdict lists Major findings"
+
+  # ── Nothing promoted yet ────────────────────────────────────────
+  out="$(cd "$work" && "$GATE" actualize Checkout --verify 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 2 ]] || ok=1
+  printf '%s\n' "$out" | grep -q '^REQ-003 refines REQ-002' || ok=1
+  printf '%s\n' "$out" | grep -q '^REQ-004 supersedes REQ-001' || ok=1
+  printf '%s\n' "$out" | grep -q '^REQ-005 is declared' || ok=1
+  prop_check relations "verify names what did not arrive" "$ok" \
+    "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
+  # ── The promotion ───────────────────────────────────────────────
+  out="$(cd "$work" && "$EDITOR_SH" compile-entry Checkout REQ-002 final "Cart holds items. A shopper keeps up to 50 items until checkout." 2>&1)"
+  line="$(grep 'REQ-002\*\*' "$work/_docs/requirements.md")"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^ACTION=refined$' || ok=1
+  [[ "$line" == *'up to 50 items'*'*(Source: Cart, refined by Checkout)*'* ]] || ok=1
+  prop_check relations "a refinement leaves its trace" "$ok" \
+    "the entry reads: $line"
+
+  ( cd "$work" \
+    && "$EDITOR_SH" compile-entry Checkout REQ-004 final "Account checkout. An order needs an account." \
+    && "$EDITOR_SH" compile-entry Checkout REQ-001 superseded-by:REQ-004 \
+    && "$EDITOR_SH" compile-entry Checkout REQ-005 final "Order summary. A shopper sees the order before paying." ) >/dev/null 2>&1
+
+  out="$(cd "$work" && "$GATE" actualize Checkout --verify 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 0 ]] || ok=1
+  prop_check relations "verify passes once every record is applied" "$ok" \
+    "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
+  out="$(cd "$work" && "$state" Checkout)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^STAGE=actualized$' || ok=1
+  printf '%s\n' "$out" | grep -q '^COMPILATION_REFINED=1$' || ok=1
+  printf '%s\n' "$out" | grep -q '^REQ-002|refined$' || ok=1
+  prop_check relations "the refined entry is the feature's" "$ok" \
+    "$(printf '%s' "$out" | grep -E '^(STAGE|COMPILATION_|REQ-)' | tr '\n' '~')"
+
+  # ── A feature that only refines ─────────────────────────────────
+  cat > "$work/_docs/Promo/new-requirements.md" <<'EOF'
+---
+status: ready
+---
+
+# Requirements — Promo
+
+## Requirements
+
+### REQ-007 — Cart size for members
+- **Refines:** REQ-002
+- **Description:** A member keeps up to 80 items. ^req-007
+EOF
+  printf -- '---\nstatus: ready\n---\n\n# Design — Promo\n\nBody.\n' > "$work/_docs/Promo/design.md"
+  sed 's/Checkout/Promo/; s/REQ-003, REQ-004, REQ-005/REQ-007/' "$work/_docs/Checkout/tasks.md" > "$work/_docs/Promo/tasks.md"
+
+  v="$(cd "$work" && "$state" Promo | sed -n 's/^STAGE=//p')"
+  ok=0; [[ "$v" == "implemented" ]] || ok=1
+  prop_check relations "refine-only, not yet promoted" "$ok" "STAGE=$v where nothing of it is in the compilation"
+
+  ( cd "$work" && "$EDITOR_SH" compile-entry Promo REQ-002 final "Cart holds items. A member keeps up to 80 items, anyone else 50." ) >/dev/null 2>&1
+  line="$(grep 'REQ-002\*\*' "$work/_docs/requirements.md")"
+  v="$(cd "$work" && "$state" Promo | sed -n 's/^STAGE=//p')"
+  out="$(cd "$work" && "$state" Checkout | sed -n 's/^STAGE=//p')"
+  ok=0
+  [[ "$v" == "actualized" && "$out" == "actualized" ]] || ok=1
+  [[ "$line" == *'*(Source: Cart, refined by Checkout, refined by Promo)*'* ]] || ok=1
+  prop_check relations "refine-only reaches actualized" "$ok" \
+    "Promo is '$v', Checkout is '$out', and the entry reads: $line"
+
+  # The same call again adds no second trace, and a later supersession keeps
+  # the ones that are there.
+  ( cd "$work" \
+    && "$EDITOR_SH" compile-entry Promo REQ-002 final "Cart holds items. A member keeps up to 80 items, anyone else 50." \
+    && "$EDITOR_SH" compile-entry Checkout REQ-002 superseded-by:REQ-005 ) >/dev/null 2>&1
+  line="$(grep 'REQ-002\*\*' "$work/_docs/requirements.md")"
+  ok=0
+  [[ "$line" == *'*(Source: Cart, refined by Checkout, refined by Promo, superseded by REQ-005)*'* ]] || ok=1
+  prop_check relations "the trace survives later edits" "$ok" "the entry reads: $line"
+
+  # ── A relation the gate cannot act on ───────────────────────────
+  cat > "$work/_docs/Promo/new-requirements.md" <<'EOF'
+---
+status: ready
+---
+
+# Requirements — Promo
+
+## Requirements
+
+### REQ-007 — Cart size for members
+- **Refines:**
+
+### REQ-008 — Member prices
+- **Supersedes:** REQ-555
+EOF
+  out="$(cd "$work" && "$GATE" actualize Promo 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^GATE=stop$' || ok=1
+  printf '%s\n' "$out" | grep -q '^REQ-007 says it refines a requirement and names none' || ok=1
+  printf '%s\n' "$out" | grep -q '^REQ-008 supersedes REQ-555, and _docs/requirements.md holds no entry REQ-555' || ok=1
+  prop_check relations "a broken relation is a stop" "$ok" \
+    "$(printf '%s' "$out" | tr '\n' '~')"
+
+  # ── A report whose verdict nobody wrote ─────────────────────────
+  printf -- '---\nreviewed: 2026-01-15\nbase: main\nroot: deadbeef\nverdict: <APPROVED | APPROVED WITH MINOR ISSUES | BLOCKED>\n---\n\n# Code Review — Checkout\n\n## Findings\n\nNone.\n' \
+    > "$work/_docs/Checkout/review.md"
+  out="$(cd "$work" && "$GATE" code-review Checkout --verify 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 2 ]] || ok=1
+  printf '%s\n' "$out" | grep -q "template's placeholder as its verdict" || ok=1
+  prop_check relations "a placeholder verdict is no verdict" "$ok" \
+    "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+}
+
 
 job_body() {
   local name="$1"; shift
@@ -1658,6 +1867,7 @@ start_job spec-verify      check_spec_verify
 start_job interrupted      check_interrupted
 start_job domains          check_domains
 start_job taken            check_taken
+start_job relations        check_relations
 start_job jira-tokens      check_jira_tokens
 start_job lib-source       check_suite lib-source
 start_job confluence-fetch   check_suite confluence

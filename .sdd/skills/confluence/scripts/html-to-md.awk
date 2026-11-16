@@ -1,7 +1,7 @@
 # HTML of a Confluence Data Center page (body.export_view) to Markdown.
 #
 # Run as: LC_ALL=C awk -v origin=<scheme://host[:port]> -v dl=<file> -v notes=<file>
-#                     [-v store=<dir> -v npuml=<n> -v nexp=<n>] -f html-to-md.awk
+#                     [-v store=<dir> -v npuml=<n> -v nexp=<n> -v ntoc=<n>] -f html-to-md.awk
 #
 # Reads HTML on stdin, writes Markdown on stdout. Every attachment the page
 # links or shows is turned into a link under attachments/ and written to `dl`
@@ -10,7 +10,8 @@
 # storage-macros.awk read from the page's storage format: the sources of the
 # PlantUML macros, 1 to `npuml` — the export view has only their rendered
 # images, which become the source — and which of the `nexp` expand macros have
-# a title of their own.
+# a title of their own, and the parameters of the `ntoc` table of contents
+# macros.
 #
 # The input is cut on "<" (RS), so each record is "tag>text" and the page is
 # read in one pass however long it is. Simple structure becomes Markdown;
@@ -22,6 +23,8 @@
 BEGIN {
   npuml += 0; pumlk = 0; nexp += 0; expk = 0; expcap = 0
   if (store != "") for (i = 1; i <= nexp && (getline line < (store "/expand")) > 0; i++) EXPT[i] = (line == "1")
+  ntoc += 0; tock = 0
+  if (store != "") for (i = 1; i <= ntoc && (getline line < (store "/toc")) > 0; i++) TOCP[i] = line
   RS = "<"
   NBSP = sprintf("%c%c", 194, 160)
   init_entities()
@@ -181,7 +184,10 @@ function put_pre(s,   n, L, i) {
 function text(s) {
   if (s == "" || skipdiv || skiptag != "") return
   if (expcap) { expbuf = expbuf s; return }
-  # A Jira issue the browser fills in later: only its key link is real.
+  # A Jira issue macro: only its key link is kept. The summary and status
+  # around it are what the macro shows, filled in when the page is viewed —
+  # in the export view often not at all — and publishing the link draws them
+  # again.
   if (jirask && nas == 0) return
   s = ent(s)
   gsub(NBSP, " ", s)
@@ -237,6 +243,8 @@ function link_open(t,   h) {
     AU[nas] = ""; put("@"); return
   }
   AU[nas] = resolve(h, "")
+  # The macro tags its link with ?src=confmacro; the issue's link is without.
+  if (jirask) sub(/[?]src=confmacro$/, "", AU[nas])
   put("[")
   AP[nas] = pos()
 }
@@ -498,7 +506,7 @@ function tag(t,   isclose, name, n, m, lang, a) {
     if (t ~ /\/[ \t\r\n]*$/) return
     spd++
     if (!expcap && hasclass(t, "expand-control-text")) { expcap = spd; expbuf = ""; return }
-    if (!jirask && hasclass(t, "jira-issue") && attr(t, "data-client-id") != "") jirask = spd
+    if (!jirask && hasclass(t, "jira-issue") && (attr(t, "data-jira-key") != "" || attr(t, "data-client-id") != "")) jirask = spd
     if (hasclass(t, "plantuml-svg-image")) plantuml()
     return
   }
@@ -522,7 +530,7 @@ function tag(t,   isclose, name, n, m, lang, a) {
       dd--; brk(2); return
     }
     if (t ~ /\/[ \t\r\n]*$/) return
-    if (hasclass(t, "toc-macro") || hasclass(t, "client-side-toc-macro")) { skipdiv = 1; return }
+    if (hasclass(t, "toc-macro") || hasclass(t, "client-side-toc-macro")) { toc(); skipdiv = 1; return }
     dd++; DA[dd] = ""; DN[dd] = nps
     brk(2)
     m = admonition(t)
@@ -609,6 +617,29 @@ function tag(t,   isclose, name, n, m, lang, a) {
   if (name == "del" || name == "s" || name == "strike") { if (isclose) mark_close("~~"); else mark_open("~~"); return }
   if (name == "code" || name == "tt" || name == "kbd" || name == "samp") { if (isclose) mark_close("`"); else mark_open("`"); return }
   if (name == "q") { put("\""); return }
+  # The date macro: its date, not the text it shows in the reader's locale.
+  if (name == "time" && !isclose && match(attr(t, "datetime"), /^[0-9][0-9][0-9][0-9]-[01][0-9]-[0-3][0-9]/)) {
+    put("<time>" substr(attr(t, "datetime"), 1, 10) "</time>")
+    if (t !~ /\/[ \t\r\n]*$/) skiptag = "time"
+    return
+  }
+}
+
+# A table of contents macro: a line of its own, [TOC], with the macro's
+# parameters as name=value — read from the storage format, the export view
+# has only the list it drew. The heading it may stand in stays empty.
+function toc(   n, P, i, k, v, s) {
+  s = "[TOC"
+  n = (++tock <= ntoc) ? split(TOCP[tock], P, "\t") : 0
+  for (i = 1; i <= n; i++) {
+    k = P[i]; v = k; sub(/=.*/, "", k); sub(/^[^=]*=/, "", v)
+    if (k !~ /^[A-Za-z][A-Za-z0-9_-]*$/ || v ~ /["\]\n]/) {
+      note("A table of contents setting could not be written into [TOC] and is lost on publishing: " P[i]); continue
+    }
+    s = s " " k "=" (v ~ /^[^ \t]+$/ ? v : "\"" v "\"")
+  }
+  hmark = ""
+  brk(2); out_line(s "]"); brk(2)
 }
 
 # An info, tip, note or warning macro, as a GitHub alert.

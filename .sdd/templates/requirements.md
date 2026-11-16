@@ -29,4 +29,8 @@ groups anything uses throughout.
 An entry with no status suffix is active. The two suffixes, after the source:
 - **REQ-014** — Cart discounts. A cart applies at most one promo code. *(Source: Cart, draft)*
 - **REQ-012** — Guest checkout. A guest can order without an account. *(Source: Cart, superseded by REQ-031)*
+
+An entry a later feature reworded keeps its source and names that feature
+after it — written by `spec-edit.sh compile-entry`, never by hand:
+- **REQ-002** — Cart holds items. A shopper keeps up to 50 items until checkout. *(Source: Cart, refined by Checkout)*
 -->

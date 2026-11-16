@@ -31,6 +31,8 @@ Generates the three spec files from `raw.md`, each as a draft. Re-running asks b
    - **Overwrite selected files only** — the human names them; the rest are left untouched.
    - **Cancel** — nothing is written and no `REQ-###` number is handed out.
 
+   A kept file is input to this run and is not brought in line by it. When the human keeps `design.md` or `tasks.md` while `new-requirements.md` is regenerated — or keeps `tasks.md` over a new `design.md` — say before going on that the kept file was written against the text being replaced, and that `/sdd-spec-review <FeatureName>` is what reconciles them.
+
    Then back up, before anything is spawned.
 
 3. **Scaffold:** run `.sdd/scripts/spec-edit.sh scaffold spec <FeatureName> <the files this run writes, space-separated>` — all three when nothing was there, and on the `ask` path only the ones the human released. The op overwrites every file it is given, so a file the human kept is never named here.

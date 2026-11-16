@@ -17,6 +17,7 @@ _docs/architecture.index.md is not there — there is nothing to promote a decis
 missing or unreadable: ./_docs/requirements.md — no number is issued from a count made by hand.
 
 ASK:
+_docs/Cart/tasks.md is missing — nothing on disk says this feature was implemented. Promoting anyway records its requirements as what the project does; it needs the human to say so in as many words.
 
 WARN:
 

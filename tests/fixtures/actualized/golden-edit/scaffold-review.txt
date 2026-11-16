@@ -1,6 +1,9 @@
 SCAFFOLD=review
 FOLDER=Cart
 REVIEW=_docs/Cart/review.md
+REVIEWED=<today>
+BASE=none — uncommitted changes only
+ROOT=none — nothing is committed yet
 ### exit=0
 ### tree
 diff -ru -x .git <tmp>/actualized/_docs/Cart/review.md <tmp>/edit/_docs/Cart/review.md
@@ -10,9 +13,9 @@ diff -ru -x .git <tmp>/actualized/_docs/Cart/review.md <tmp>/edit/_docs/Cart/rev
 +---
 +type: review
 +feature: Cart
-+reviewed: <YYYY-MM-DD>
-+base: <base ref, or "none — uncommitted changes only">
-+root: <the commit the reviewed diff was taken against>
++reviewed: <today>
++base: none — uncommitted changes only
++root: none — nothing is committed yet
 +verdict: <APPROVED | APPROVED WITH MINOR ISSUES | BLOCKED>
 +tags:
 +  - sdd/review

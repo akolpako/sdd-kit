@@ -5,7 +5,7 @@ SPACE=PAY
 VERSION=7
 URL=https://confluence.example.com/spaces/PAY/pages/123456/Payments+design
 OUT=<TMP>/g1/page.md
-LINES=66
+LINES=68
 
 ATTACHMENTS:
 

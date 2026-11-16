@@ -32,6 +32,7 @@ STOP:
 ASK:
 
 WARN:
+1 task(s) are marked [x] and 1 blocked — this spec already has code behind it. The marks stay as they are through the review; a change to what a done task covers becomes a new task, and /sdd-implement Cart is what builds it.
 _docs/architecture.index.md is not there — the design is reviewed without the architecture context, and /sdd-init is what creates it.
 
 ANOMALIES:

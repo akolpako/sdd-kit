@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=no feature folder _docs/ABC-12345 — /sdd-next-story ABC-12345 creates it
+### tree

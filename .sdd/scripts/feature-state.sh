@@ -47,19 +47,26 @@
 #   COMPILATION_ACTIVE=<n>               entries sourced by this feature,
 #   COMPILATION_DRAFT=<n>                by status
 #   COMPILATION_SUPERSEDED=<n>
+#   COMPILATION_REFINED=<n>              entries another feature sourced and
+#                                        this one reworded — `refined by <it>`
 #   STAGE=<stage>
 #   NEXT=<command>                       empty when the feature is done. One
 #                                        stage has more than one successor:
 #                                        `implemented` follows REVIEW_VERDICT —
 #                                        absent or unrecognized → /sdd-code-review,
 #                                        `blocked` → /sdd-code-fix,
+#                                        `approved with…` → /sdd-code-fix: that
+#                                        verdict is the one that lists Major
+#                                        findings,
 #                                        `stale` → /sdd-code-review,
-#                                        `approved…` → /sdd-actualize
+#                                        `approved` → /sdd-actualize
 #   TASKS:                  <ID>|<state>|<type>|<requires>|<title>|<reason>
 #                           six fields; state is one of done, open, blocked, or
 #                           done+blocked — [x] and still carrying BLOCKED:
 #   COMPILATION_ENTRIES:    <REQ-###>|<status>
-#                           status is active, draft, or superseded by REQ-###
+#                           status is active, draft, superseded by REQ-###,
+#                           or refined — an entry of another feature that
+#                           this one reworded
 #   ANOMALIES:              one per line — reported, never fixed
 #   NOTES:                  what the script could not settle on its own
 #
@@ -78,8 +85,9 @@
 #   reviewed                all three `ready`, no task done
 #   in progress N/M         some tasks done
 #   implemented             every task done
-#   actualized              implemented, and every compilation entry of the
-#                           feature is out of `draft`
+#   actualized              implemented, and the compilation holds an entry
+#                           this feature sourced or refined, none of them
+#                           `draft`
 # The stage is the furthest one whose signals all hold. Signals that disagree
 # leave the earlier stage standing, and the disagreement goes to ANOMALIES.
 # `, K blocked` is appended to the stage whenever K > 0.
@@ -191,7 +199,10 @@ parse_tasks() {
   '
 }
 
-# One record per compilation entry sourced by <feature>: REQ-###|<status>|<source>
+# One record per compilation entry sourced by <feature>, or reworded by it —
+# `*(Source: Catalog, refined by <feature>)*`: REQ-###|<status>|<source>
+# A refinement is the whole of what some features leave in the compilation, and
+# without it such a feature has no entry to be told actualized by.
 # The source is matched the way the folder itself is resolved — case-insensitively
 # — so an entry that names `cart` for the folder `Cart` is still this feature's
 # entry. Dropping it would leave the feature at `implemented` for good, with
@@ -210,13 +221,22 @@ parse_compilation() {
       if (q > 0) rest = substr(rest, 1, q - 1)
       n = split(rest, part, ",")
       src = part[1]; gsub(/^[[:space:]]+|[[:space:]]+$/, "", src)
-      if (tolower(src) != lcwant) next
-      status = "active"
+      own = (tolower(src) == lcwant)
+      status = "active"; refiner = ""
       for (i = 2; i <= n; i++) {
         f = part[i]; gsub(/^[[:space:]]+|[[:space:]]+$/, "", f)
         if (f == "draft") status = "draft"
         else if (f ~ /^superseded by REQ-([A-Z][A-Z0-9]*-)*[0-9]+/) status = f
+        else if (f ~ /^refined by /) {
+          r = substr(f, 12); gsub(/^[[:space:]]+|[[:space:]]+$/, "", r)
+          if (tolower(r) == lcwant) refiner = r
+        }
       }
+      if (!own && refiner == "") next
+      # To the feature that reworded it the entry is `refined`, whatever became
+      # of it since; the name it is compared by below is the one the entry
+      # spells the refiner with.
+      if (!own) { status = "refined"; src = refiner }
       # The record is three fields split on `|`, so a source carrying one would
       # shift every field after it — the status would be read as the source and
       # the entry would land in the wrong counter. Same substitution and same
@@ -253,7 +273,7 @@ collect() {
   TASK_RECS=(); N_TASK_RECS=0
   COMP_RECS=(); N_COMP_RECS=0
   T_TOTAL=0; T_DONE=0; T_BLOCKED=0
-  C_ACTIVE=0; C_DRAFT=0; C_SUPERSEDED=0
+  C_ACTIVE=0; C_DRAFT=0; C_SUPERSEDED=0; C_REFINED=0
   TYPES=""; UNKNOWN=""; SEEN_IDS=""; MISSING_SPECS=""
 
   anom() { ANOM+=("$1"); N_ANOM=$(( N_ANOM + 1 )); }
@@ -377,6 +397,7 @@ collect() {
     case "$cstatus" in
       draft)          C_DRAFT=$(( C_DRAFT + 1 )) ;;
       superseded*)    C_SUPERSEDED=$(( C_SUPERSEDED + 1 )) ;;
+      refined)        C_REFINED=$(( C_REFINED + 1 )) ;;
       *)              C_ACTIVE=$(( C_ACTIVE + 1 )) ;;
     esac
     # The record carries the source with `|` replaced, so the folder is compared
@@ -417,6 +438,10 @@ collect() {
       # send the human to three different commands.
       case "$(printf '%s' "$R_VERDICT" | tr '[:upper:]' '[:lower:]')" in
         blocked*)  NEXT="/sdd-code-fix $f" ;;
+        # Before the plain one: `APPROVED WITH MINOR ISSUES` is the verdict of a
+        # report that lists Major findings, and those are fixed before the
+        # feature is promoted.
+        "approved with"*) NEXT="/sdd-code-fix $f" ;;
         approved*) NEXT="/sdd-actualize $f" ;;
         stale*)    NEXT="/sdd-code-review $f" ;;
         *)         NEXT="/sdd-code-review $f" ;;
@@ -456,6 +481,7 @@ print_feature() {
   printf 'COMPILATION_ACTIVE=%s\n' "$C_ACTIVE"
   printf 'COMPILATION_DRAFT=%s\n' "$C_DRAFT"
   printf 'COMPILATION_SUPERSEDED=%s\n' "$C_SUPERSEDED"
+  printf 'COMPILATION_REFINED=%s\n' "$C_REFINED"
   printf 'STAGE=%s\n' "$STAGE"
   printf 'NEXT=%s\n' "$NEXT"
 

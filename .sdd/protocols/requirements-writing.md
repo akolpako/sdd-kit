@@ -15,7 +15,9 @@ How a feature description becomes implementation-ready requirements on this proj
 
 - Every point in `raw.md` ends up in one of two places: a requirement that covers it, or a line in `## Out of Scope` that excludes it.
 - Capabilities nobody asked for are deferred, not designed in.
-- Compare every new requirement against `requirements.md`. An overlap or a contradiction is resolved one of two ways, never silently: **refinement** — the existing entry is reworded in place and keeps its number; **replacement** — the existing entry gets the status `superseded by REQ-NNN` and the new requirement takes its own number.
+- Compare every new requirement against `requirements.md`. An overlap or a contradiction is resolved one of two ways, never silently: **refinement** — the existing entry will take this requirement's wording and keep its number; **replacement** — the existing entry will be retired and this requirement stands in its place under its own number.
+- **Which of the two it is goes on the page, as one line directly under the requirement's heading** — `- **Refines:** [REQ-NNN](../requirements.md#^req-nnn)` or `- **Supersedes:** [REQ-NNN](../requirements.md#^req-nnn)`, the format the scaffolded file shows. That line is the whole of the resolution here: `requirements.md` itself is not edited, and the line is what gets applied to it once the feature is finished. A requirement that touches no existing entry carries neither.
+- **The choice between the two is the human's.** Write the line for the option you recommend, record it as an `A-##` assumption, and put the question into `## Open Questions` naming both — as `.sdd/protocols/spec-modes.md` fixes it. An answer that picks the other one changes the line.
 
 ## 3. Numbering
 

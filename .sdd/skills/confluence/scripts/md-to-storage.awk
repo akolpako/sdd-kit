@@ -1,13 +1,23 @@
 # Markdown to the Confluence storage format (Data Center): the way back of
 # html-to-md.awk, for a page written or edited as Markdown.
 #
-# Run as: LC_ALL=C awk -v refs=<file> -f md-to-storage.awk < in.md > out.xml
+# Run as: LC_ALL=C awk -v refs=<file> [-v jira=<file>] -f md-to-storage.awk < in.md > out.xml
 #
 # Reads Markdown on stdin, writes the page body as storage-format XHTML on
 # stdout. Side facts go to `refs`, one per line, tab-separated:
 #   image <path>   a local image the text shows; the body names the attachment
 #   file  <path>   a local file the text links; the body names the attachment
+#   jira  <base>   a link to a Jira issue on the Jira at <base>
 #   note  <text>   something that was simplified on the way
+#
+# A link to a Jira issue that shows nothing but the issue — its key as the
+# text, [PAY-42](https://jira/browse/PAY-42), or the bare link — becomes the
+# Jira issue macro, which shows the key, summary and status, when `jira`
+# names the Jira servers Confluence is linked to: one per line,
+# "<base url>\t<server id>\t<server name>". The macro names the server whose
+# base the link starts with; a link to a Jira Confluence is not linked to
+# stays a link. Without `jira`, every such link stays a link and is only
+# named in `refs`. A link with text of its own is a link either way.
 # A path is local when it has no scheme; it is %-decoded, and the attachment
 # is named by its last segment. Whether the file exists is the caller's
 # business.
@@ -106,7 +116,9 @@ function is_delim_row(s,   t) {
   return index(t, "|") > 0 || t ~ /^:?-+:?$/
 }
 function is_table(i, b) { return i < b && index(L[i], "|") > 0 && is_delim_row(L[i + 1]) }
-function starts_block(s) { return blank(s) || fence_open(s) || is_heading(s) || is_hr(s) || is_quote(s) || is_item(s) }
+function starts_block(s) { return blank(s) || fence_open(s) || is_heading(s) || is_hr(s) || is_quote(s) || is_item(s) || is_toc(s) }
+# [TOC] on a line of its own, with name=value or name="value" settings.
+function is_toc(s) { return indent(s) <= 3 && s ~ /^ *\[[Tt][Oo][Cc]([ \t]+[A-Za-z][A-Za-z0-9_-]*=("[^"]*"|[^ \t"\]]+))*[ \t]*\][ \t]*$/ }
 
 # ── Blocks ────────────────────────────────────────────────────────
 # nop is set for the content of a list item or a task: its first paragraph
@@ -125,6 +137,8 @@ function blocks(a, b, nop,    i, s, R, x, firstp) {
       x = heading(s); i++
     } else if (is_hr(s)) {
       x = "<hr/>"; i++
+    } else if (is_toc(s)) {
+      x = toc_macro(s); i++
     } else if (is_quote(s)) {
       x = quote_block(i, b); i = NEXT
     } else if (is_item(s)) {
@@ -154,6 +168,17 @@ function para(i, b, nop,   R, s, first) {
   }
   NEXT = i
   return R
+}
+
+function toc_macro(s,   x, k, v) {
+  x = "<ac:structured-macro ac:name=\"toc\" ac:schema-version=\"1\">"
+  s = trim(s); s = substr(s, 5, length(s) - 5)
+  while (match(s, /[A-Za-z][A-Za-z0-9_-]*=("[^"]*"|[^ \t"]+)/)) {
+    k = substr(s, RSTART, RLENGTH); s = substr(s, RSTART + RLENGTH)
+    v = k; sub(/=.*/, "", k); sub(/^[^=]*=/, "", v); gsub(/^"|"$/, "", v)
+    x = x "<ac:parameter ac:name=\"" k "\">" xa(v) "</ac:parameter>"
+  }
+  return x "</ac:structured-macro>"
 }
 
 function heading(s,   n, t) {
@@ -456,7 +481,31 @@ function img(u, alt,   name) {
   name = ref("image", u)
   return "<ac:image" (alt != "" ? " ac:alt=\"" xa(alt) "\"" : "") "><ri:attachment ri:filename=\"" xa(name) "\"/></ac:image>"
 }
+# The Jira issue macro for a link to an issue, or "" to keep it a link. The
+# text is the issue's key, the link itself, or empty — anything else is text
+# the writer chose, which the macro would replace.
+function jira_issue(t, u,   key, base, k) {
+  if (!match(u, /^https?:\/\/[^\/?#]+(\/[^?#]*)?\/browse\/[A-Z][A-Z0-9_]*-[0-9]+([?]src=confmacro)?$/)) return ""
+  base = u; sub(/[?].*$/, "", base)
+  key = base; sub(/.*\//, "", key)
+  sub(/\/browse\/[^\/]*$/, "", base)
+  t = trim(t)
+  if (t != "" && t != key && t != u && t != "<" u ">") return ""
+  if (refs != "") print "jira\t" base > refs
+  if (!JIRA_ON) return ""
+  k = tolower(base)
+  if (!(k in JSID)) {
+    note("A link to an issue on " base " stays a link: Confluence is linked to no Jira there, so no Jira macro can show it.")
+    return ""
+  }
+  return "<ac:structured-macro ac:name=\"jira\" ac:schema-version=\"1\">" \
+    (JSNAME[k] != "" ? "<ac:parameter ac:name=\"server\">" xa(JSNAME[k]) "</ac:parameter>" : "") \
+    "<ac:parameter ac:name=\"serverId\">" xa(JSID[k]) "</ac:parameter>" \
+    "<ac:parameter ac:name=\"key\">" key "</ac:parameter></ac:structured-macro>"
+}
+
 function link(t, u,   name, x) {
+  if (u != "" && (x = jira_issue(t, u)) != "") return x
   x = inl(t)
   if (u == "") return x
   if (u ~ /^#/ || is_remote(u)) return "<a href=\"" xa(u) "\">" (x == "" ? xa(u) : x) "</a>"
@@ -500,18 +549,30 @@ function inl(s,   out, n, i, c, p, q, j, e, inner, d, u) {
 
     if (c == "<") {
       if (match(substr(s, i), /^<[A-Za-z][A-Za-z0-9+.-]*:[^ <>]*>/)) {
-        u = substr(s, i + 1, RLENGTH - 2); out = out "<a href=\"" xa(u) "\">" xa(u) "</a>"; i += RLENGTH; continue
+        u = substr(s, i + 1, RLENGTH - 2); i += RLENGTH
+        if ((d = jira_issue("", u)) != "") { out = out d; continue }
+        out = out "<a href=\"" xa(u) "\">" xa(u) "</a>"; continue
       }
       if (match(substr(s, i), /^<[^ <>@]+@[^ <>@]+\.[^ <>@]+>/)) {
         u = substr(s, i + 1, RLENGTH - 2); out = out "<a href=\"mailto:" xa(u) "\">" xa(u) "</a>"; i += RLENGTH; continue
       }
       if (match(substr(s, i), /^<[Bb][Rr] *\/?>/)) { out = out "<br/>"; i += RLENGTH; continue }
+      # A date, as the date macro: <time>2026-11-16</time>, or the tag as HTML
+      # writes it, <time datetime="2026-11-16">16 Nov 2026</time>.
+      if (match(substr(s, i), /^<time>[ \t]*[0-9][0-9][0-9][0-9]-[01][0-9]-[0-3][0-9][ \t]*<\/time>/) \
+          || match(substr(s, i), /^<time[ \t]+datetime=["'][0-9][0-9][0-9][0-9]-[01][0-9]-[0-3][0-9]["'][ \t]*(\/>|>[^<]*<\/time>)/)) {
+        u = substr(s, i, RLENGTH); i += RLENGTH
+        match(u, /[0-9][0-9][0-9][0-9]-[01][0-9]-[0-3][0-9]/)
+        out = out "<time datetime=\"" substr(u, RSTART, RLENGTH) "\"/>"; continue
+      }
     }
 
     if ((c == "h" || c == "f") && !is_word(p) && match(substr(s, i), /^(https?|ftp):\/\/[^ \t<>]+/)) {
       u = substr(s, i, RLENGTH); sub(/[.,;:!?'"]+$/, "", u)
       if (u ~ /\)$/ && index(u, "(") == 0) sub(/\)+$/, "", u)
-      out = out "<a href=\"" xa(u) "\">" xa(u) "</a>"; i += length(u); continue
+      i += length(u)
+      if ((d = jira_issue("", u)) != "") { out = out d; continue }
+      out = out "<a href=\"" xa(u) "\">" xa(u) "</a>"; continue
     }
 
     if ((c == "*" || c == "_") && q == c && !is_space(substr(s, i + 2, 1)) && !(c == "_" && is_word(p))) {
@@ -543,6 +604,12 @@ function diagram_notes(   n, i, D, l, w) {
 
 BEGIN {
   PUNCT = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"; NRAW = 0; SP = 0; TASKID = 0
+  # The Jira servers Confluence is linked to, by base URL.
+  JIRA_ON = (jira != "")
+  if (JIRA_ON) while ((getline line < jira) > 0) {
+    nf = split(line, JF, "\t"); sub(/\/+$/, "", JF[1])
+    if (nf >= 2 && JF[1] != "" && JF[2] != "") { JSID[tolower(JF[1])] = JF[2]; JSNAME[tolower(JF[1])] = JF[3] }
+  }
   CTRL = "[" sprintf("%c", 1) "-" sprintf("%c", 8) sprintf("%c", 11) sprintf("%c", 12) sprintf("%c", 14) "-" sprintf("%c", 31) "]"
 }
 {

@@ -2,7 +2,7 @@
 
 *Addressed to the agent reviewing the code. It names no command and no agent.*
 
-How a change set is reviewed against its specification on this project. **Which** change set arrives with the assignment; this is what happens to it once it has arrived. The review is read-only: applying the fixes and re-verifying the build belong to whoever gave the assignment.
+How a change set is reviewed against its specification on this project. **Which** change set arrives with the assignment; this is what happens to it once it has arrived. The review is read-only on the code: applying the fixes and re-verifying the build belong to whoever gave the assignment. The one file it writes is the report.
 
 ## 1. Input Collection
 
@@ -80,4 +80,15 @@ The report closes with one verdict and one line naming what decided it. It follo
 
 ## 7. Delivery
 
-Return the report in one piece: the class of the review set, the issue list within its cap, the coverage rows, and the verdict.
+**The report is written into the file the assignment names for it**, and that file is the report — nothing is reconstructed from what you return. It is already on disk, holding the template: keep its structure and write
+
+- `## Review set` — the class of §2 and what it means for what the report may claim;
+- `## Findings` — the issues of §4 within their cap, numbered `F-01` upward in the order you sorted them, in the shape the template shows. The numbers are what a fix is later triaged by;
+- `## Requirement coverage` and `### Gaps` — the rows of §5, and the gaps listed apart;
+- the `verdict` property of the frontmatter — the verdict of §6, quoted when it carries a colon.
+
+The other properties of the frontmatter and the last section, `## Older TODO Code Review markers`, are filled in outside this assignment: leave them exactly as they stand.
+
+Then return a summary, not the report again: the verdict and the line that decided it, the number of findings per severity, the `N more findings` line when there is one, and the gaps.
+
+An assignment that names no file for the report gets it returned in one piece instead: the class of the review set, the issue list within its cap, the coverage rows, and the verdict.

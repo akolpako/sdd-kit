@@ -37,3 +37,5 @@ after empty pre
 ![image-2026-6-17.png](attachments/image-2026-6-17.png)
 
 - B2B: [CIAM-1](https://jira.example.com/browse/CIAM-1) trailing
+
+Valid as of <time>2026-11-16</time>, **due <time>2027-01-02</time>**

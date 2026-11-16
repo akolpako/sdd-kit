@@ -3,6 +3,8 @@
 https://confluence.example.com/spaces/PAY/pages/123456/Payments+design
 Space: Payments (PAY) · Path: Payments Home › Architecture · Version: 7, 2026-10-01, John Doe
 
+[TOC]
+
 # Overview
 
 The **payment service** handles *card* and `SEPA` transfers — see [the glossary](https://confluence.example.com/display/PAY/Glossary) and <https://example.org/spec>.
@@ -48,7 +50,7 @@ POST /payments
 
 Spec: [spec.pdf](attachments/spec.pdf), external ![logo](https://cdn.example.org/logo.png)
 
-Ticket: [PAY-42](https://jira.example.com/browse/PAY-42) - Refunds Done
+Ticket: [PAY-42](https://jira.example.com/browse/PAY-42)
 
 > **Contacts**
 >

@@ -49,10 +49,14 @@
 #       files named are copied, so a file the human kept is never among them,
 #       and each one named is overwritten: the caller has already asked whose
 #       spec may go and already made its backup.
-#   scaffold review <Feature>
+#   scaffold review <Feature> [<base> [<root>]]
 #       review.md from the template, the title carrying the feature name, over
 #       whatever an earlier run left there. The report is a snapshot of the
-#       working tree, so replacing it whole is what a re-run means.
+#       working tree, so replacing it whole is what a re-run means. The header
+#       is this script's: `reviewed` is today, `base` and `root` are the two
+#       arguments — what the gate resolved the review set against. An empty
+#       one, or `none`, is written as the absence it is. `verdict` is left for
+#       whoever reaches one.
 #   marker <file> <line> <text>
 #       Insert `TODO Code Review: <text> (<today>)` above that line, in the
 #       comment syntax of that file type and at its indentation. An extension
@@ -61,8 +65,11 @@
 #       The entry of _docs/requirements.md: drop the `draft`
 #       suffix, mark it superseded, or append a new entry and move the counter
 #       past its number. The wording is the model's and arrives as <text>; an
-#       entry already on file keeps its source. A number carried by two entries
-#       is a stop.
+#       entry already on file keeps its source. A feature that rewords an entry
+#       another feature sourced — `final` with a <text> — is a refinement: the
+#       entry gains `refined by <Feature>` after its source, which is the only
+#       trace on disk that the feature was promoted at all. A number carried by
+#       two entries is a stop.
 #   section <file> <heading> [<text>]
 #       Replace the body of `## <heading>` with the text as given. No text
 #       leaves the section as it is — the template's hint stays in place.
@@ -390,8 +397,18 @@ scaffold)
     [[ -f "$src" ]] || die2 "no template $src"
     dst="$SPECS/$FOLDER/review.md"
     sed "s|<FeatureName>|$FOLDER|g" "$src" > "$TMP/f" || exit 1
-    replace_file "$dst" "$TMP/f"
-    printf 'SCAFFOLD=review\nFOLDER=%s\nREVIEW=%s\n' "$FOLDER" "$dst"
+    # The three header fields nobody has to reach a conclusion for. They are
+    # written here, before any role opens the file: a date typed by a model is a
+    # date nobody checked, and the base and the root are the gate's answer, not
+    # a thing to be copied out of a prompt by hand.
+    R_BASE="${2:-}"; R_ROOT="${3:-}"
+    case "$R_BASE" in ''|none) R_BASE="none — uncommitted changes only" ;; esac
+    case "$R_ROOT" in ''|none) R_ROOT="none — nothing is committed yet" ;; esac
+    md_field_set "$TMP/f" reviewed "$TODAY" > "$TMP/g" || die2 "template $src carries no \`reviewed\` property"
+    md_field_set "$TMP/g" base "$R_BASE"    > "$TMP/f" || die2 "template $src carries no \`base\` property"
+    md_field_set "$TMP/f" root "$R_ROOT"    > "$TMP/g" || die2 "template $src carries no \`root\` property"
+    replace_file "$dst" "$TMP/g"
+    printf 'SCAFFOLD=review\nFOLDER=%s\nREVIEW=%s\nREVIEWED=%s\nBASE=%s\nROOT=%s\n' "$FOLDER" "$dst" "$TODAY" "$R_BASE" "$R_ROOT"
     ;;
 
   *) die2 "not a scaffold: ${KIND:-<empty>} — init, feature, spec or review" ;;
@@ -466,7 +483,17 @@ compile-entry)
     # change whose requirement it was.
     at="$(cat "$TMP/lines")"
     old="$(awk -v n="$at" 'NR == n { print; exit }' "$FILE")"
-    src="${old##*\*(Source: }"; src="${src%%)*}"; src="${src%%,*}"
+    parts="${old##*\*(Source: }"; parts="${parts%%)*}"
+    src="${parts%%,*}"
+    # Who has reworded the entry since stays on it through every later edit: it
+    # is what lets a feature that added no entry of its own be told apart from
+    # one that was never promoted.
+    refined=""
+    while [[ "$parts" == *,* ]]; do
+      parts="${parts#*,}"
+      part="${parts%%,*}"; part="${part#"${part%%[![:space:]]*}"}"
+      case "$part" in "refined by "*) refined="$refined, $part" ;; esac
+    done
     body="$TEXT"
     if [[ -z "$body" ]]; then
       body="${old#*— }"; body="${body%% \*(Source:*}"
@@ -483,10 +510,19 @@ compile-entry)
       *"$ANCHOR"*) ;;
       *) tail="$tail $ANCHOR" ;;
     esac
-    new="- **$REQ** — $body *(Source: $src$suffix)*$tail"
+    action="updated"
+    lc_src="$(printf '%s' "$src" | tr '[:upper:]' '[:lower:]')"
+    lc_feature="$(printf '%s' "$FEATURE" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$MODE" == "final" && -n "$TEXT" && "$lc_src" != "$lc_feature" ]]; then
+      case "$(printf '%s' "$refined," | tr '[:upper:]' '[:lower:]')" in
+        *", refined by $lc_feature,"*) ;;
+        *) refined="$refined, refined by $FEATURE" ;;
+      esac
+      action="refined"
+    fi
+    new="- **$REQ** — $body *(Source: $src$refined$suffix)*$tail"
     awk -v n="$at" -v line="$new" 'NR == n { print line; next } { print }' "$FILE" > "$TMP/f" || exit 1
     replace_file "$FILE" "$TMP/f"
-    action="updated"
   else
     [[ -n "$TEXT" ]] || die2 "$REQ has no entry yet, so its wording has to come with it: compile-entry $FEATURE $REQ $MODE <text>"
     new="- **$REQ** — $TEXT *(Source: $FEATURE$suffix)* $ANCHOR"

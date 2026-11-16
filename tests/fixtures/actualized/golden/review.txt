@@ -33,6 +33,7 @@ STOP:
 ASK:
 
 WARN:
+4 task(s) are marked [x] and 0 blocked — this spec already has code behind it. The marks stay as they are through the review; a change to what a done task covers becomes a new task, and /sdd-implement Cart is what builds it.
 
 ANOMALIES:
 

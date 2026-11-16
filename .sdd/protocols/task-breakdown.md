@@ -10,6 +10,8 @@ How a design becomes the task list an implementer works from. The structure of t
 4. Include technical details sufficient for implementation.
 5. Order tasks by dependency (backend APIs before frontend consumers). **The order of the list is the order of execution** — `tasks.md` has no dependency field, so a task that depends on another is placed after it.
 
+**A task that has been worked on keeps its line.** `[x]` and `BLOCKED:` are written by whoever implemented the task and by nobody else: when the breakdown is revised, a line carrying either keeps its mark, its ID and its place, and an ID is never reused. Work the revision adds to something already `[x]` is a new task after it — never an edit that leaves a done mark standing over work nobody did, and never a mark removed to say so. A done task the revision made pointless is left as it is and named in what you return.
+
 **Atomicity test.** A task is atomic when it can be finished with the build left green and nothing broken. If it cannot, cut it further. Incomplete feature coverage at the end of a task is fine; incomplete or broken code is not.
 
 | Work | Result |

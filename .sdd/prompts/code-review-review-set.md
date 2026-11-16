@@ -28,4 +28,7 @@ Specs of this run:
 
 {{SECTION:SPEC_FILES}}
 
-Return: your report in one piece, per the protocol.
+Your report goes into `{{REVIEW_PATH}}` — already on disk, holding the template,
+with `reviewed`, `base` and `root` filled in. It is the one file you write.
+
+Return: the summary the protocol asks for, once the report is in that file.

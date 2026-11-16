@@ -18,6 +18,8 @@ A shopper keeps items on a list without buying them.
 
 ### REQ-005 — Move to cart
 
+- **Refines:** [REQ-002](../requirements.md#^req-002)
+
 A shopper moves an item from the list into the cart.
 
 - Error: an item that is out of stock stays on the list.

@@ -354,12 +354,13 @@ fi
 # Confluence's default text.
 STORE="$TMP/store"; mkdir -p "$STORE"
 COUNTS="$(jq -r '.body.storage.value // ""' "$BODY" | LC_ALL=C awk -v dir="$STORE" -f "$SCRIPT_DIR/storage-macros.awk")"
-N_PUML="${COUNTS%% *}"; N_EXP="${COUNTS##* }"
+read -r N_PUML N_EXP N_TOC <<< "$COUNTS"
 [[ "$N_PUML" =~ ^[0-9]+$ ]] || N_PUML=0
 [[ "$N_EXP" =~ ^[0-9]+$ ]] || N_EXP=0
+[[ "$N_TOC" =~ ^[0-9]+$ ]] || N_TOC=0
 : > "$TMP/dl.tsv"; : > "$TMP/notes.txt"
 LC_ALL=C awk -v origin="$ORIGIN" -v dl="$TMP/dl.tsv" -v notes="$TMP/notes.txt" \
-  -v store="$STORE" -v npuml="$N_PUML" -v nexp="$N_EXP" \
+  -v store="$STORE" -v npuml="$N_PUML" -v nexp="$N_EXP" -v ntoc="$N_TOC" \
   -f "$SCRIPT_DIR/html-to-md.awk" < "$TMP/page.html" > "$TMP/body.md" 2> "$TMP/convert.err"
 rc=$?
 if (( rc != 0 )) || [[ -s "$TMP/convert.err" ]]; then
@@ -373,10 +374,11 @@ while IFS= read -r line; do [[ -n "$line" ]] && note "$line"; done < "$TMP/notes
 # Every macro the conversion has no form for, by name. Their rendered HTML is
 # carried over as text where it has any; what a script draws, or what is not
 # rendered for export at all, is not in the file. Known: what becomes Markdown
-# (code, noformat, the panels, expand, plantuml), what renders as plain content
-# (status, jira, excerpt, details, layout sections), navigation (toc, anchor).
+# (code, noformat, the panels, expand, plantuml, toc), what renders as plain
+# content (status, jira, excerpt, details, layout sections). An anchor or a
+# toc-zone leaves nothing in the file, so it is named.
 OTHER="$(LC_ALL=C sort -u "$STORE/macros" 2>/dev/null \
-  | LC_ALL=C grep -vxE 'code|noformat|info|tip|note|warning|panel|expand|plantuml.*|toc|toc-zone|anchor|status|jira|excerpt|details|section|column' \
+  | LC_ALL=C grep -vxE 'code|noformat|info|tip|note|warning|panel|expand|plantuml.*|toc|status|jira|excerpt|details|section|column' \
   | paste -sd ',' - | sed 's/,/, /g')"
 [[ -n "$OTHER" ]] && note "The page holds macros the file carries at most as their rendered text: $OTHER. Open the page to see what they show."
 

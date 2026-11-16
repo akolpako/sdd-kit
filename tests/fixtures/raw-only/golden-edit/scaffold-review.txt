@@ -1,6 +1,9 @@
 SCAFFOLD=review
 FOLDER=Cart
 REVIEW=_docs/Cart/review.md
+REVIEWED=<today>
+BASE=none — uncommitted changes only
+ROOT=none — nothing is committed yet
 ### exit=0
 ### tree
 Only in <tmp>/edit/_docs/Cart: review.md

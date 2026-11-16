@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=no feature folder _docs/Cart — /sdd-next-story Cart creates it
+### tree

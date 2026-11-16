@@ -1,4 +1,6 @@
-VERIFY=ok
+VERIFY=fail
 
 FAIL:
-### exit=0
+REQ-004 is declared by _docs/Wishlist/new-requirements.md and _docs/requirements.md holds no entry for it — it was not promoted.
+REQ-005 refines REQ-002, and the entry of REQ-002 in _docs/requirements.md carries no trace of this feature — the new wording was not written into it.
+### exit=2
