@@ -795,10 +795,12 @@ check_new() {
   done <<< "$FEATURES"
 
   if [[ $FS_FOUND -eq 1 && $exact -eq 1 ]]; then
-    case "$ST_RAW" in
-      present) stop "_docs/$FOLDER/raw.md already holds a description, and this command never overwrites one — delete the file to start over. Edit it, or run /sdd-specify $FEATURE." ;;
-      *) ;;
-    esac
+    # A raw.md that is still the template is a run cut short — the scaffold
+    # made it and the import or the interview never wrote into it. Running
+    # again is how that finishes, so it is not a description to protect.
+    if [[ "$ST_RAW" == "present" ]] && ! md_untouched "$SPECS/$FOLDER/raw.md" "$TEMPLATE_DIR/raw.md"; then
+      stop "_docs/$FOLDER/raw.md already holds a description, and this command never overwrites one — delete the file to start over. Edit it, or run /sdd-specify $FEATURE."
+    fi
   else
     ST_RAW="missing"
   fi
@@ -818,8 +820,11 @@ check_specify() {
     no_feature_stop "there is nothing to specify."
     return 0
   fi
-  [[ "$ST_RAW" == "present" ]] || \
+  if [[ "$ST_RAW" != "present" ]]; then
     stop "_docs/$FOLDER/raw.md is $ST_RAW — the description this spec is written from is not on disk. /sdd-next-story $FEATURE creates it."
+  elif md_untouched "$SPECS/$FOLDER/raw.md" "$TEMPLATE_DIR/raw.md"; then
+    stop "_docs/$FOLDER/raw.md holds nothing but the template it was copied from — there is no description to write a spec from. Fill it in, or run /sdd-next-story $FEATURE again."
+  fi
 
   # A file that is present is not a stop: it sends the run to the human, who
   # decides before anything is generated. An `empty` one is overwritten silently.

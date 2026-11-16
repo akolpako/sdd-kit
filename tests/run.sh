@@ -1924,6 +1924,38 @@ SDD_VALUES
   prop_check text "a key given twice is refused" "$ok" "exit $rc: $out"
 }
 
+# A raw.md that is still the template the scaffold copied holds no description:
+# /sdd-next-story runs again over it, and /sdd-specify has nothing to write from.
+check_raw() {
+  local work="$TMP/raw-check" out rc ok
+
+  printf 'raw\n'
+  rm -rf "$work" && mkdir -p "$work/_docs" || exit 1
+  ( cd "$work" && "$EDITOR_SH" scaffold feature Cart ) >/dev/null 2>&1
+
+  out="$(cd "$work" && "$GATE" new Cart 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -q '^GATE=ok$' || ok=1
+  prop_check raw "next-story runs again over the template" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  out="$(cd "$work" && "$EDITOR_SH" scaffold feature Cart 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 0 ]] || ok=1
+  prop_check raw "scaffold feature copies over the template" "$ok" "exit $rc: $out"
+
+  out="$(cd "$work" && "$GATE" specify Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^GATE=stop$' || ok=1
+  printf '%s\n' "$out" | grep -q 'raw.md holds nothing but the template' || ok=1
+  prop_check raw "specify stops on the template" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  ( cd "$work" && "$EDITOR_SH" section _docs/Cart/raw.md Problem - <<<'Shoppers lose their cart.' ) >/dev/null 2>&1
+  out="$(cd "$work" && "$GATE" new Cart 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -q 'already holds a description' || ok=1
+  out="$(cd "$work" && "$EDITOR_SH" scaffold feature Cart 2>&1)"; rc=$?
+  [[ $rc -eq 2 ]] || ok=1
+  grep -q 'Shoppers lose their cart.' "$work/_docs/Cart/raw.md" || ok=1
+  prop_check raw "a written description is kept" "$ok" "exit $rc: $out"
+}
+
 job_body() {
   local name="$1"; shift
   # Nothing a job runs has a question to ask: every case is scripted, and a
@@ -1964,6 +1996,7 @@ start_job domains          check_domains
 start_job taken            check_taken
 start_job relations        check_relations
 start_job text             check_text
+start_job raw              check_raw
 start_job jira-tokens      check_jira_tokens
 start_job lib-source       check_suite lib-source
 start_job confluence-fetch   check_suite confluence

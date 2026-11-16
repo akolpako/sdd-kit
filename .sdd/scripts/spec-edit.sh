@@ -371,7 +371,11 @@ scaffold)
       done
     fi
     dst="$SPECS/$FOLDER/raw.md"
-    [[ -s "$dst" ]] && die2 "$dst already describes this feature — it is never overwritten"
+    # Still the template is not a description: a run cut short left it, and
+    # copying the template over it again loses nothing.
+    if [[ -s "$dst" ]] && ! md_untouched "$dst" "$src"; then
+      die2 "$dst already describes this feature — it is never overwritten"
+    fi
     mkdir -p "$SPECS/$FOLDER" || exit 1
     # Every `<FeatureName>` the template carries, not only the one in the title:
     # the frontmatter names the feature in a property of its own, and it sits
