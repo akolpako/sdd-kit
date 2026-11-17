@@ -1994,6 +1994,32 @@ SDD_TEXT
   [[ "$(grep -c '' "$work/A.java")" == "4" ]] || ok=1
   prop_check text "a marker of two lines is a stop" "$ok" "exit $rc: $out"
 
+  # ── marker -, the batch ─────────────────────────────────────────
+  # Records in any order land above the lines they name as the file stood before
+  # the call; two on one line keep their order; the text is the rest of the line.
+  local b1
+  mkdir -p "$work/batch" && printf '1\n2\n3\n4\n5\n' > "$work/batch/B.java" && printf 'x\n  y\n' > "$work/batch/b.py"
+  out="$(cd "$work/batch" && "$EDITOR_SH" marker - 2>&1 <<SDD_RECS
+B.java|2|first on 2
+B.java|4|on 4, with a | inside and $nasty
+b.py|2|py
+B.java|2|second on 2
+SDD_RECS
+)"; rc=$?
+  b1="$(sed 's/ ([0-9-]*)$//' "$work/batch/B.java" | tr '\n' '~')"
+  ok=0; [[ $rc -eq 0 ]] || ok=1
+  [[ "$b1" == "1~// TODO Code Review: first on 2~// TODO Code Review: second on 2~2~3~// TODO Code Review: on 4, with a | inside and $nasty~4~5~" ]] || ok=1
+  [[ "$(sed -n 2p "$work/batch/b.py")" == "  # TODO Code Review: py ("* ]] || ok=1
+  [[ "$(printf '%s\n' "$out" | sed -n '/^MARKERS:$/,$p' | sed 1d | tr '\n' ' ')" == "B.java:4 B.java:2 B.java:2 b.py:2 " ]] || ok=1
+  prop_check text "marker - writes every record bottom-up" "$ok" "exit $rc: $(printf '%s' "$out" | tr '\n' '~') B.java: $b1"
+
+  # One bad record writes nothing, and every bad one is named.
+  cp "$work/batch/B.java" "$work/batch/B.before"
+  out="$(cd "$work/batch" && printf 'B.java|1|fine\nB.java|99|past the end\nC.json|1|no syntax\n' | "$EDITOR_SH" marker - 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 2 && "$out" == *"record 2:"* && "$out" == *"record 3:"* && "$out" != *"record 1:"* ]] || ok=1
+  cmp -s "$work/batch/B.java" "$work/batch/B.before" || ok=1
+  prop_check text "marker - checks every record before writing one" "$ok" "exit $rc: $out"
+
   # ── spawn-prompt.sh, values on stdin ────────────────────────────
   local proj="$TMP/text-prompt" a b
   rm -rf "$proj" && mkdir -p "$proj" && cp -R "$FIXTURES/actualized/tree/." "$proj/" || exit 1

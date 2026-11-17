@@ -67,6 +67,15 @@
 #       Insert `TODO Code Review: <text> (<today>)` above that line, in the
 #       comment syntax of that file type and at its indentation. An extension
 #       this script has no syntax for is a stop, never a guess.
+#   marker -
+#       The same for every `<file>|<line>|<text>` record on stdin, one per
+#       line — the text is the rest of the line, `|` and all. Every record is
+#       checked before anything is written, and one that fails is a stop that
+#       names each failing record and leaves every file as it was. The markers
+#       go in from the highest line of a file to the lowest, so each lands above
+#       the line its record gave, as the file stood before the call; records on
+#       one line keep their order. Prints DATE= and MARKERS:, `<file>:<line>`
+#       per marker in the order written.
 #   compile-entry <Feature> <REQ-###> final|refine|superseded-by:<REQ-###> [<text>]
 #       The entry of _docs/requirements.md: drop the `draft`
 #       suffix of an entry from before the public release (nothing writes it
@@ -256,6 +265,49 @@ replace_section() {
 
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/sdd-edit.XXXXXX")" || exit 1
 trap 'rm -rf "$TMP"' EXIT
+
+# ── marker, the helpers ───────────────────────────────────────────
+# The comment syntax of a file, by its extension: `<open>|<close>`, or nothing
+# when this script knows none — and a marker is then not guessed.
+marker_syntax() {
+  local base="${1##*/}" ext=""
+  case "$base" in *.*) ext="${base##*.}" ;; esac
+  case "$ext" in
+    java|kt|kts|groovy|gradle|scala|swift|rs|php|dart|ts|tsx|js|jsx|mjs|cjs|scss|go|c|cpp|h|hpp|cs) printf '//|' ;;
+    sql)                                      printf -- '--|' ;;
+    sh|bash|py|rb|yaml|yml|toml|properties)   printf '#|' ;;
+    html|xml|md)                              printf '<!--| -->' ;;
+    css)                                      printf '/*| */' ;;
+  esac
+}
+
+# Why a marker cannot go above <line> of <file>, or nothing when it can.
+marker_problem() {
+  local file="$1" line="$2" text="$3" total base ext
+  [[ -n "$file" && -n "$line" && -n "$text" ]] || { printf 'a marker needs a file, a line and a text'; return 0; }
+  [[ "$text" != *$'\n'* ]] || { printf 'the text of marker is one line, and this one holds a newline — it would be written as two'; return 0; }
+  [[ -f "$file" ]] || { printf 'no such file: %s' "$file"; return 0; }
+  case "$line" in ''|*[!0-9]*) printf 'not a line number: %s' "$line"; return 0 ;; esac
+  total=$(grep -c '' "$file" || true)
+  [[ "$line" -ge 1 && "$line" -le "$total" ]] || { printf '%s has %s lines — line %s is not in it' "$file" "$total" "$line"; return 0; }
+  if [[ -z "$(marker_syntax "$file")" ]]; then
+    base="${file##*/}"; ext=""; case "$base" in *.*) ext="${base##*.}" ;; esac
+    printf 'no comment syntax known for .%s (%s) — the marker is not guessed' "${ext:-<no extension>}" "$file"
+  fi
+}
+
+marker_write() {
+  local file="$1" line="$2" text="$3" syn open close indent
+  syn="$(marker_syntax "$file")"; open="${syn%%|*}"; close="${syn#*|}"
+  indent="$(sed -n "${line}p" "$file" | sed 's/[^[:space:]].*//')"
+  # The line reaches awk through the environment, never through `-v`: `-v` runs
+  # its value through escape processing, and a finding quoting `\d+` or a path
+  # with `\n` in it would come out altered or split over two lines.
+  SDD_LINE="$indent$open TODO Code Review: $text ($TODAY)$close" awk -v n="$line" '
+    NR == n { print ENVIRON["SDD_LINE"] } { print }
+  ' "$file" > "$TMP/f" || exit 1
+  replace_file "$file" "$TMP/f"
+}
 
 case "$OP" in
 
@@ -551,35 +603,39 @@ scaffold)
 
 # ── marker ────────────────────────────────────────────────────────
 marker)
-  FILE="${1:-}"; LINE="${2:-}"; TEXT="$(text_arg "${3:-}")"
-  [[ -n "$FILE" && -n "$LINE" && -n "$TEXT" ]] || die2 "marker <file> <line> <text>"
-  one_line "$TEXT" marker
-  [[ -f "$FILE" ]] || die2 "no such file: $FILE"
-  case "$LINE" in ''|*[!0-9]*) die2 "not a line number: $LINE" ;; esac
-  total=$(grep -c '' "$FILE" || true)
-  [[ "$LINE" -ge 1 && "$LINE" -le "$total" ]] || die2 "$FILE has $total lines — line $LINE is not in it"
-
-  base="${FILE##*/}"
-  case "$base" in *.*) ext="${base##*.}" ;; *) ext="" ;; esac
-  open=""; close=""
-  case "$ext" in
-    java|kt|kts|groovy|gradle|scala|swift|rs|php|dart|ts|tsx|js|jsx|mjs|cjs|scss|go|c|cpp|h|hpp|cs) open="//" ;;
-    sql)                                      open="--" ;;
-    sh|bash|py|rb|yaml|yml|toml|properties)   open="#"  ;;
-    html|xml|md)                              open="<!--"; close=" -->" ;;
-    css)                                      open="/*";   close=" */"  ;;
-    *) die2 "no comment syntax known for .${ext:-<no extension>} ($FILE) — the marker is not guessed" ;;
-  esac
-
-  indent="$(sed -n "${LINE}p" "$FILE" | sed 's/[^[:space:]].*//')"
-  # The line reaches awk through the environment, never through `-v`: `-v` runs
-  # its value through escape processing, and a finding quoting `\d+` or a path
-  # with `\n` in it would come out altered or split over two lines.
-  SDD_LINE="$indent$open TODO Code Review: $TEXT ($TODAY)$close" awk -v n="$LINE" '
-    NR == n { print ENVIRON["SDD_LINE"] } { print }
-  ' "$FILE" > "$TMP/f" || exit 1
-  replace_file "$FILE" "$TMP/f"
-  printf 'MARKER=%s:%s\nDATE=%s\n' "$FILE" "$LINE" "$TODAY"
+  if [[ "${1:-}" == "-" && $# -eq 1 ]]; then
+    # The batch: every record is checked before the first one is written, so a
+    # bad record leaves every file as it was. Within a file the markers go in
+    # from the highest line to the lowest — a marker inserted above a line moves
+    # every line below it, and the lines of the records are the lines the
+    # review saw.
+    n=0; problems=""
+    while IFS= read -r rec || [[ -n "$rec" ]]; do
+      [[ -n "${rec//[[:space:]]/}" ]] || continue
+      n=$(( n + 1 ))
+      IFS='|' read -r m_file m_line m_text <<< "$rec"
+      p="$(marker_problem "$m_file" "$m_line" "$m_text")"
+      [[ -z "$p" ]] || problems="$problems; record $n: $p"
+      printf '%s\t%s\t%s\t%s\n' "$m_file" "$m_line" "$n" "$m_text" >> "$TMP/recs"
+    done
+    [[ $n -gt 0 ]] || die2 "marker - reads one \`<file>|<line>|<text>\` record per line on stdin, and none came"
+    [[ -z "$problems" ]] || die2 "no marker written — ${problems#; }"
+    # Equal lines keep the order they were given in: the later record is
+    # inserted first and ends up below the earlier one.
+    LC_ALL=C sort -t "$(printf '\t')" -k1,1 -k2,2nr -k3,3nr "$TMP/recs" > "$TMP/sorted" || exit 1
+    printf 'DATE=%s\n\nMARKERS:\n' "$TODAY"
+    while IFS="$(printf '\t')" read -r m_file m_line _ m_text; do
+      marker_write "$m_file" "$m_line" "$m_text"
+      printf '%s:%s\n' "$m_file" "$m_line"
+    done < "$TMP/sorted"
+  else
+    FILE="${1:-}"; LINE="${2:-}"; TEXT="$(text_arg "${3:-}")"
+    [[ -n "$FILE" && -n "$LINE" && -n "$TEXT" ]] || die2 "marker <file> <line> <text>, or marker - with the records on stdin"
+    p="$(marker_problem "$FILE" "$LINE" "$TEXT")"
+    [[ -z "$p" ]] || die2 "$p"
+    marker_write "$FILE" "$LINE" "$TEXT"
+    printf 'MARKER=%s:%s\nDATE=%s\n' "$FILE" "$LINE" "$TODAY"
+  fi
   ;;
 
 # ── compile-entry ─────────────────────────────────────────────────

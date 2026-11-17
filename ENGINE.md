@@ -107,7 +107,7 @@ is `orchestration.md`.
 | `/sdd-spec-review` | same two roles and scopes | as for specify, plus spec-checklist | `backup`, then `status … draft` on every `ready` file (before spawn); `status` markers after the verdict; answers onto their lines of `## Open Questions` via `answer` |
 | `/sdd-implement` | backend-developer · backend<br>frontend-developer · frontend | developer, task-loop | nothing |
 | `/sdd-code-review` | code-reviewer · review-set | code-review, docs-format | `backup`, `scaffold review` with the header and the marker sweep (before spawn). The findings, coverage and verdict are the role's |
-| `/sdd-code-fix` | backend/frontend-developer · findings-backend/-frontend | developer | `marker` (`TODO Code Review:`) before the spawn, bottom-up; `verdict-stale` |
+| `/sdd-code-fix` | backend/frontend-developer · findings-backend/-frontend | developer | `marker -` (`TODO Code Review:`, every marker in one call) before the spawn; `verdict-stale` |
 | `/sdd-actualize` | architect · baseline-from-feature | project-baseline, docs-format | `backup`; after the spawn `arch-index`, then `compile-entry` into `requirements.md` per `DECLARED:` record — the last write; with no record, `actualized` instead |
 | `/sdd-status` | — | — | nothing — the report goes to chat |
 
