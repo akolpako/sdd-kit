@@ -161,12 +161,16 @@ COMPILATION_STATE="missing"
 
 file_state() {
   if [[ ! -f "$1" ]]; then printf 'missing'; return 0; fi
-  if grep -q '[^[:space:]]' "$1" 2>/dev/null; then printf 'present'; else printf 'empty'; fi
+  # Read by the shell, not by grep: a program started per file was a large part
+  # of what a state cost.
+  local body
+  { body="$(< "$1")"; } 2>/dev/null || body=""
+  if [[ "$body" == *[![:space:]]* ]]; then printf 'present'; else printf 'empty'; fi
 }
 
 # One record per task: ID|state|type|requires|title|reason
 parse_tasks() {
-  md_uncomment "$1" | awk '
+  md_awk "$1" '
     function flush() {
       if (id != "") printf "%s|%s|%s|%s|%s|%s\n", id, state, type, requires, title, reason
       id = ""; state = ""; type = ""; requires = ""; title = ""; reason = ""
@@ -228,7 +232,7 @@ parse_tasks() {
 # caller can report the difference.
 parse_compilation() {
   [[ -f "$COMPILATION_FILE" ]] || return 0
-  md_uncomment "$COMPILATION_FILE" | awk -v want="$1" "$MD_AWK_ENTRY"'
+  md_awk "$COMPILATION_FILE" "$MD_AWK_ENTRY"'
     BEGIN { lcwant = tolower(want) }
     md_is_entry($0) {
       req = md_id($0)
@@ -267,7 +271,7 @@ parse_compilation() {
       gsub(/\|/, "/", src)
       print req "|" status "|" src
     }
-  '
+  ' -v want="$1"
 }
 
 # ── The compilation file itself, read once ────────────────────────
@@ -276,7 +280,7 @@ parse_compilation() {
 if [[ "$COMPILATION_STATE" == "present" ]]; then
   md_comment_open "$COMPILATION_FILE" && \
     note "requirements.md leaves an HTML comment open — every entry after the stray '<!--' is invisible, and the features they belong to cannot reach 'actualized'."
-  NO_SOURCE=$(md_uncomment "$COMPILATION_FILE" | awk "$MD_AWK_ENTRY"'
+  NO_SOURCE=$(md_awk "$COMPILATION_FILE" "$MD_AWK_ENTRY"'
     md_is_entry($0) && index($0, "(Source:") == 0 {
       printf "%s%s", (n++ ? ", " : ""), md_id($0)
     }
@@ -474,24 +478,34 @@ EOF
   # by eye: a requirement no task names, and a task naming one nobody declares.
   UNCOVERED=""; UNDECLARED=""; COVERAGE=""
   if [[ "$ST_REQ" == "present" && "$ST_TSK" == "present" ]]; then
-    local requires=" " declared=" " r t_id t_req pairs="" title titles covered
+    local requires=" " declared=" " r rest t t_id t_req pairs="" title titles covered line
     for rec in ${TASK_RECS[@]+"${TASK_RECS[@]}"}; do
       t_id="${rec%%|*}"; t_req="${rec#*|*|*|}"; t_req="${t_req%%|*}"
-      for r in $(printf '%s' "$t_req" | grep -oE "$MD_REQ_RE"); do
+      rest="$t_req"
+      while [[ "$rest" =~ $MD_REQ_RE ]]; do
+        r="${BASH_REMATCH[0]}"; rest="${rest#*"$r"}"
         requires="$requires$r "
         pairs="$pairs$t_id|$r"$'\n'
       done
     done
     # Every heading's title in one pass, `<REQ>|<title>`.
-    titles="$(md_uncomment "$dir/new-requirements.md" | awk "$MD_AWK_DECL"'
+    titles="$(md_awk "$dir/new-requirements.md" "$MD_AWK_DECL"'
       md_is_req_heading($0) { id = md_id($0)
         sub(/^#+[[:space:]]*/, ""); sub(/^[^[:space:]]+[[:space:]]*/, "")
         sub(/^(—|–|-)[[:space:]]*/, ""); gsub(/\|/, "/"); print id "|" $0 }')"
     while IFS='|' read -r d_id _rest; do
       [[ -n "$d_id" ]] || continue
       declared="$declared$d_id "
-      title="$(printf '%s\n' "$titles" | awk -F'|' -v id="$d_id" '$1 == id { sub(/^[^|]*\|/, ""); print; exit }')"
-      covered="$(printf '%s' "$pairs" | awk -F'|' -v id="$d_id" '$2 == id { printf "%s%s", sep, $1; sep = "," }')"
+      # The first heading of that id, and every task naming it, read in the
+      # shell: a program per requirement was most of what the matrix cost.
+      title=""
+      while IFS= read -r line; do
+        [[ "${line%%|*}" == "$d_id" ]] && { title="${line#*|}"; break; }
+      done <<< "$titles"
+      covered=""
+      while IFS='|' read -r t r; do
+        [[ -n "$t" && "$r" == "$d_id" ]] && covered="${covered:+$covered,}$t"
+      done <<< "$pairs"
       COVERAGE="$COVERAGE$d_id|$title|${covered:--}"$'\n'
       [[ -z "$covered" ]] && UNCOVERED="$UNCOVERED$d_id|$title"$'\n'
     done <<EOF
@@ -598,9 +612,15 @@ print_feature() {
   printf '\nUNDECLARED:\n%s' "$UNDECLARED"
 }
 
+# A glob rather than find | sed | sort: the same folders, dot-folders and
+# links left out, in the shell's own sorted order — and no program started.
 list_features() {
-  find "$SPECS" -mindepth 1 -maxdepth 1 -type d ! -name '.*' 2>/dev/null \
-    | sed 's|.*/||' | sort
+  local d
+  for d in "$SPECS"/*/; do
+    d="${d%/}"
+    [[ -d "$d" && ! -L "$d" ]] || continue
+    printf '%s\n' "${d##*/}"
+  done
 }
 
 # The folder a name resolves to on disk. On a case-insensitive filesystem
@@ -608,15 +628,17 @@ list_features() {
 # argument with itself would never notice — so the comparison happens here,
 # against the folders that are actually there.
 resolve_folder() {
-  local want="$1" lc names name
+  local want="$1" names name
   names=$(list_features)
   while IFS= read -r name; do
     [[ "$name" == "$want" ]] && { printf '%s' "$name"; return 0; }
   done <<< "$names"
-  lc=$(printf '%s' "$want" | tr '[:upper:]' '[:lower:]')
+  # Compared without regard to case by the shell itself, not through tr.
+  shopt -s nocasematch
   while IFS= read -r name; do
-    [[ "$(printf '%s' "$name" | tr '[:upper:]' '[:lower:]')" == "$lc" ]] && { printf '%s' "$name"; return 0; }
+    [[ "$name" == "$want" ]] && { shopt -u nocasematch; printf '%s' "$name"; return 0; }
   done <<< "$names"
+  shopt -u nocasematch
   printf '%s' "$want"
 }
 

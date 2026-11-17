@@ -103,7 +103,8 @@ fi
 # this does not accept is a name no entry could carry, and answering with a
 # number under it would reserve nothing.
 DOMAIN="${2:-}"
-if [[ -n "$DOMAIN" ]] && ! printf '%s' "$DOMAIN" | grep -Eq '^[A-Z][A-Z0-9]*(-[A-Z][A-Z0-9]*)*$'; then
+DOMAIN_RE='^[A-Z][A-Z0-9]*(-[A-Z][A-Z0-9]*)*$'
+if [[ -n "$DOMAIN" && ! "$DOMAIN" =~ $DOMAIN_RE ]]; then
   printf 'ERROR=not a domain: %s — uppercase, starting with a letter, as in ACC\n' "$DOMAIN" >&2
   exit 1
 fi
@@ -245,13 +246,21 @@ id_of() { [[ -z "$2" ]] && return 0; md_req_id "$(dom_of "$1")" "$2"; }
 # is the number being handed out rather than a use of it.
 SCAN_LIMIT=5
 
+# One awk over every file rather than two programs per file: the scanner resets
+# its comment state at each file's first line.
 mentioned_ids() {
-  local f
+  local f files=()
   [[ -d "$ROOT_DIR/_docs" ]] || return 0
   while IFS= read -r f; do
-    [[ -r "$f" ]] || continue
-    md_uncomment "$f" | grep -oE "$MD_REQ_RE"
-  done < <(find "$ROOT_DIR/_docs" -type f -name '*.md' 2>/dev/null | sort) | sort -u
+    [[ -r "$f" ]] && files+=("$f")
+  done < <(find "$ROOT_DIR/_docs" -type f -name '*.md' 2>/dev/null | sort)
+  (( ${#files[@]} > 0 )) || return 0
+  awk "$MD_AWK_STRIP"'
+    { s = $0
+      while (match(s, /REQ-([A-Z][A-Z0-9]*-)*[0-9]+/)) {
+        print substr(s, RSTART, RLENGTH); s = substr(s, RSTART + RLENGTH)
+      }
+    }' "${files[@]}" | sort -u
 }
 
 MENTIONED="$(mentioned_ids)"
@@ -267,7 +276,7 @@ while IFS='|' read -r key n src counter highest decl declin cnt; do
   tries=0; taken=""
   while (( tries < SCAN_LIMIT )); do
     id="$(md_req_id "$dom" "$n")"
-    printf '%s\n' "$MENTIONED" | grep -qx "$id" || break
+    [[ $'\n'"$MENTIONED"$'\n' == *$'\n'"$id"$'\n'* ]] || break
     taken="${taken:+$taken }$id"
     n=$(( n + 1 )); tries=$(( tries + 1 ))
   done

@@ -102,8 +102,11 @@ function md_is_req_heading(s) { return s ~ /^#+[[:space:]]*REQ-([A-Z][A-Z0-9]*-)
 #
 # An argument that is not an id at all comes back empty from the first two, and
 # the caller that cares checks with `md_req_is_id`.
+# A bash match rather than grep: this runs once per id, and starting a program
+# per call was most of what reading a project cost.
+MD_REQ_RE_WHOLE="^$MD_REQ_RE\$"
 md_req_is_id() {
-  printf '%s' "${1:-}" | grep -Eq "^$MD_REQ_RE\$"
+  [[ "${1:-}" =~ $MD_REQ_RE_WHOLE ]]
 }
 
 md_req_domain() {
@@ -142,33 +145,49 @@ md_req_id() {
 # One scanner serves both uses — `probe=1` asks it whether a comment was left
 # open at EOF instead of printing, because a stray `<!--` makes everything after
 # it invisible to every parser above.
-MD_AWK_UNCOMMENT='
-{
-  rest = $0; out = ""
+#
+# The scanner is a function, so a reader runs it as the first rule of its own
+# program — one awk per read, where `md_uncomment | awk` started two. The state
+# is reset per file, so one program can read several.
+MD_AWK_STRIP='
+function md_strip(s,   rest, out, p) {
+  rest = s; out = ""
   while (rest != "") {
-    if (incomment) {
+    if (md_incomment) {
       p = index(rest, "-->")
       if (p == 0) break
-      rest = substr(rest, p + 3); incomment = 0
+      rest = substr(rest, p + 3); md_incomment = 0
     } else {
       p = index(rest, "<!--")
       if (p == 0) { out = out rest; break }
-      out = out substr(rest, 1, p - 1); rest = substr(rest, p + 4); incomment = 1
+      out = out substr(rest, 1, p - 1); rest = substr(rest, p + 4); md_incomment = 1
     }
   }
-  if (!probe) print out
+  return out
 }
-END { if (probe && incomment) print "open" }
+FNR == 1 { md_incomment = 0 }
+{ $0 = md_strip($0) }
 '
 
 md_uncomment() {
   [[ -f "$1" ]] || return 0
-  awk -v probe=0 "$MD_AWK_UNCOMMENT" "$1"
+  awk "$MD_AWK_STRIP"'{ print }' "$1"
+}
+
+# `md_uncomment <file> | awk [opts] <program>` in one program: the program sees
+# every line with its comment text cut out, and the line numbers of the file.
+# Usage: md_awk <file> <program> [awk options ...]. A missing file prints
+# nothing, as md_uncomment does.
+md_awk() {
+  local file="$1" prog="$2"
+  shift 2
+  [[ -f "$file" ]] || return 0
+  awk "$@" "$MD_AWK_STRIP$prog" "$file"
 }
 
 md_comment_open() {
   [[ -f "$1" ]] || return 1
-  [[ -n "$(awk -v probe=1 "$MD_AWK_UNCOMMENT" "$1")" ]]
+  [[ -n "$(awk "$MD_AWK_STRIP"'END { if (md_incomment) print "open" }' "$1")" ]]
 }
 
 # ── The fields of a document ──────────────────────────────────────
@@ -205,6 +224,7 @@ function md_value(s,   v) {
   sub(/[[:space:]]+$/, "", v)
   return md_unquote(v)
 }
+BEGIN { k = tolower(k) }
 NR == 1 && /^---[[:space:]]*$/ { fm = 1; next }
 fm && /^(---|\.\.\.)[[:space:]]*$/ { fm = 0; next }
 '
@@ -214,7 +234,7 @@ fm && /^(---|\.\.\.)[[:space:]]*$/ { fm = 0; next }
 # piece. A quoted YAML value comes back without its quotes: a value carrying a
 # colon has to be quoted, and the quotes are the format's, not the value's.
 md_field() {
-  md_uncomment "$1" | awk -v k="$(printf '%s' "$2" | tr '[:upper:]' '[:lower:]')" "$MD_AWK_FIELD"'
+  md_awk "$1" "$MD_AWK_FIELD"'
     fm && tolower($0) ~ "^" k "[[:space:]]*:" {
       v = md_value($0)
       if (v != "") { print v; exit }
@@ -223,23 +243,32 @@ md_field() {
       v = md_value($0)
       if (v != "") { print v; exit }
     }
-  '
+  ' -v k="$2"
 }
 
 # The `status` field of a document, as the first word of its value.
 # `absent` when the document carries none.
 md_status() {
-  local v w
+  local w
   [[ -f "$1" ]] || { printf 'absent'; return 0; }
-  v="$(md_field "$1" status)"
-  w="$(printf '%s' "$v" | awk '
-    {
-      split($0, a, /[[:space:]]+/)
+  # The field and its first word in one program: md_field's rules, then the
+  # word taken off the value it would have printed.
+  w="$(md_awk "$1" "$MD_AWK_FIELD"'
+    function first_word(v,   a, w) {
+      split(v, a, /[[:space:]]+/)
       w = a[1]
       gsub(/^[^A-Za-z]+|[^A-Za-z]+$/, "", w)
-      if (w != "") { print tolower(w); exit }
+      return tolower(w)
     }
-  ')"
+    fm && tolower($0) ~ "^" k "[[:space:]]*:" {
+      v = md_value($0)
+      if (v != "") { print first_word(v); exit }
+    }
+    !fm && tolower($0) ~ "^>[[:space:]]*" k "[[:space:]]*:" {
+      v = md_value($0)
+      if (v != "") { print first_word(v); exit }
+    }
+  ' -v k=status)"
   [[ -z "$w" ]] && w="absent"
   printf '%s' "$w"
 }
@@ -254,14 +283,14 @@ md_status() {
 # has no line number at all, so `md_field_set` fails and the caller says so —
 # the value is not inserted where the reader would not have found it.
 md_field_line() {
-  md_uncomment "$1" | awk -v k="$(printf '%s' "$2" | tr '[:upper:]' '[:lower:]')" "$MD_AWK_FIELD"'
+  md_awk "$1" "$MD_AWK_FIELD"'
     fm && tolower($0) ~ "^" k "[[:space:]]*:" {
       if (md_value($0) != "") { print NR; exit }
     }
     !fm && tolower($0) ~ "^>[[:space:]]*" k "[[:space:]]*:" {
       if (md_value($0) != "") { print NR; exit }
     }
-  '
+  ' -v k="$2"
 }
 
 # Only the line the key names changes, and only the first one: the value is
@@ -318,15 +347,15 @@ md_field_put() {
 }
 
 md_req_ids() {
-  md_uncomment "$1" | awk "$MD_AWK_ENTRY"'
+  md_awk "$1" "$MD_AWK_ENTRY"'
     md_is_entry($0) { print md_id($0) }
   '
 }
 
 md_req_lines() {
-  md_uncomment "$1" | awk -v want="$2" "$MD_AWK_ENTRY"'
+  md_awk "$1" "$MD_AWK_ENTRY"'
     md_is_entry($0) { if (md_id($0) == want) print NR }
-  '
+  ' -v want="$2"
 }
 
 # Why <name> cannot be a feature folder under _docs/, or nothing when it can.
@@ -351,21 +380,21 @@ md_name_problem() {
 # entry names no source. Whose entry it is decides whether a feature promoting
 # that number writes its own entry or someone else's.
 md_req_source() {
-  md_uncomment "$1" | awk -v want="$2" "$MD_AWK_ENTRY"'
+  md_awk "$1" "$MD_AWK_ENTRY"'
     md_is_entry($0) && md_id($0) == want {
       p = index($0, "(Source:"); if (p == 0) exit
       rest = substr($0, p + 8); q = index(rest, ")"); if (q > 0) rest = substr(rest, 1, q - 1)
       split(rest, part, ","); src = part[1]; gsub(/^[[:space:]]+|[[:space:]]+$/, "", src)
       print src; exit
     }
-  '
+  ' -v want="$2"
 }
 
 # What a feature declares is what holds the number: the entry in
 # requirements.md is written when the feature is actualized, and
 # until then this heading is the only record that the number is in use.
 md_req_declared() {
-  md_uncomment "$1" | awk "$MD_AWK_DECL"'
+  md_awk "$1" "$MD_AWK_DECL"'
     md_is_req_heading($0) { print md_id($0) }
   '
 }
@@ -387,7 +416,7 @@ md_req_declared() {
 # still holds the number, which is `md_req_declared`'s business, and nothing of
 # it is promoted.
 md_req_relations() {
-  md_uncomment "$1" | awk "$MD_AWK_DECL"'
+  md_awk "$1" "$MD_AWK_DECL"'
     function flush() { if (id != "") print id "|" rel "|" target; id = "" }
     /^##[[:space:]]/ { oos = (tolower($0) ~ /^##[[:space:]]+out of scope/) }
     md_is_req_heading($0) {
@@ -505,6 +534,5 @@ fm { next }
 # before it gets here.
 md_untouched() {
   [[ -f "$1" && -f "$2" ]] || return 1
-  [[ "$(md_uncomment "$1" | awk "$MD_AWK_SKELETON")" \
-     == "$(md_uncomment "$2" | awk "$MD_AWK_SKELETON")" ]]
+  [[ "$(md_awk "$1" "$MD_AWK_SKELETON")" == "$(md_awk "$2" "$MD_AWK_SKELETON")" ]]
 }

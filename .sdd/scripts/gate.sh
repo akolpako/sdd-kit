@@ -233,19 +233,28 @@ warn() { WARNS+=("$1"); N_WARN=$(( N_WARN + 1 )); }
 
 RC2=0   # a subordinate script exited 2 and that turned into a stop
 
+# Read in the shell: the gate asks for some thirty keys, and a program per key
+# was a large part of what a gate run cost.
 kv() {
-  printf '%s\n' "$1" | awk -v k="$2" '
-    index($0, k "=") == 1 { sub(/^[^=]*=/, ""); print; exit }
-  '
+  local s=$'\n'"$1" k=$'\n'"$2="
+  [[ "$s" == *"$k"* ]] || return 0
+  s="${s#*"$k"}"
+  printf '%s\n' "${s%%$'\n'*}"
 }
 
 # The lines of one `SECTION:` block. A KEY=value line never matches a header,
 # so the block ends at the next header or at the end of the output.
+SECTION_HEAD_RE='^[A-Z_]+:$'
 section() {
-  printf '%s\n' "$1" | awk -v want="$2:" '
-    /^[A-Z_]+:$/ { inside = ($0 == want); next }
-    inside && NF { print }
-  '
+  local line inside=0
+  while IFS= read -r line; do
+    if [[ "$line" =~ $SECTION_HEAD_RE ]]; then
+      [[ "$line" == "$2:" ]] && inside=1 || inside=0
+      continue
+    fi
+    [[ $inside -eq 1 && "$line" == *[![:space:]]* ]] && printf '%s\n' "$line"
+  done <<< "$1"
+  return 0
 }
 
 list_features() {
