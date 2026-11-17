@@ -95,6 +95,11 @@
 #   FAIL:         one reason per line, worded as the human is told it
 #   ANOMALIES:    implement only, from feature-state.sh, unchanged — what the
 #                 roles' marks left in tasks.md that a reader cannot settle
+#   ACCEPTED:     implement and actualize only: the ASK: lines of the gate
+#                 that say the feature is not finished and still hold — what
+#                 the human said yes to, worded as they were asked, for the
+#                 closing report. Never the build-command ASK:, which a yes
+#                 does not answer
 #
 # What each step is checked to have left behind:
 #   init         the three files of _docs/ exist and hold something
@@ -440,6 +445,64 @@ if [[ $NEED_FS -eq 1 && $FS_RC -eq 0 ]]; then
   COMP_RECS="$(section "$FS_OUT" COMPILATION_ENTRIES)"
 fi
 
+# The status markers of the three files, as one list: ", new-requirements.md
+# (draft), tasks.md (no status)" — of the files on disk. Empty when every one
+# of them is ready.
+draft_list() {
+  local pair marker file out=""
+  for pair in "$ST_REQ:$S_REQ:new-requirements.md" "$ST_DES:$S_DES:design.md" "$ST_TSK:$S_TSK:tasks.md"; do
+    # A file that is not there is not a draft: it is the stop of its own.
+    [[ "${pair%%:*}" == "present" ]] || continue
+    marker="${pair#*:}"; file="${marker#*:}"; marker="${marker%%:*}"
+    [[ "$marker" == "ready" ]] && continue
+    [[ "$marker" == "absent" ]] && marker="no status"
+    out="$out, $file ($marker)"
+  done
+  printf '%s' "${out#, }"
+}
+
+# What says the feature is not finished, as ASK: lines: a command goes on over
+# them only on the human's yes. The same lines are printed again under --verify
+# as ACCEPTED: — nothing the run does settles any of them, so a condition that
+# still holds after the step is one the human said yes to, and the closing
+# report reads it off the disk instead of out of the session's memory.
+unfinished_implement() {
+  local draft
+  draft="$(draft_list)"
+  [[ -n "$draft" ]] && \
+    ask "Not reviewed: $draft. /sdd-spec-review $FEATURE is what promotes a spec to ready. Implementing anyway needs the human to say so in as many words, and the final report then says the work was built from an unreviewed spec."
+  return 0
+}
+
+# Promotion is the one step nothing later reviews: an entry written here is
+# what every next feature is specified against. So whatever says the feature
+# is not finished goes to the human before a line of it is written.
+unfinished_actualize() {
+  local draft
+  draft="$(draft_list)"
+  [[ -n "$draft" ]] && \
+    ask "Not reviewed: $draft. /sdd-spec-review $FEATURE is what promotes a spec to ready. Promoting anyway writes requirements nobody approved into _docs/requirements.md as final — it needs the human to say so in as many words, and the final report then says the baseline was written from an unreviewed spec."
+
+  if [[ "$ST_TSK" != "present" ]]; then
+    ask "_docs/$FOLDER/tasks.md is $ST_TSK — nothing on disk says this feature was implemented. Promoting anyway records its requirements as what the project does; it needs the human to say so in as many words."
+  elif [[ "$T_TOTAL" == "0" || "$T_DONE" != "$T_TOTAL" ]]; then
+    ask "Not implemented: $T_DONE of $T_TOTAL task(s) are [x], $T_BLOCKED blocked. /sdd-implement $FEATURE is what finishes them. Promoting anyway records requirements the code does not meet as what the project does — it needs the human to say so in as many words, and the final report names the tasks left open."
+  fi
+
+  case "$(printf '%s' "$R_VERDICT" | tr '[:upper:]' '[:lower:]')" in
+    blocked*)
+      ask "The code review of $R_DATE says '$R_VERDICT' — the code was judged not mergeable as it stands. /sdd-code-fix $FEATURE acts on that report. Promoting anyway needs the human to say so in as many words." ;;
+    "approved with"*)
+      warn "The code review of $R_DATE says '$R_VERDICT' — it lists Major findings, and /sdd-code-fix $FEATURE is what acts on them." ;;
+    # A fix run invalidates whatever verdict it acted on, BLOCKED included: what
+    # the code is now, no review has said. Promoting over that is the human's
+    # call, as it is over a BLOCKED one.
+    stale*)
+      ask "The code review report says '$R_VERDICT' — fixes were applied after it, and no review has seen the code as it now stands. /sdd-code-review $FEATURE reaches a verdict on it. Promoting anyway needs the human to say so in as many words." ;;
+  esac
+  return 0
+}
+
 # ══ --verify: what the step left behind ═══════════════════════════
 # Only what is mechanical: a file on disk, a marker in it, a task no longer
 # open. Everything else the run produced is judged by a human or by a review.
@@ -639,6 +702,13 @@ if [[ $VERIFY -eq 1 ]]; then
     printf '\nANOMALIES:\n'
     [[ -n "$ANOMALIES" ]] && printf '%s\n' "$ANOMALIES"
   fi
+  if [[ "$CMD" == "implement" || "$CMD" == "actualize" ]]; then
+    if [[ $FS_FOUND -eq 1 ]]; then
+      unfinished_$CMD
+    fi
+    printf '\nACCEPTED:\n'
+    for a in ${ASKS[@]+"${ASKS[@]}"}; do printf '%s\n' "$a"; done
+  fi
   [[ $N_FAIL -gt 0 ]] && exit 2
   exit 0
 fi
@@ -672,22 +742,6 @@ require_specs() {
       *)       stop "_docs/$FOLDER/$file is missing$tail /sdd-specify $FEATURE writes it." ;;
     esac
   done
-}
-
-# The status markers of the three files, as one list: ", new-requirements.md
-# (draft), tasks.md (no status)" — of the files on disk. Empty when every one
-# of them is ready.
-draft_list() {
-  local pair marker file out=""
-  for pair in "$ST_REQ:$S_REQ:new-requirements.md" "$ST_DES:$S_DES:design.md" "$ST_TSK:$S_TSK:tasks.md"; do
-    # A file that is not there is not a draft: it is the stop of its own.
-    [[ "${pair%%:*}" == "present" ]] || continue
-    marker="${pair#*:}"; file="${marker#*:}"; marker="${marker%%:*}"
-    [[ "$marker" == "ready" ]] && continue
-    [[ "$marker" == "absent" ]] && marker="no status"
-    out="$out, $file ($marker)"
-  done
-  printf '%s' "${out#, }"
 }
 
 # ── The build command ─────────────────────────────────────────────
@@ -1003,10 +1057,7 @@ check_implement() {
   else
     require_specs "."
 
-    local draft
-    draft="$(draft_list)"
-    [[ -n "$draft" ]] && \
-      ask "Not reviewed: $draft. /sdd-spec-review $FEATURE is what promotes a spec to ready. Implementing anyway needs the human to say so in as many words, and the final report then says the work was built from an unreviewed spec."
+    unfinished_implement
 
     # Only when the file is there: a missing tasks.md already has its own line,
     # and one problem never reaches the human as two.
@@ -1234,31 +1285,7 @@ EOF
   [[ "$ST_REQ" == "present" && -z "$DECLARED_RECS" ]] && \
     warn "_docs/$FOLDER/new-requirements.md declares no requirement — nothing of it reaches _docs/requirements.md, only the architecture baseline is promoted, and the 'actualized:' property of new-requirements.md is what marks it done."
 
-  # Promotion is the one step nothing later reviews: an entry written here is
-  # what every next feature is specified against. So whatever says the feature
-  # is not finished goes to the human before a line of it is written.
-  local draft
-  draft="$(draft_list)"
-  [[ -n "$draft" ]] && \
-    ask "Not reviewed: $draft. /sdd-spec-review $FEATURE is what promotes a spec to ready. Promoting anyway writes requirements nobody approved into _docs/requirements.md as final — it needs the human to say so in as many words, and the final report then says the baseline was written from an unreviewed spec."
-
-  if [[ "$ST_TSK" != "present" ]]; then
-    ask "_docs/$FOLDER/tasks.md is $ST_TSK — nothing on disk says this feature was implemented. Promoting anyway records its requirements as what the project does; it needs the human to say so in as many words."
-  elif [[ "$T_TOTAL" == "0" || "$T_DONE" != "$T_TOTAL" ]]; then
-    ask "Not implemented: $T_DONE of $T_TOTAL task(s) are [x], $T_BLOCKED blocked. /sdd-implement $FEATURE is what finishes them. Promoting anyway records requirements the code does not meet as what the project does — it needs the human to say so in as many words, and the final report names the tasks left open."
-  fi
-
-  case "$(printf '%s' "$R_VERDICT" | tr '[:upper:]' '[:lower:]')" in
-    blocked*)
-      ask "The code review of $R_DATE says '$R_VERDICT' — the code was judged not mergeable as it stands. /sdd-code-fix $FEATURE acts on that report. Promoting anyway needs the human to say so in as many words." ;;
-    "approved with"*)
-      warn "The code review of $R_DATE says '$R_VERDICT' — it lists Major findings, and /sdd-code-fix $FEATURE is what acts on them." ;;
-    # A fix run invalidates whatever verdict it acted on, BLOCKED included: what
-    # the code is now, no review has said. Promoting over that is the human's
-    # call, as it is over a BLOCKED one.
-    stale*)
-      ask "The code review report says '$R_VERDICT' — fixes were applied after it, and no review has seen the code as it now stands. /sdd-code-review $FEATURE reaches a verdict on it. Promoting anyway needs the human to say so in as many words." ;;
-  esac
+  unfinished_actualize
 }
 
 PROJECT=""; EXISTING=""; FEATURES=""

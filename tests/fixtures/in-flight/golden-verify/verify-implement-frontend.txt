@@ -5,4 +5,7 @@ TASKS_TOTAL=2
 FAIL:
 
 ANOMALIES:
+
+ACCEPTED:
+Not reviewed: new-requirements.md (draft), design.md (draft), tasks.md (draft). /sdd-spec-review Wishlist is what promotes a spec to ready. Implementing anyway needs the human to say so in as many words, and the final report then says the work was built from an unreviewed spec.
 ### exit=0

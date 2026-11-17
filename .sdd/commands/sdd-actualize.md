@@ -26,7 +26,7 @@ Promotes what a finished feature decided into the project-level files. Safe to r
 
 1. **Gate:** run `.sdd/scripts/gate.sh actualize <FeatureName>`.
    - `ok` promotes.
-   - `ask` says the feature is not finished — a spec nobody reviewed, tasks left open, a review that blocked, a review that fixes have since outdated. It promotes only on an explicit yes to each line, and what was accepted this way is named again in the final report, in those words.
+   - `ask` says the feature is not finished — a spec nobody reviewed, tasks left open, a review that blocked, a review that fixes have since outdated. It promotes only on an explicit yes to each line, and what was accepted this way is named again in the final report, in those words — read off `ACCEPTED:` of the verify in step 6.
 
 2. **Back up:** run `.sdd/scripts/spec-edit.sh backup <FeatureName>`. If it exits non-zero, stop.
 
@@ -50,4 +50,4 @@ Promotes what a finished feature decided into the project-level files. Safe to r
 
 6. **Verify:** run `.sdd/scripts/gate.sh actualize <FeatureName> --verify` — a declared requirement that did not arrive, an entry left `draft`, or a counter standing on a number already handed out, or the mark missing on a feature with no requirement, is what the next feature collides with.
 
-7. **Report the next step:** what changed in the architecture baseline and in `requirements.md`, and every `ASK:` line of step 1 that was accepted. The feature is done.
+7. **Report the next step:** what changed in the architecture baseline and in `requirements.md`, and every `ACCEPTED:` line of the verify in step 6. The feature is done.

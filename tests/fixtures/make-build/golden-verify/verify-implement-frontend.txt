@@ -5,4 +5,6 @@ TASKS_TOTAL=4
 FAIL:
 
 ANOMALIES:
+
+ACCEPTED:
 ### exit=0

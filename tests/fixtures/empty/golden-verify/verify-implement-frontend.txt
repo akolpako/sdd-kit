@@ -6,4 +6,6 @@ FAIL:
 No feature folder for 'Cart' under _docs/ — nothing this run was to write is on disk.
 
 ANOMALIES:
+
+ACCEPTED:
 ### exit=2
