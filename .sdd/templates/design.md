@@ -11,20 +11,6 @@ tags:
 <!-- The `status` property above is `draft` or `ready` — the only record on
 disk of whether the spec was reviewed. -->
 
-<!-- A section this feature does not touch is deleted, not filled with an
-example or a placeholder. A section the feature is bound by but does not
-change is one line pointing at the architecture baseline — the section file, or
-the `## ` section, that holds it — never a retelling of it. -->
-
-<!-- Budget — the size of this file follows the size of the feature, counted
-in the tasks of `tasks.md`:
-  * 5 tasks or fewer — about 150 lines, one diagram;
-  * 6 to 15 tasks — about 300 lines;
-  * more — no ceiling, but every diagram earns its place.
-A diagram, a section, or an assumption written only to fill the template is
-waste: the file is read again by every role that implements or reviews the
-feature. -->
-
 ## Overview
 
 <!-- What this feature adds to the system and how it fits what already

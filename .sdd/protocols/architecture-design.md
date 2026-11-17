@@ -21,7 +21,7 @@ How a set of requirements becomes the architecture an implementer works from. **
 
 Derive the architecture style and the bounded contexts from the goals, actors, key flows, and constraints in `new-requirements.md`. Then fill the sections of `design.md`: the C4 views the feature changes, module decomposition, the conceptual data model and its persistence mapping, the API boundary contract-first, business logic and calculation rules, what the feature adds to the attack surface, and the non-functional baselines it changes or is bound by.
 
-**A section the feature does not change is a pointer.** Whatever the architecture baseline already fixes and this feature only inherits — a layer, a convention, a stack decision — is one line naming the file, or the `## ` section, that holds it, never a restatement.
+**A section the feature does not touch is deleted**, never filled with an example or a placeholder. **A section the feature is bound by but does not change is a pointer.** Whatever the architecture baseline already fixes and this feature only inherits — a layer, a convention, a stack decision — is one line naming the file, or the `## ` section, that holds it, never a restatement.
 
 **Purpose, not file counts.** A module is described by why it exists, what decided its shape, and what it owns versus delegates — never by the files in it or how many there are. The same holds for the baseline's module structure.
 
@@ -41,3 +41,5 @@ Validate the syntax before finalizing.
 ## 5. Output Rules
 
 Implementation-guiding and testable: every section says what an implementer can build from and a reviewer can check.
+
+**The size of `design.md` follows the size of the feature**, counted in the tasks of `tasks.md`: five tasks or fewer — about 150 lines and one diagram; six to fifteen — about 300 lines; more — no ceiling, but every diagram earns its place. A diagram, a section or an assumption written only to fill the template is read again by every role that implements or reviews the feature.

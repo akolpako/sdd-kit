@@ -10,7 +10,7 @@ _docs/Cart/tasks.md
 diff -ru -x .git <tmp>/dup-req/_docs/Cart/design.md <tmp>/edit/_docs/Cart/design.md
 --- <tmp>/dup-req/_docs/Cart/design.md
 +++ <tmp>/edit/_docs/Cart/design.md
-@@ -1,7 +1,107 @@
+@@ -1,7 +1,93 @@
 +---
 +type: design
 +feature: Cart
@@ -25,20 +25,6 @@ diff -ru -x .git <tmp>/dup-req/_docs/Cart/design.md <tmp>/edit/_docs/Cart/design
 +<!-- The `status` property above is `draft` or `ready` — the only record on
 +disk of whether the spec was reviewed. -->
  
-+<!-- A section this feature does not touch is deleted, not filled with an
-+example or a placeholder. A section the feature is bound by but does not
-+change is one line pointing at the architecture baseline — the section file, or
-+the `## ` section, that holds it — never a retelling of it. -->
-+
-+<!-- Budget — the size of this file follows the size of the feature, counted
-+in the tasks of `tasks.md`:
-+  * 5 tasks or fewer — about 150 lines, one diagram;
-+  * 6 to 15 tasks — about 300 lines;
-+  * more — no ceiling, but every diagram earns its place.
-+A diagram, a section, or an assumption written only to fill the template is
-+waste: the file is read again by every role that implements or reviews the
-+feature. -->
-+
  ## Overview
  
 -A cart service over a cart table, reached through one REST controller.
@@ -123,7 +109,7 @@ diff -ru -x .git <tmp>/dup-req/_docs/Cart/design.md <tmp>/edit/_docs/Cart/design
 diff -ru -x .git <tmp>/dup-req/_docs/Cart/new-requirements.md <tmp>/edit/_docs/Cart/new-requirements.md
 --- <tmp>/dup-req/_docs/Cart/new-requirements.md
 +++ <tmp>/edit/_docs/Cart/new-requirements.md
-@@ -1,15 +1,68 @@
+@@ -1,15 +1,57 @@
 +---
 +type: requirements
 +feature: Cart
@@ -173,18 +159,7 @@ diff -ru -x .git <tmp>/dup-req/_docs/Cart/new-requirements.md <tmp>/edit/_docs/C
 +
 +`Refines` — the existing entry keeps its number and takes this wording.
 +`Supersedes` — the existing entry is retired and this requirement stands in its
-+place under its own number. The line is read by the engine: it is what
-+/sdd-actualize acts on.
-+
-+Requirements describe *what* and *why*, never *how*.
-+One behaviour per condition — "and" inside a condition means it should be split.
-+At least two conditions per requirement, one of them an `Error:` condition.
-+
-+The `^req-###` at the end of the description line is the requirement's anchor,
-+the id in lower case — `REQ-ACC-003` gives `^req-acc-003`. It is what
-+`design.md` and `tasks.md` link to, so it is written even where nothing points
-+at it yet. A term this feature defines is marked ==like this== where it is
-+defined, once, and used plainly everywhere after.
++place under its own number.
 +-->
 +
 +## Assumptions

@@ -50,7 +50,12 @@ A `NEXT` that arrived is a number to use, whatever the compilation on disk looks
 
 ## 4. Requirements Generation
 
-The structure of a requirement is the one the scaffolded `new-requirements.md` defines, in the hint comments it was copied with.
+The structure of a requirement is the one the scaffolded `new-requirements.md` shows in its hint comment. What every requirement holds to, in whichever pass it is read:
+
+- **What and why, never how.**
+- **One behaviour per condition of satisfaction** — "and" inside a condition means it is two.
+- **At least two conditions, one of them an `Error:` condition.**
+- **The anchor ends the description line** — `^req-###`, the id in lower case (`REQ-ACC-003` gives `^req-acc-003`). It is what `design.md` and `tasks.md` link to, so it is written even where nothing points at it yet.
 
 ## 5. Edge Cases
 
