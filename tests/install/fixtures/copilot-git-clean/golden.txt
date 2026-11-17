@@ -30,6 +30,9 @@ d  .github/skills/angular-practices/
 c  .github/skills/angular-practices/SKILL.md = <engine>/.sdd/skills/angular-practices/SKILL.md
 d  .github/skills/confluence/
 c  .github/skills/confluence/SKILL.md = <engine>/.sdd/skills/confluence/SKILL.md
+d  .github/skills/confluence/references/
+c  .github/skills/confluence/references/publish.md = <engine>/.sdd/skills/confluence/references/publish.md
+c  .github/skills/confluence/references/setup.md = <engine>/.sdd/skills/confluence/references/setup.md
 d  .github/skills/confluence/scripts/
 c  .github/skills/confluence/scripts/confluence-fetch.sh = <engine>/.sdd/skills/confluence/scripts/confluence-fetch.sh
 c  .github/skills/confluence/scripts/confluence-publish.sh = <engine>/.sdd/skills/confluence/scripts/confluence-publish.sh
@@ -65,6 +68,9 @@ d  .github/skills/java-springboot/
 c  .github/skills/java-springboot/SKILL.md = <engine>/.sdd/skills/java-springboot/SKILL.md
 d  .github/skills/jira/
 c  .github/skills/jira/SKILL.md = <engine>/.sdd/skills/jira/SKILL.md
+d  .github/skills/jira/references/
+c  .github/skills/jira/references/publish.md = <engine>/.sdd/skills/jira/references/publish.md
+c  .github/skills/jira/references/setup.md = <engine>/.sdd/skills/jira/references/setup.md
 d  .github/skills/jira/scripts/
 c  .github/skills/jira/scripts/jira-fetch.sh = <engine>/.sdd/skills/jira/scripts/jira-fetch.sh
 c  .github/skills/jira/scripts/jira-publish.sh = <engine>/.sdd/skills/jira/scripts/jira-publish.sh
@@ -220,6 +226,8 @@ host	copilot
 <sum>	.github/agents/requirements-engineer.agent.md
 <sum>	.github/skills/angular-practices/SKILL.md
 <sum>	.github/skills/confluence/SKILL.md
+<sum>	.github/skills/confluence/references/publish.md
+<sum>	.github/skills/confluence/references/setup.md
 <sum>	.github/skills/confluence/scripts/confluence-fetch.sh
 <sum>	.github/skills/confluence/scripts/confluence-publish.sh
 <sum>	.github/skills/confluence/scripts/confluence-search.sh
@@ -248,6 +256,8 @@ host	copilot
 <sum>	.github/skills/java-junit/references/junit-rule-state-based-assertions.md
 <sum>	.github/skills/java-springboot/SKILL.md
 <sum>	.github/skills/jira/SKILL.md
+<sum>	.github/skills/jira/references/publish.md
+<sum>	.github/skills/jira/references/setup.md
 <sum>	.github/skills/jira/scripts/jira-fetch.sh
 <sum>	.github/skills/jira/scripts/jira-publish.sh
 <sum>	.github/skills/jira/scripts/md-to-wiki.awk

@@ -29,6 +29,9 @@ d  .claude/skills/angular-practices/
 c  .claude/skills/angular-practices/SKILL.md = <engine>/.sdd/skills/angular-practices/SKILL.md
 d  .claude/skills/confluence/
 c  .claude/skills/confluence/SKILL.md = <engine>/.sdd/skills/confluence/SKILL.md
+d  .claude/skills/confluence/references/
+c  .claude/skills/confluence/references/publish.md = <engine>/.sdd/skills/confluence/references/publish.md
+c  .claude/skills/confluence/references/setup.md = <engine>/.sdd/skills/confluence/references/setup.md
 d  .claude/skills/confluence/scripts/
 c  .claude/skills/confluence/scripts/confluence-fetch.sh = <engine>/.sdd/skills/confluence/scripts/confluence-fetch.sh
 c  .claude/skills/confluence/scripts/confluence-publish.sh = <engine>/.sdd/skills/confluence/scripts/confluence-publish.sh
@@ -64,6 +67,9 @@ d  .claude/skills/java-springboot/
 c  .claude/skills/java-springboot/SKILL.md = <engine>/.sdd/skills/java-springboot/SKILL.md
 d  .claude/skills/jira/
 c  .claude/skills/jira/SKILL.md = <engine>/.sdd/skills/jira/SKILL.md
+d  .claude/skills/jira/references/
+c  .claude/skills/jira/references/publish.md = <engine>/.sdd/skills/jira/references/publish.md
+c  .claude/skills/jira/references/setup.md = <engine>/.sdd/skills/jira/references/setup.md
 d  .claude/skills/jira/scripts/
 c  .claude/skills/jira/scripts/jira-fetch.sh = <engine>/.sdd/skills/jira/scripts/jira-fetch.sh
 c  .claude/skills/jira/scripts/jira-publish.sh = <engine>/.sdd/skills/jira/scripts/jira-publish.sh
@@ -200,6 +206,8 @@ host	claude
 <sum>	.claude/settings.json
 <sum>	.claude/skills/angular-practices/SKILL.md
 <sum>	.claude/skills/confluence/SKILL.md
+<sum>	.claude/skills/confluence/references/publish.md
+<sum>	.claude/skills/confluence/references/setup.md
 <sum>	.claude/skills/confluence/scripts/confluence-fetch.sh
 <sum>	.claude/skills/confluence/scripts/confluence-publish.sh
 <sum>	.claude/skills/confluence/scripts/confluence-search.sh
@@ -228,6 +236,8 @@ host	claude
 <sum>	.claude/skills/java-junit/references/junit-rule-state-based-assertions.md
 <sum>	.claude/skills/java-springboot/SKILL.md
 <sum>	.claude/skills/jira/SKILL.md
+<sum>	.claude/skills/jira/references/publish.md
+<sum>	.claude/skills/jira/references/setup.md
 <sum>	.claude/skills/jira/scripts/jira-fetch.sh
 <sum>	.claude/skills/jira/scripts/jira-publish.sh
 <sum>	.claude/skills/jira/scripts/md-to-wiki.awk
