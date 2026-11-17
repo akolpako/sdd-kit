@@ -42,7 +42,7 @@
 # is inherited through the environment and ties the records of one run together.
 #
 # A run handed `-` among its arguments reads somebody's words from stdin — the
-# text of `spec-edit.sh answer|section|compile-entry`, the records of
+# text of `spec-edit.sh answer|section|compile-entry|promote`, the records of
 # `marker -`, the blocks of `spawn-prompt.sh … -`. Those words are what was
 # written, and the argv alone shows only that something was. The wrapper saves
 # stdin to a file, hands that file to the child as its stdin and logs it as a

@@ -108,7 +108,7 @@ is `orchestration.md`.
 | `/sdd-implement` | backend-developer · backend<br>frontend-developer · frontend | developer, task-loop | `start` before the baseline — the feature's starting point, written once, read by `review-set.sh` |
 | `/sdd-code-review` | code-reviewer · review-set | code-review, docs-format | `backup`, `scaffold review` with the header and the marker sweep (before spawn). The findings, coverage and verdict are the role's |
 | `/sdd-code-fix` | backend/frontend-developer · findings-backend/-frontend | developer | `marker -` (`TODO Code Review:`, every marker in one call) before the spawn; `verdict-stale` |
-| `/sdd-actualize` | architect · baseline-from-feature | project-baseline, docs-format | `backup`; after the spawn `arch-index`, then `compile-entry` into `requirements.md` per `DECLARED:` record — the last write; with no record, `actualized` instead |
+| `/sdd-actualize` | architect · baseline-from-feature | project-baseline, docs-format | `backup`; after the spawn `arch-index`, then `promote` — every `DECLARED:` record into `requirements.md` in one write, or the `actualized:` mark when there is none — the last write |
 | `/sdd-status` | — | — | nothing — the report goes to chat |
 
 - **Scaffold before spawn**: a role opens a file already on disk rather than looking for the
@@ -120,8 +120,8 @@ is `orchestration.md`.
 - **One protocol set per role per kind of assignment**, and it is the whole of what the agent
   does under it.
 - **The write that marks a step as done is its last one**: `status` in `/sdd-spec-review`,
-  `verdict-stale` in `/sdd-code-fix`, `compile-entry` in `/sdd-actualize` (`actualized` for a
-  feature that declares no requirement). A run cut short leaves the feature at the stage it was
+  `verdict-stale` in `/sdd-code-fix`, `promote` in `/sdd-actualize` (the `actualized:` mark
+  for a feature that declares no requirement). A run cut short leaves the feature at the stage it was
   on, never one ahead.
 - **A relation between requirements is a line on the page**: `**Refines:**` / `**Supersedes:**`
   under the heading in `new-requirements.md`, written by the role, read by `lib/format.sh`,

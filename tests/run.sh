@@ -1873,6 +1873,43 @@ EOF
   prop_check relations "verify names what did not arrive" "$ok" \
     "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
 
+  # ── The promotion in one call, on a copy ───────────────────────
+  # promote reads the relations off the page and takes only the words. A line
+  # missing is a stop that names it, and the compilation stays as it was.
+  local one="$work.one" words before
+  rm -rf "$one" && cp -R "$work" "$one" || exit 1
+  before="$(cat "$one/_docs/requirements.md")"
+  words='REQ-003|Cart holds items. A shopper keeps up to 50 items until checkout.
+REQ-004|Account checkout. An order needs an account.'
+  out="$(cd "$one" && printf '%s\nREQ-009|Stray. Nobody declared it.\n' "$words" | "$EDITOR_SH" promote Checkout - 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 2 && "$out" == *'REQ-009 is not declared'* && "$out" == *'REQ-005 has no wording on stdin'* ]] || ok=1
+  [[ "$(cat "$one/_docs/requirements.md")" == "$before" ]] || ok=1
+  prop_check relations "promote: a wording missing or stray stops it, nothing written" "$ok" \
+    "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
+  words="$words
+REQ-005|Order summary. A shopper sees the order before paying."
+  out="$(cd "$one" && printf '%s\n' "$words" | "$EDITOR_SH" promote Checkout - 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 0 ]] || ok=1
+  [[ "$(printf '%s\n' "$out" | sed -n '/^ENTRIES:$/,$p' | sed 1d | tr '\n' ' ')" \
+      == 'REQ-002|refined REQ-004|appended REQ-001|superseded REQ-005|appended ' ]] || ok=1
+  grep -q 'REQ-002\*\* — Cart holds items. A shopper keeps up to 50 items until checkout. \*(Source: Cart, refined by Checkout)\*' \
+    "$one/_docs/requirements.md" || ok=1
+  grep -q '^- \*\*REQ-003\*\*' "$one/_docs/requirements.md" && ok=1
+  ( cd "$one" && "$GATE" actualize Checkout --verify ) >/dev/null 2>&1 || ok=1
+  [[ "$(cd "$one" && "$state" Checkout | sed -n 's/^STAGE=//p')" == "actualized" ]] || ok=1
+  prop_check relations "promote: every record in one call, and verify passes" "$ok" \
+    "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
+  before="$(cat "$one/_docs/requirements.md")"
+  out="$(cd "$one" && printf '%s\n' "$words" | "$EDITOR_SH" promote Checkout - 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 0 && "$(cat "$one/_docs/requirements.md")" == "$before" ]] || ok=1
+  prop_check relations "promote: a re-run changes nothing" "$ok" \
+    "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
   # ── The promotion ───────────────────────────────────────────────
   out="$(cd "$work" && "$EDITOR_SH" compile-entry Checkout REQ-002 refine "Cart holds items. A shopper keeps up to 50 items until checkout." 2>&1)"
   line="$(grep 'REQ-002\*\*' "$work/_docs/requirements.md")"
@@ -2679,6 +2716,14 @@ check_no_requirements() {
   ( cd "$work" && "$EDITOR_SH" actualized Tidy ) >/dev/null 2>&1
   ok=0; [[ "$(grep -c '^actualized:' "$f")" == 1 ]] || ok=1
   prop_check no-requirements "a second run rewrites the mark, never adds one" "$ok" "$(tr '\n' '~' < "$f")"
+
+  # promote takes the same mark for such a feature, and refuses words for it.
+  out="$(cd "$work" && "$EDITOR_SH" promote Tidy 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 0 && "$out" == *"ACTUALIZED=$(date +%Y-%m-%d)"* && "$(grep -c '^actualized:' "$f")" == 1 ]] || ok=1
+  out="$(cd "$work" && printf 'REQ-002|x\n' | "$EDITOR_SH" promote Tidy - 2>&1)"; rc=$?
+  [[ $rc -eq 2 && "$out" == *'declares no requirement'* ]] || ok=1
+  prop_check no-requirements "promote marks it, and refuses wording" "$ok" "exit $rc: $out"
 
   printf '# R\n\n> Status: ready\n\n## Requirements\n\nNone.\n' > "$f"
   ( cd "$work" && "$EDITOR_SH" actualized Tidy ) >/dev/null 2>&1

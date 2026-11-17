@@ -100,6 +100,24 @@
 #       feature that declares no requirement, and so has no compilation entry
 #       to be told actualized by. A feature that declares one is a stop: its
 #       entries are that mark, and a second one could disagree with them.
+#   promote <Feature> [-]
+#       The whole promotion of a feature into _docs/requirements.md, in one
+#       call and one write. What becomes which entry is read here, from the
+#       `**Refines:**` / `**Supersedes:**` lines of new-requirements.md — the
+#       records the gate prints as DECLARED: — and never passed in. Only the
+#       wording is: one `<REQ-###>|<short title>. <one sentence>.` line per
+#       declared requirement on stdin, keyed by the number the feature
+#       declares. A `new` requirement is `compile-entry … final`; a
+#       `refines` one rewords its target (`refine`), and its own number gets no
+#       entry; a `supersedes` one is its own `final` entry, then the target
+#       `superseded-by:` it. A line missing, extra, doubled or for a number the
+#       feature does not declare is a stop, and every such line is named in it.
+#       Any stop — those, or one of compile-entry's — leaves the file as it was:
+#       the entries are built on a copy, written back once all of them stand.
+#       A feature that declares nothing takes the `actualized` mark instead,
+#       with nothing on stdin. Prints PROMOTED=<entries>, ACTUALIZED=<date,
+#       when the mark was set>, FILE=, then ENTRIES:, `<REQ>|<action>` per
+#       entry written — appended, updated, refined or superseded.
 #   start <Feature>
 #       Record where the feature's code starts, into
 #       _docs/<Feature>/.implement-start: the commit HEAD is on, and every
@@ -187,8 +205,8 @@ set -- ${ARGS[@]+"${ARGS[@]}"}
 
 OP="${1:-}"
 case "$OP" in
-  backup|status|verdict-stale|scaffold|arch-index|marker|compile-entry|actualized|start|conf-set|section|answer) shift ;;
-  "") printf 'ERROR=no operation: spec-edit.sh <op> — backup, status, verdict-stale, scaffold, arch-index, marker, compile-entry, actualized, start, conf-set, section, answer\n' >&2; exit 1 ;;
+  backup|status|verdict-stale|scaffold|arch-index|marker|compile-entry|actualized|promote|start|conf-set|section|answer) shift ;;
+  "") printf 'ERROR=no operation: spec-edit.sh <op> — backup, status, verdict-stale, scaffold, arch-index, marker, compile-entry, actualized, promote, start, conf-set, section, answer\n' >&2; exit 1 ;;
   *)  printf 'ERROR=unknown operation: %s\n' "$OP" >&2; exit 1 ;;
 esac
 
@@ -305,6 +323,139 @@ replace_section() {
 
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/sdd-edit.XXXXXX")" || exit 1
 trap 'rm -rf "$TMP" ${REPLACE_TMP:+"$REPLACE_TMP"}' EXIT
+
+# One entry of the compilation, written into FILE: the whole of
+# `compile-entry`, and each step of `promote`, which hands it a copy of the
+# compilation and writes that copy back once every step has passed. Leaves
+# ACTION and NEXT_FREE for the caller to print. Any stop is die2, before FILE
+# is touched.
+ACTION=""; NEXT_FREE=""
+compile_one() {
+  local FEATURE="$1" REQ="$2" MODE="$3" TEXT="$4" FILE="$5"
+  local hits suffix ANCHOR at old parts src refined superseded part body tail rest
+  local action lc_src lc_feature new domain next free current
+  # The entries are the ones the readers see: the template's example block is an
+  # HTML comment, and an entry written into it would belong to no feature.
+  md_req_lines "$FILE" "$REQ" > "$TMP/lines"
+  hits=$(grep -c . < "$TMP/lines" || true)
+  [[ "$hits" -le 1 ]] || die2 "$REQ is carried by $hits entries — the duplicate is the human's call, and no entry is edited until it is gone"
+
+  suffix=""
+  case "$MODE" in superseded-by:*) suffix=", superseded by ${MODE#superseded-by:}" ;; esac
+
+  # The anchor another document links to: the id in lower case, as a block id at
+  # the end of the entry. It is written here rather than left to a role, so that
+  # `[REQ-001](requirements.md#^req-001)` resolves for every entry on the page
+  # and not only for the ones somebody remembered.
+  ANCHOR="^$(printf '%s' "$REQ" | tr '[:upper:]' '[:lower:]')"
+
+  if [[ "$hits" -eq 1 ]]; then
+    # An entry on file keeps the source that wrote it: a refinement does not
+    # change whose requirement it was.
+    at="$(cat "$TMP/lines")"
+    old="$(awk -v n="$at" 'NR == n { print; exit }' "$FILE")"
+    parts="${old##*\*(Source: }"; parts="${parts%%)*}"
+    src="${parts%%,*}"
+    # Who has reworded the entry since stays on it through every later edit: it
+    # is what lets a feature that added no entry of its own be told apart from
+    # one that was never promoted.
+    # So does a replacement: a later rewording of a retired entry leaves it
+    # retired, unless this call names a new replacement of its own.
+    refined=""; superseded=""
+    while [[ "$parts" == *,* ]]; do
+      parts="${parts#*,}"
+      part="${parts%%,*}"; part="${part#"${part%%[![:space:]]*}"}"
+      case "$part" in
+        "refined by "*)    refined="$refined, $part" ;;
+        "superseded by "*) superseded=", $part" ;;
+      esac
+    done
+    [[ -n "$suffix" ]] || suffix="$superseded"
+    body="$TEXT"
+    if [[ -z "$body" ]]; then
+      body="${old#*— }"; body="${body%% \*(Source:*}"
+    fi
+    # Whatever the line carries after the source — a note in a comment — is not
+    # this script's to drop: it owns the entry, not the margin beside it.
+    tail=""
+    case "$old" in
+      *'*(Source: '*)
+        rest="${old#*\*(Source: }"
+        case "$rest" in *')*'*) tail="${rest#*)\*}" ;; esac ;;
+    esac
+    case "$tail" in
+      *"$ANCHOR"*) ;;
+      *) tail="$tail $ANCHOR" ;;
+    esac
+    action="updated"
+    lc_src="$(printf '%s' "$src" | tr '[:upper:]' '[:lower:]')"
+    lc_feature="$(printf '%s' "$FEATURE" | tr '[:upper:]' '[:lower:]')"
+    case "$MODE" in
+      final)
+        [[ "$lc_src" == "$lc_feature" ]] || \
+          die2 "$REQ is an entry of $src, not of $FEATURE — \`final\` writes a feature's own entry. Two features were handed one number, or this one rewords that entry: that is \`refine\`" ;;
+      refine)
+        [[ "$lc_src" != "$lc_feature" ]] || die2 "$REQ is $FEATURE's own entry — rewording it is \`final\`, not \`refine\`"
+        [[ -n "$TEXT" ]] || die2 "refine $REQ carries the new wording: compile-entry $FEATURE $REQ refine <text>" ;;
+    esac
+    if [[ "$MODE" == "refine" ]]; then
+      case "$(printf '%s' "$refined," | tr '[:upper:]' '[:lower:]')" in
+        *", refined by $lc_feature,"*) ;;
+        *) refined="$refined, refined by $FEATURE" ;;
+      esac
+      action="refined"
+    fi
+    new="- **$REQ** — $body *(Source: $src$refined$suffix)*$tail"
+    # Through the environment, for the reason `marker` gives.
+    SDD_LINE="$new" awk -v n="$at" 'NR == n { print ENVIRON["SDD_LINE"]; next } { print }' "$FILE" > "$TMP/f" || exit 1
+    replace_file "$FILE" "$TMP/f"
+  else
+    [[ "$MODE" != "refine" ]] || die2 "$REQ has no entry in $FILE — there is nothing to refine"
+    [[ -n "$TEXT" ]] || die2 "$REQ has no entry yet, so its wording has to come with it: compile-entry $FEATURE $REQ $MODE <text>"
+    new="- **$REQ** — $TEXT *(Source: $FEATURE$suffix)* $ANCHOR"
+    # Appended at the end of `## Requirements`, after whatever is already there.
+    # The heading is looked for outside the comments, like everything else here.
+    at="$(md_uncomment "$FILE" | awk '
+      /^## Requirements/ { inside = 1; next }
+      inside && /^## / { print NR; found = 1; exit }
+      END { if (inside && !found) print NR + 1 }
+    ')"
+    [[ -n "$at" ]] || die2 "$FILE has no \`## Requirements\` section — an entry is never written where the format has no place for it"
+    SDD_LINE="$new" awk -v n="$at" '
+      NR == n { print ENVIRON["SDD_LINE"]; print "" } { print }
+      END { if (n > NR) print ENVIRON["SDD_LINE"] }
+    ' "$FILE" > "$TMP/f" || exit 1
+    replace_file "$FILE" "$TMP/f"
+    action="appended"
+  fi
+
+  # The counter never points at a number already issued — the counter of this
+  # entry's own domain, which is the only sequence the entry took a number out
+  # of. A file carrying no marker for the domain gets one: the entry is written
+  # either way, and a domain whose next number is nowhere on file is a number
+  # handed out twice on the next run.
+  domain="$(md_req_domain "$REQ")"
+  next=$(( 10#$(md_req_number "$REQ") + 1 ))
+  free="$(md_req_id "$domain" "$next")"
+  current="$(md_counter "$FILE" "$domain")"
+  if [[ -n "$current" ]] && (( 10#$(md_req_number "$current") > next )); then
+    free="$current"
+  elif ! md_counter_set "$FILE" "$free" > "$TMP/f"; then
+    # No marker anywhere in the file: the counter has no place to live, and the
+    # entry is not held back over it.
+    free=""
+  else
+    replace_file "$FILE" "$TMP/f"
+  fi
+  ACTION="$action"; NEXT_FREE="$free"
+}
+
+# The mark of a promotion for a feature that declares no requirement.
+mark_actualized() {
+  md_field_put "$1" actualized "$TODAY" status > "$TMP/f" \
+    || die2 "$1 carries no status — the mark goes under it, and is not added where the format has no field block"
+  replace_file "$1" "$TMP/f"
+}
 
 # ── marker, the helpers ───────────────────────────────────────────
 # The comment syntax of a file, by its extension: `<open>|<close>`, or nothing
@@ -470,10 +621,76 @@ actualized)
   [[ -f "$path" ]] || die2 "no such file: $path — the mark is written into the feature's requirements"
   decl="$(md_req_relations "$path" | cut -d'|' -f1 | paste -sd, -)"
   [[ -z "$decl" ]] || die2 "$path declares $decl — a feature with requirements is marked actualized by its entries in $SPECS/requirements.md, which compile-entry writes"
-  md_field_put "$path" actualized "$TODAY" status > "$TMP/f" \
-    || die2 "$path carries no status — the mark goes under it, and is not added where the format has no field block"
-  replace_file "$path" "$TMP/f"
+  mark_actualized "$path"
   printf 'ACTUALIZED=%s\nFILE=%s\n' "$TODAY" "$path"
+  ;;
+
+# ── promote ───────────────────────────────────────────────────────
+promote)
+  FOLDER="$(resolve_folder "${1:-}")" || exit 2
+  path="$SPECS/$FOLDER/new-requirements.md"
+  [[ -f "$path" ]] || die2 "no such file: $path — what is promoted is read from the feature's requirements"
+  [[ $# -le 2 && ( -z "${2:-}" || "$2" == "-" ) ]] || \
+    die2 "promote <Feature> [-] — the wording comes on stdin, one \`<REQ-###>|<text>\` line per declared requirement"
+  md_req_relations "$path" > "$TMP/decl"
+  : > "$TMP/words"
+  [[ "${2:-}" == "-" ]] && { cat > "$TMP/words" || exit 1; }
+
+  # The words, one line per requirement. Every problem is named before the
+  # first stop, so one correction answers all of them.
+  N_W=0; W_IDS=(); W_TEXT=(); problems=""
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -n "${line//[[:space:]]/}" ]] || continue
+    req="${line%%|*}"; req="${req//[[:space:]]/}"
+    text="${line#*|}"; text="${text#"${text%%[![:space:]]*}"}"
+    if [[ "$line" != *"|"* ]] || ! md_req_is_id "$req"; then
+      problems="$problems; not a \`<REQ-###>|<text>\` line: $line"; continue
+    fi
+    [[ -n "$text" ]] || { problems="$problems; $req has no wording"; continue; }
+    grep -q "^$req|" "$TMP/decl" || { problems="$problems; $req is not declared by $path"; continue; }
+    case " ${W_IDS[*]-} " in *" $req "*) problems="$problems; $req is worded twice"; continue ;; esac
+    W_IDS[N_W]="$req"; W_TEXT[N_W]="$text"; N_W=$(( N_W + 1 ))
+  done < "$TMP/words"
+
+  if [[ ! -s "$TMP/decl" ]]; then
+    [[ $N_W -eq 0 && -z "$problems" ]] || \
+      die2 "$path declares no requirement, and stdin carries wording — nothing of this feature reaches $SPECS/requirements.md"
+    mark_actualized "$path"
+    printf 'PROMOTED=0\nACTUALIZED=%s\nFILE=%s\n\nENTRIES:\n' "$TODAY" "$path"
+    exit 0
+  fi
+
+  while IFS='|' read -r req rel target; do
+    case " ${W_IDS[*]-} " in *" $req "*) ;; *) problems="$problems; $req has no wording on stdin" ;; esac
+  done < "$TMP/decl"
+  [[ -z "$problems" ]] || die2 "nothing promoted — ${problems#; }"
+
+  FILE="$SPECS/requirements.md"
+  [[ -f "$FILE" ]] || die2 "no $FILE — /sdd-init writes it"
+  # Every entry goes into a copy; the compilation is written once, at the end,
+  # so a stop on the third entry leaves the first two unwritten too.
+  cat "$FILE" > "$TMP/req.md" || exit 1
+  ENTRIES=""; N_E=0
+  while IFS='|' read -r req rel target; do
+    i=0
+    while [[ "${W_IDS[i]}" != "$req" ]]; do i=$(( i + 1 )); done
+    case "$rel" in
+      new)
+        compile_one "$FOLDER" "$req" final "${W_TEXT[i]}" "$TMP/req.md"
+        ENTRIES="$ENTRIES$req|$ACTION"$'\n' ;;
+      refines)
+        compile_one "$FOLDER" "$target" refine "${W_TEXT[i]}" "$TMP/req.md"
+        ENTRIES="$ENTRIES$target|$ACTION"$'\n' ;;
+      supersedes)
+        compile_one "$FOLDER" "$req" final "${W_TEXT[i]}" "$TMP/req.md"
+        ENTRIES="$ENTRIES$req|$ACTION"$'\n'
+        compile_one "$FOLDER" "$target" "superseded-by:$req" "" "$TMP/req.md"
+        ENTRIES="$ENTRIES$target|superseded"$'\n' ;;
+    esac
+    N_E=$(( N_E + 1 ))
+  done < "$TMP/decl"
+  replace_file "$FILE" "$TMP/req.md"
+  printf 'PROMOTED=%s\nACTUALIZED=\nFILE=%s\n\nENTRIES:\n%s' "$N_E" "$FILE" "$ENTRIES"
   ;;
 
 # ── start ─────────────────────────────────────────────────────────
@@ -747,121 +964,8 @@ compile-entry)
 
   FILE="$SPECS/requirements.md"
   [[ -f "$FILE" ]] || die2 "no $FILE — /sdd-init writes it"
-
-  # The entries are the ones the readers see: the template's example block is an
-  # HTML comment, and an entry written into it would belong to no feature.
-  md_req_lines "$FILE" "$REQ" > "$TMP/lines"
-  hits=$(grep -c . < "$TMP/lines" || true)
-  [[ "$hits" -le 1 ]] || die2 "$REQ is carried by $hits entries — the duplicate is the human's call, and no entry is edited until it is gone"
-
-  suffix=""
-  case "$MODE" in superseded-by:*) suffix=", superseded by ${MODE#superseded-by:}" ;; esac
-
-  # The anchor another document links to: the id in lower case, as a block id at
-  # the end of the entry. It is written here rather than left to a role, so that
-  # `[REQ-001](requirements.md#^req-001)` resolves for every entry on the page
-  # and not only for the ones somebody remembered.
-  ANCHOR="^$(printf '%s' "$REQ" | tr '[:upper:]' '[:lower:]')"
-
-  if [[ "$hits" -eq 1 ]]; then
-    # An entry on file keeps the source that wrote it: a refinement does not
-    # change whose requirement it was.
-    at="$(cat "$TMP/lines")"
-    old="$(awk -v n="$at" 'NR == n { print; exit }' "$FILE")"
-    parts="${old##*\*(Source: }"; parts="${parts%%)*}"
-    src="${parts%%,*}"
-    # Who has reworded the entry since stays on it through every later edit: it
-    # is what lets a feature that added no entry of its own be told apart from
-    # one that was never promoted.
-    # So does a replacement: a later rewording of a retired entry leaves it
-    # retired, unless this call names a new replacement of its own.
-    refined=""; superseded=""
-    while [[ "$parts" == *,* ]]; do
-      parts="${parts#*,}"
-      part="${parts%%,*}"; part="${part#"${part%%[![:space:]]*}"}"
-      case "$part" in
-        "refined by "*)    refined="$refined, $part" ;;
-        "superseded by "*) superseded=", $part" ;;
-      esac
-    done
-    [[ -n "$suffix" ]] || suffix="$superseded"
-    body="$TEXT"
-    if [[ -z "$body" ]]; then
-      body="${old#*— }"; body="${body%% \*(Source:*}"
-    fi
-    # Whatever the line carries after the source — a note in a comment — is not
-    # this script's to drop: it owns the entry, not the margin beside it.
-    tail=""
-    case "$old" in
-      *'*(Source: '*)
-        rest="${old#*\*(Source: }"
-        case "$rest" in *')*'*) tail="${rest#*)\*}" ;; esac ;;
-    esac
-    case "$tail" in
-      *"$ANCHOR"*) ;;
-      *) tail="$tail $ANCHOR" ;;
-    esac
-    action="updated"
-    lc_src="$(printf '%s' "$src" | tr '[:upper:]' '[:lower:]')"
-    lc_feature="$(printf '%s' "$FEATURE" | tr '[:upper:]' '[:lower:]')"
-    case "$MODE" in
-      final)
-        [[ "$lc_src" == "$lc_feature" ]] || \
-          die2 "$REQ is an entry of $src, not of $FEATURE — \`final\` writes a feature's own entry. Two features were handed one number, or this one rewords that entry: that is \`refine\`" ;;
-      refine)
-        [[ "$lc_src" != "$lc_feature" ]] || die2 "$REQ is $FEATURE's own entry — rewording it is \`final\`, not \`refine\`"
-        [[ -n "$TEXT" ]] || die2 "refine $REQ carries the new wording: compile-entry $FEATURE $REQ refine <text>" ;;
-    esac
-    if [[ "$MODE" == "refine" ]]; then
-      case "$(printf '%s' "$refined," | tr '[:upper:]' '[:lower:]')" in
-        *", refined by $lc_feature,"*) ;;
-        *) refined="$refined, refined by $FEATURE" ;;
-      esac
-      action="refined"
-    fi
-    new="- **$REQ** — $body *(Source: $src$refined$suffix)*$tail"
-    # Through the environment, for the reason `marker` gives.
-    SDD_LINE="$new" awk -v n="$at" 'NR == n { print ENVIRON["SDD_LINE"]; next } { print }' "$FILE" > "$TMP/f" || exit 1
-    replace_file "$FILE" "$TMP/f"
-  else
-    [[ "$MODE" != "refine" ]] || die2 "$REQ has no entry in $FILE — there is nothing to refine"
-    [[ -n "$TEXT" ]] || die2 "$REQ has no entry yet, so its wording has to come with it: compile-entry $FEATURE $REQ $MODE <text>"
-    new="- **$REQ** — $TEXT *(Source: $FEATURE$suffix)* $ANCHOR"
-    # Appended at the end of `## Requirements`, after whatever is already there.
-    # The heading is looked for outside the comments, like everything else here.
-    at="$(md_uncomment "$FILE" | awk '
-      /^## Requirements/ { inside = 1; next }
-      inside && /^## / { print NR; found = 1; exit }
-      END { if (inside && !found) print NR + 1 }
-    ')"
-    [[ -n "$at" ]] || die2 "$FILE has no \`## Requirements\` section — an entry is never written where the format has no place for it"
-    SDD_LINE="$new" awk -v n="$at" '
-      NR == n { print ENVIRON["SDD_LINE"]; print "" } { print }
-      END { if (n > NR) print ENVIRON["SDD_LINE"] }
-    ' "$FILE" > "$TMP/f" || exit 1
-    replace_file "$FILE" "$TMP/f"
-    action="appended"
-  fi
-
-  # The counter never points at a number already issued — the counter of this
-  # entry's own domain, which is the only sequence the entry took a number out
-  # of. A file carrying no marker for the domain gets one: the entry is written
-  # either way, and a domain whose next number is nowhere on file is a number
-  # handed out twice on the next run.
-  domain="$(md_req_domain "$REQ")"
-  next=$(( 10#$(md_req_number "$REQ") + 1 ))
-  free="$(md_req_id "$domain" "$next")"
-  current="$(md_counter "$FILE" "$domain")"
-  if [[ -n "$current" ]] && (( 10#$(md_req_number "$current") > next )); then
-    free="$current"
-  elif ! md_counter_set "$FILE" "$free" > "$TMP/f"; then
-    # No marker anywhere in the file: the counter has no place to live, and the
-    # entry is not held back over it.
-    free=""
-  else
-    replace_file "$FILE" "$TMP/f"
-  fi
-  printf 'ENTRY=%s\nACTION=%s\nNEXT_FREE=%s\nFILE=%s\n' "$REQ" "$action" "$free" "$FILE"
+  compile_one "$FEATURE" "$REQ" "$MODE" "$TEXT" "$FILE"
+  printf 'ENTRY=%s\nACTION=%s\nNEXT_FREE=%s\nFILE=%s\n' "$REQ" "$ACTION" "$NEXT_FREE" "$FILE"
   ;;
 
 # ── conf-set ──────────────────────────────────────────────────────
