@@ -613,36 +613,6 @@ print_feature() {
   printf '\nUNDECLARED:\n%s' "$UNDECLARED"
 }
 
-# A glob rather than find | sed | sort: the same folders, dot-folders and
-# links left out, in the shell's own sorted order — and no program started.
-list_features() {
-  local d
-  for d in "$SPECS"/*/; do
-    d="${d%/}"
-    [[ -d "$d" && ! -L "$d" ]] || continue
-    printf '%s\n' "${d##*/}"
-  done
-}
-
-# The folder a name resolves to on disk. On a case-insensitive filesystem
-# `_docs/cart` opens `_docs/Cart`, and every step that only compared the
-# argument with itself would never notice — so the comparison happens here,
-# against the folders that are actually there.
-resolve_folder() {
-  local want="$1" names name
-  names=$(list_features)
-  while IFS= read -r name; do
-    [[ "$name" == "$want" ]] && { printf '%s' "$name"; return 0; }
-  done <<< "$names"
-  # Compared without regard to case by the shell itself, not through tr.
-  shopt -s nocasematch
-  while IFS= read -r name; do
-    [[ "$name" == "$want" ]] && { shopt -u nocasematch; printf '%s' "$name"; return 0; }
-  done <<< "$names"
-  shopt -u nocasematch
-  printf '%s' "$want"
-}
-
 # ── Run ───────────────────────────────────────────────────────────
 ALL_ANOM=(); N_ALL_ANOM=0
 FEATURE_ROWS=(); N_ROWS=0
@@ -651,10 +621,12 @@ if [[ -n "$FEATURE" ]]; then
   if [[ ! -d "$SPECS/$FEATURE" ]]; then
     printf 'ERROR=no such feature: %s\n' "$FEATURE" >&2
     printf 'FEATURES:\n'
-    list_features
+    md_features "$SPECS"
     exit 2
   fi
-  FOLDER=$(resolve_folder "$FEATURE")
+  # The folder as spelled on disk: on a case-insensitive filesystem the
+  # argument opens it under another spelling (lib/format.sh).
+  FOLDER=$(md_feature_folder "$SPECS" "$FEATURE")
   # Everything downstream — the paths, the compilation source, the NEXT command
   # — uses the folder as it is spelled on disk, never the argument as typed.
   collect "$FOLDER"
@@ -675,7 +647,7 @@ else
     for a in ${ANOM[@]+"${ANOM[@]}"}; do
       ALL_ANOM+=("$name: $a"); N_ALL_ANOM=$(( N_ALL_ANOM + 1 ))
     done
-  done < <(list_features)
+  done < <(md_features "$SPECS")
 
   if [[ $count -eq 0 ]]; then
     printf 'ERROR=no feature folder in %s\n' "$SPECS" >&2

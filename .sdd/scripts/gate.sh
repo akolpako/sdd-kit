@@ -266,11 +266,6 @@ section() {
   return 0
 }
 
-list_features() {
-  find "$SPECS" -mindepth 1 -maxdepth 1 -type d ! -name '.*' 2>/dev/null \
-    | sed 's|.*/||' | sort
-}
-
 # Whether the entry <REQ> of the compilation belongs to another feature: prints
 # that feature's name, or nothing when there is no entry, no source, or the
 # source is this feature (compared as folders are, case aside).
@@ -879,7 +874,7 @@ check_new() {
     warn "$NAME_WARN"
   fi
 
-  FEATURES="$(list_features)"
+  FEATURES="$(md_features "$SPECS")"
 
   # A name differing only in case is the same folder on a case-insensitive
   # filesystem — the human picks one of the two spellings before anything is

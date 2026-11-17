@@ -51,6 +51,7 @@
 #   md_findings <file>             one record per finding of a review.md, in
 #                                  file order: `F-##|severity|category|file|line`,
 #                                  `-` for a part the finding does not give
+#   md_features <specs>            the feature folders under it, one per line
 #   md_feature_folder <specs> <name>
 #                                  the folder under <specs> the name is on disk:
 #                                  itself, else the one differing in case alone,
@@ -385,6 +386,18 @@ md_name_problem() {
   [[ -z "$bad" ]] || printf "it holds '%s'" "$bad"
 }
 
+# The feature folders under <specs>, in the shell's sorted order: a glob rather
+# than find | sed | sort — dot-folders and links left out, no program started.
+md_features() {
+  local d
+  for d in "$1"/*/; do
+    d="${d%/}"
+    [[ -d "$d" && ! -L "$d" ]] || continue
+    printf '%s\n' "${d##*/}"
+  done
+  return 0
+}
+
 # The folder a feature name is on disk under <specs>. On a case-insensitive
 # filesystem `_docs/cart` opens `_docs/Cart`, and a step that only compared the
 # argument with itself would never notice — so the name is compared against the
@@ -392,17 +405,16 @@ md_name_problem() {
 # A name no folder matches comes back as given. Dot-folders and links are not
 # features. Read by the shell, no program started.
 md_feature_folder() {
-  local d name found=""
-  for d in "$1"/*/; do
-    d="${d%/}"; name="${d##*/}"
-    [[ -d "$d" && ! -L "$d" ]] || continue
+  local name found=""
+  while IFS= read -r name; do
+    [[ -n "$name" ]] || continue
     [[ "$name" == "$2" ]] && { printf '%s' "$name"; return 0; }
     if [[ -z "$found" ]]; then
       shopt -s nocasematch
       [[ "$name" == "$2" ]] && found="$name"
       shopt -u nocasematch
     fi
-  done
+  done <<< "$(md_features "$1")"
   printf '%s' "${found:-$2}"
 }
 

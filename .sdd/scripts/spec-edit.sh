@@ -197,19 +197,13 @@ one_line() {
 # The folder on disk, matched without regard to case: a feature typed `cart`
 # and a folder named `Cart` are the same feature.
 resolve_folder() {
-  local want="$1" d name problem
+  local want="$1" folder problem
   [[ -n "$want" ]] || die2 "no feature name"
   problem="$(md_name_problem "$want")"
   [[ -z "$problem" ]] || die2 "not a feature name: '$want' — $problem"
-  if [[ -d "$SPECS/$want" ]]; then printf '%s\n' "$want"; return 0; fi
-  for d in "$SPECS"/*/; do
-    [[ -d "$d" ]] || continue
-    name="${d%/}"; name="${name##*/}"
-    if [[ "$(printf '%s' "$name" | tr 'A-Z' 'a-z')" == "$(printf '%s' "$want" | tr 'A-Z' 'a-z')" ]]; then
-      printf '%s\n' "$name"; return 0
-    fi
-  done
-  die2 "no feature folder _docs/$want — /sdd-next-story $want creates it"
+  folder="$(md_feature_folder "$SPECS" "$want")"
+  [[ -d "$SPECS/$folder" ]] || die2 "no feature folder _docs/$want — /sdd-next-story $want creates it"
+  printf '%s\n' "$folder"
 }
 
 # In place, without a temp file left behind on failure.
@@ -540,16 +534,7 @@ scaffold)
     [[ -z "$problem" ]] || die2 "not a feature name: '$FEATURE' — $problem"
     src="$TEMPLATE_DIR/raw.md"
     [[ -f "$src" ]] || die2 "no template $src"
-    FOLDER="$FEATURE"
-    if [[ -d "$SPECS" ]]; then
-      for d in "$SPECS"/*/; do
-        [[ -d "$d" ]] || continue
-        name="${d%/}"; name="${name##*/}"
-        if [[ "$(printf '%s' "$name" | tr 'A-Z' 'a-z')" == "$(printf '%s' "$FEATURE" | tr 'A-Z' 'a-z')" ]]; then
-          FOLDER="$name"; break
-        fi
-      done
-    fi
+    FOLDER="$(md_feature_folder "$SPECS" "$FEATURE")"
     dst="$SPECS/$FOLDER/raw.md"
     # Still the template is not a description: a run cut short left it, and
     # copying the template over it again loses nothing.
