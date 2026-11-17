@@ -40,7 +40,7 @@ Turns a `draft` spec into a `ready` one through the checklist and an interview. 
    - **Spawn the same scope again** — the same `SPAWN:` record, the same `spawn-prompt.sh` call, the same prompt. Nothing here tells the role which round it is on: what it does with an answered line is its own protocol's.
    - Then round two, from the top.
 
-   At most three rounds per file per session, per `.sdd/protocols/interview.md`. What is still open at that ceiling stays on the page, and the verdict of step 7 accounts for it.
+   **At most three rounds per file per session.** What is still open at that ceiling is not asked a fourth time: it stays on the page, and the verdict of step 7 accounts for it. The count belongs to this run and the page carries no counter, so a review re-run after an interruption counts from zero.
 
 4. **Conflicts are settled inside the loop of step 3, not after it.** Finding them is the roles': a new requirement that overlaps or contradicts an entry of `_docs/requirements.md`, and a design decision that contradicts the architecture baseline, each arrive as a line of `## Open Questions` like any other question.
    - For a requirement the question is always the same one — is it a **refinement** of the existing entry or its **replacement** — and the answer is written back onto its line by the same `spec-edit.sh answer` call. The role then records it as the `Refines:` / `Supersedes:` line under the requirement's heading; that line is what `/sdd-actualize` applies to the compilation. Nothing is written into `new-requirements.md` by hand here.

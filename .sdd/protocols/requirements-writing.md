@@ -29,7 +29,7 @@ The domains in use are the `DOMAINS:` records of `.sdd/scripts/next-req.sh`, one
 
 - **The project groups nothing** — every record is `-`. Then this feature adds no domain: its requirements are ungrouped, like everything already in the file. Starting a group is a decision about the whole compilation, not about one feature.
 - **One existing domain covers what this feature is about** — that is the domain, and no question is asked. A domain groups requirements by what they are about, never by which feature happened to write them: a feature touching accounts writes into `ACC` beside the accounts requirements that are already there.
-- **The project groups its requirements and none of the domains fits, or two fit equally** — that is the human's to settle, asked as `.sdd/protocols/interview.md` fixes it: one question, carrying the recommended answer and the domains already in use. A new domain is a decision about how the compilation is organised, and it is never taken silently.
+- **The project groups its requirements and none of the domains fits, or two fit equally** — that is the human's to settle, put on the page as `.sdd/protocols/spec-modes.md` fixes it: one question, carrying the recommended answer and the domains already in use. A new domain is a decision about how the compilation is organised, and it is never taken silently.
 
 ### The number
 

@@ -1296,8 +1296,8 @@ if [[ $SPAWNING -eq 1 ]]; then
       printf 'requirements-engineer|%s/spec-modes.md,%s/requirements-writing.md,%s/docs-format.md|requirements\n' "$P" "$P" "$P"
       printf 'architect|%s/spec-modes.md,%s/architecture-design.md,%s/task-breakdown.md,%s/docs-format.md|design+tasks\n' "$P" "$P" "$P" "$P" ;;
     review)
-      printf 'requirements-engineer|%s/spec-modes.md,%s/spec-checklist.md,%s/interview.md,%s/requirements-writing.md,%s/docs-format.md|requirements\n' "$P" "$P" "$P" "$P" "$P"
-      printf 'architect|%s/spec-modes.md,%s/spec-checklist.md,%s/interview.md,%s/architecture-design.md,%s/task-breakdown.md,%s/docs-format.md|design+tasks\n' "$P" "$P" "$P" "$P" "$P" "$P" ;;
+      printf 'requirements-engineer|%s/spec-modes.md,%s/spec-checklist.md,%s/requirements-writing.md,%s/docs-format.md|requirements\n' "$P" "$P" "$P" "$P"
+      printf 'architect|%s/spec-modes.md,%s/spec-checklist.md,%s/architecture-design.md,%s/task-breakdown.md,%s/docs-format.md|design+tasks\n' "$P" "$P" "$P" "$P" "$P" ;;
     implement)
       # Only the stacks the breakdown actually carries, in ROLE_ORDER: backend
       # before frontend, because the frontend spawn is handed what the backend

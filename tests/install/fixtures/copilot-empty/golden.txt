@@ -104,7 +104,6 @@ c  .sdd/protocols/architecture-design.md = <engine>/.sdd/protocols/architecture-
 c  .sdd/protocols/code-review.md = <engine>/.sdd/protocols/code-review.md
 c  .sdd/protocols/developer.md = <engine>/.sdd/protocols/developer.md
 c  .sdd/protocols/docs-format.md = <engine>/.sdd/protocols/docs-format.md
-c  .sdd/protocols/interview.md = <engine>/.sdd/protocols/interview.md
 c  .sdd/protocols/orchestration.md = <engine>/.sdd/protocols/orchestration.md
 c  .sdd/protocols/project-baseline.md = <engine>/.sdd/protocols/project-baseline.md
 c  .sdd/protocols/requirements-writing.md = <engine>/.sdd/protocols/requirements-writing.md
@@ -261,7 +260,6 @@ host	copilot
 <sum>	.sdd/protocols/code-review.md
 <sum>	.sdd/protocols/developer.md
 <sum>	.sdd/protocols/docs-format.md
-<sum>	.sdd/protocols/interview.md
 <sum>	.sdd/protocols/orchestration.md
 <sum>	.sdd/protocols/project-baseline.md
 <sum>	.sdd/protocols/requirements-writing.md
