@@ -2401,6 +2401,25 @@ SDD_TEXT
   [[ $rc -eq 0 ]] || ok=1
   [[ "$(sed -n '5,7p' "$work/_docs/Cart/design.md" | tr '\n' '~')" == '## Open Questions~~- Add a task? **Answer:** yes~' ]] || ok=1
   prop_check spec-review "a new line goes into an empty section" "$ok" "exit $rc: $out — $(tr '\n' '~' < "$work/_docs/Cart/design.md")"
+
+  # The scope of a review round is read off the page: an answered line in a
+  # file's ## Open Questions makes its record a fold, and the other file stays
+  # a full review.
+  printf -- '---\nstatus: draft\n---\n# R\n\n## Requirements\n\n### REQ-001 — Cart total\n\n## Open Questions\n\n- Which currency? — recommended: EUR, A-01\n' > "$work/_docs/Cart/new-requirements.md"
+  printf -- '---\nstatus: draft\n---\n# Design — Cart\n\n## Open Questions\n\n<!-- - x **Answer:** y -->\n' > "$work/_docs/Cart/design.md"
+  printf '# Raw\n' > "$work/_docs/Cart/raw.md"
+  out="$(cd "$work" && "$GATE" review Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '|requirements$' || ok=1
+  printf '%s\n' "$out" | grep -q '|design+tasks$' || ok=1
+  prop_check spec-review "no answered line: both files get the full review" "$ok" "$(printf '%s' "$out" | sed -n '/^SPAWN:/,/^$/p' | tr '\n' '~')"
+
+  printf -- '---\nstatus: draft\n---\n# R\n\n## Requirements\n\n### REQ-001 — Cart total\n\n## Open Questions\n\n- Which currency? — recommended: EUR, A-01 **Answer:** EUR\n' > "$work/_docs/Cart/new-requirements.md"
+  out="$(cd "$work" && "$GATE" review Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^requirements-engineer|.sdd/protocols/spec-modes.md,.sdd/protocols/requirements-writing.md,.sdd/protocols/docs-format.md|fold-requirements$' || ok=1
+  printf '%s\n' "$out" | grep -q '|design+tasks$' || ok=1
+  prop_check spec-review "an answered line makes that file's round a fold, without the checklist" "$ok" "$(printf '%s' "$out" | sed -n '/^SPAWN:/,/^$/p' | tr '\n' '~')"
 }
 
 # The build answer goes into .sdd/sdd.conf through a script, so that whoever

@@ -673,6 +673,19 @@ md_untouched() {
   [[ "$(md_awk "$1" "$MD_AWK_SKELETON")" == "$(md_awk "$2" "$MD_AWK_SKELETON")" ]]
 }
 
+# The lines of `## Open Questions` that carry an answer — `**Answer:**` on the
+# line is the whole discriminator, as the spec-modes protocol fixes it. Prints
+# their count, 0 for none or for a file that is not there. The template's
+# example lives in a comment and is cut out first.
+md_answered() {
+  local n
+  n="$(md_awk "$1" '
+    /^## / { inside = ($0 ~ /^## Open Questions[[:space:]]*$/); next }
+    inside && index($0, "**Answer:**") { n++ }
+    END { print n + 0 }')"
+  printf '%s\n' "${n:-0}"
+}
+
 # The findings of a code review, the format `.sdd/templates/review.md` fixes:
 #
 #   ### F-01 — Critical — Security

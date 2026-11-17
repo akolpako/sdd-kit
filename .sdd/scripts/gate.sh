@@ -77,7 +77,10 @@
 #                and what is wrong with them is a STOP:, ASK: or WARN: line
 #   specify      STATUS_*, NEXT_REQ=REQ-###, MODE=draft, REQ_DOMAINS:
 #   review       the same, plus COVERAGE:, UNCOVERED:, UNDECLARED: (from
-#                feature-state.sh — the stops of the coverage matrix)
+#                feature-state.sh — the stops of the coverage matrix). The
+#                scope of each SPAWN: record is read off its file: one whose
+#                `## Open Questions` holds an answered line is a fold
+#                (fold-requirements, fold-design+tasks), without the checklist
 #   implement    TASKS_DONE, TASKS_TOTAL, ROLE_ORDER, OPEN_STACKS (the stacks
 #                with an open task, blocked ones aside), BUILD_BACKEND,
 #                BUILD_FRONTEND, BASELINE, and RETRY: — `<TASK>|<type>` per
@@ -1480,8 +1483,21 @@ if [[ $SPAWNING -eq 1 ]]; then
       printf 'requirements-engineer|%s/spec-modes.md,%s/requirements-writing.md,%s/docs-format.md|requirements\n' "$P" "$P" "$P"
       printf 'architect|%s/spec-modes.md,%s/architecture-design.md,%s/task-breakdown.md,%s/docs-format.md|design+tasks\n' "$P" "$P" "$P" "$P" ;;
     review)
-      printf 'requirements-engineer|%s/spec-modes.md,%s/spec-checklist.md,%s/requirements-writing.md,%s/docs-format.md|requirements\n' "$P" "$P" "$P" "$P"
-      printf 'architect|%s/spec-modes.md,%s/spec-checklist.md,%s/architecture-design.md,%s/task-breakdown.md,%s/docs-format.md|design+tasks\n' "$P" "$P" "$P" "$P" "$P" ;;
+      # Per file, off the disk: a file whose `## Open Questions` holds an
+      # answered line gets the fold — the answers written in, what they touch
+      # re-checked — without the checklist; any other gets the full review.
+      # The design re-spawned after the requirements changed has no answered
+      # line of its own, so it is reviewed in full against the new text.
+      if [[ "$(md_answered "$SPECS/$FOLDER/new-requirements.md")" != "0" ]]; then
+        printf 'requirements-engineer|%s/spec-modes.md,%s/requirements-writing.md,%s/docs-format.md|fold-requirements\n' "$P" "$P" "$P"
+      else
+        printf 'requirements-engineer|%s/spec-modes.md,%s/spec-checklist.md,%s/requirements-writing.md,%s/docs-format.md|requirements\n' "$P" "$P" "$P" "$P"
+      fi
+      if [[ "$(md_answered "$SPECS/$FOLDER/design.md")" != "0" ]]; then
+        printf 'architect|%s/spec-modes.md,%s/architecture-design.md,%s/task-breakdown.md,%s/docs-format.md|fold-design+tasks\n' "$P" "$P" "$P" "$P"
+      else
+        printf 'architect|%s/spec-modes.md,%s/spec-checklist.md,%s/architecture-design.md,%s/task-breakdown.md,%s/docs-format.md|design+tasks\n' "$P" "$P" "$P" "$P" "$P"
+      fi ;;
     implement)
       # Only the stacks the breakdown actually carries, in ROLE_ORDER: backend
       # before frontend, because the frontend spawn is handed what the backend

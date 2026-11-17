@@ -94,6 +94,8 @@ c  .sdd/prompts/implement-backend.md = <engine>/.sdd/prompts/implement-backend.m
 c  .sdd/prompts/implement-frontend.md = <engine>/.sdd/prompts/implement-frontend.md
 c  .sdd/prompts/init-baseline-from-codebase.md = <engine>/.sdd/prompts/init-baseline-from-codebase.md
 c  .sdd/prompts/review-design+tasks.md = <engine>/.sdd/prompts/review-design+tasks.md
+c  .sdd/prompts/review-fold-design+tasks.md = <engine>/.sdd/prompts/review-fold-design+tasks.md
+c  .sdd/prompts/review-fold-requirements.md = <engine>/.sdd/prompts/review-fold-requirements.md
 c  .sdd/prompts/review-requirements.md = <engine>/.sdd/prompts/review-requirements.md
 c  .sdd/prompts/specify-design+tasks.md = <engine>/.sdd/prompts/specify-design+tasks.md
 c  .sdd/prompts/specify-requirements.md = <engine>/.sdd/prompts/specify-requirements.md
@@ -259,6 +261,8 @@ host	claude
 <sum>	.sdd/prompts/implement-frontend.md
 <sum>	.sdd/prompts/init-baseline-from-codebase.md
 <sum>	.sdd/prompts/review-design+tasks.md
+<sum>	.sdd/prompts/review-fold-design+tasks.md
+<sum>	.sdd/prompts/review-fold-requirements.md
 <sum>	.sdd/prompts/review-requirements.md
 <sum>	.sdd/prompts/specify-design+tasks.md
 <sum>	.sdd/prompts/specify-requirements.md
