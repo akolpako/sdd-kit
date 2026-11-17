@@ -2,20 +2,13 @@ GATE=stop
 FEATURE=Cart
 FOLDER=Cart
 STAGE=raw
-RAW=present
-REQUIREMENTS=missing
-DESIGN=missing
-TASKS=missing
 STATUS_REQUIREMENTS=absent
 STATUS_DESIGN=absent
 STATUS_TASKS=absent
-COMPILATION=missing
 NEXT_REQ=REQ-001
 MODE=review
 
 REQ_DOMAINS:
-
-REQ_DUPLICATES:
 
 STOP:
 _docs/Cart/new-requirements.md is missing — there is nothing to review. /sdd-specify Cart writes it.

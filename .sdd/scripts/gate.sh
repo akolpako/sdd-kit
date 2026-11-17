@@ -62,28 +62,26 @@
 # A key the command does not decide from is not printed. At GATE=stop and
 # GATE=done no record section is — no role is spawned from them. Per command,
 # on top of the common part:
-#   init         PROJECT=greenfield|brownfield, TEMPLATES=ok|missing:<file,...>,
+#   init         PROJECT=greenfield|brownfield, EXISTING=<file,...>,
+#                BUILD_ROOT, BUILD_BACKEND, BUILD_FRONTEND
 #                (on brownfield, an ASK: per stack with no build command)
-#                EXISTING=<file,...>, BUILD_ROOT, BUILD_BACKEND, BUILD_FRONTEND,
-#                DETECTED:
-#   new          NAME_OK=yes|no, NAME_WARN=<text>, RAW=..., FEATURES:
-#   specify      RAW, REQUIREMENTS, DESIGN, TASKS, STATUS_*, COMPILATION,
-#                NEXT_REQ=REQ-###, MODE=draft, REQ_DOMAINS:, REQ_DUPLICATES:
+#   new          nothing: the name, the folders and raw.md are judged here,
+#                and what is wrong with them is a STOP:, ASK: or WARN: line
+#   specify      STATUS_*, NEXT_REQ=REQ-###, MODE=draft, REQ_DOMAINS:
 #   review       the same, plus COVERAGE:, UNCOVERED:, UNDECLARED: (from
 #                feature-state.sh — the stops of the coverage matrix)
-#   implement    TASKS_DONE, TASKS_TOTAL, TASKS_BLOCKED, ROLE_ORDER, BUILD_ROOT,
-#                BUILD_BACKEND, BUILD_FRONTEND, BASELINE, BUILD_FILES
+#   implement    TASKS_DONE, TASKS_TOTAL, ROLE_ORDER, BUILD_BACKEND,
+#                BUILD_FRONTEND, BASELINE
 #   code-review  BASE, ROOT, DIFF, CHANGED, REVIEW_PATH, REVIEW_PREVIOUS
-#   code-fix     REVIEW, REVIEW_PATH, REVIEW_DATE, REVIEW_ROOT, REVIEW_VERDICT,
-#                ROOT, BUILD_ROOT, BUILD_BACKEND, BUILD_FRONTEND, and FINDINGS:
+#   code-fix     REVIEW_PATH, REVIEW_DATE, REVIEW_ROOT, REVIEW_VERDICT,
+#                ROOT, BUILD_BACKEND, BUILD_FRONTEND, and FINDINGS:
 #                — one record per finding of the report, in its order,
 #                `F-##|severity|category|file|line|stack`. The line is the first
 #                of a range; `-` is a part the finding does not give. The stack
 #                is the feature's when its breakdown carries one, else the one
 #                of the build file nearest above the file; `-` when that does
 #                not settle it — the human names the role
-#   actualize    REQUIREMENTS, DESIGN, COMPILATION, NEXT_REQ, REQ_DOMAINS:,
-#                COMPILATION_ENTRIES:, and DECLARED: — one record per
+#   actualize    REQ_DOMAINS:, COMPILATION_ENTRIES:, and DECLARED: — one record per
 #                requirement the feature declares, `<REQ-…>|new|`,
 #                `<REQ-…>|refines|<REQ-…>` or `<REQ-…>|supersedes|<REQ-…>`:
 #                what each of them is to the compilation, read off the
@@ -684,7 +682,7 @@ draft_list() {
 # DETECTED: rows are a proposal the script never substitutes for a missing one.
 # What the rows do decide here is the SHAPE of the project — which stacks it
 # has — and the shape is what says which answers it needs.
-BUILD_ROOT=""; BUILD_BACKEND=""; BUILD_FRONTEND=""; BUILD_FILES=0; BASELINE=""
+BUILD_ROOT=""; BUILD_BACKEND=""; BUILD_FRONTEND=""; BASELINE=""
 BUILD_DETECTED=""; HAS_BACKEND=0; HAS_FRONTEND=0
 PROPOSE_BACKEND=""; PROPOSE_FRONTEND=""
 PROPOSE_BACKEND_FILE=""; PROPOSE_FRONTEND_FILE=""
@@ -693,7 +691,6 @@ if [[ $NEED_BC -eq 1 && $BC_RC -eq 0 ]]; then
   BUILD_BACKEND="$(kv "$BC_OUT" BACKEND)"
   BUILD_FRONTEND="$(kv "$BC_OUT" FRONTEND)"
   BUILD_DETECTED="$(section "$BC_OUT" DETECTED)"
-  BUILD_FILES="$(printf '%s\n' "$BUILD_DETECTED" | grep -c . || true)"
   while IFS='|' read -r d_dir d_file d_cmd d_stack; do
     [[ -n "$d_stack" ]] || continue
     [[ "$d_dir" == "." ]] && d_path="$d_file" || d_path="$d_dir/$d_file"
@@ -828,9 +825,7 @@ check_init() {
   [[ -n "$(find "$TEMPLATE_DIR/architecture" -maxdepth 1 -name '*.md' -type f 2>/dev/null)" ]] \
     || missing="${missing:+$missing,}architecture/"
   arch_written && existing="${existing:+$existing,}${ARCH_ENTRY#_docs/}"
-  TEMPLATES="ok"
   if [[ -n "$missing" ]]; then
-    TEMPLATES="missing:$missing"
     stop "Templates the setup writes from are not there: $missing. The engine is installed incompletely — report it instead of inventing a structure for those files."
   fi
   EXISTING="$existing"
@@ -860,18 +855,15 @@ check_init() {
 check_new() {
   local reason lc other exact=0
   # The name alone, before anything on disk is read.
-  NAME_OK="yes"; NAME_WARN=""
   reason="$(md_name_problem "$FEATURE")"
   if [[ -n "$reason" ]]; then
-    NAME_OK="no"
     stop "'$FEATURE' is not a usable folder name: $reason. A usable name holds only letters, digits, '-', '_' and '.', carries no path separator, is not '.' or '..', and does not start with '.'."
   # Two shapes are expected, not one: a PascalCase name a human chose, and a
   # Jira issue key, which carries a hyphen and is never PascalCase. An imported
   # feature is named after its issue, so warning about the key would mean a
   # warning on every import and nothing for the human to do about it.
   elif ! printf '%s' "$FEATURE" | LC_ALL=C grep -qE '^([A-Z][A-Za-z0-9]*|[A-Z][A-Z0-9]*-[0-9]+)$'; then
-    NAME_WARN="'$FEATURE' is neither PascalCase nor a Jira issue key. The name is used on disk exactly as given — never renamed, capitalized, or otherwise 'fixed'."
-    warn "$NAME_WARN"
+    warn "'$FEATURE' is neither PascalCase nor a Jira issue key. The name is used on disk exactly as given — never renamed, capitalized, or otherwise 'fixed'."
   fi
 
   FEATURES="$(md_features "$SPECS")"
@@ -1255,8 +1247,7 @@ EOF
   esac
 }
 
-PROJECT=""; TEMPLATES=""; EXISTING=""
-NAME_OK=""; NAME_WARN=""; FEATURES=""
+PROJECT=""; EXISTING=""; FEATURES=""
 TODO_RECS=""; ROLE_ORDER=""; BLOCKED_RECS=""; DECLARED_RECS=""; FINDING_RECS=""
 
 # Two shapes of the same baseline on disk at once is the one state no reader
@@ -1299,39 +1290,25 @@ fi
 case "$CMD" in
   init)
     printf 'PROJECT=%s\n' "$PROJECT"
-    printf 'TEMPLATES=%s\n' "$TEMPLATES"
     printf 'EXISTING=%s\n' "$EXISTING"
     printf 'BUILD_ROOT=%s\n' "$BUILD_ROOT"
     printf 'BUILD_BACKEND=%s\n' "$BUILD_BACKEND"
     printf 'BUILD_FRONTEND=%s\n' "$BUILD_FRONTEND"
     ;;
-  new)
-    printf 'NAME_OK=%s\n' "$NAME_OK"
-    printf 'NAME_WARN=%s\n' "$NAME_WARN"
-    printf 'RAW=%s\n' "$ST_RAW"
-    ;;
   specify|review)
-    printf 'RAW=%s\n' "$ST_RAW"
-    printf 'REQUIREMENTS=%s\n' "$ST_REQ"
-    printf 'DESIGN=%s\n' "$ST_DES"
-    printf 'TASKS=%s\n' "$ST_TSK"
     printf 'STATUS_REQUIREMENTS=%s\n' "$S_REQ"
     printf 'STATUS_DESIGN=%s\n' "$S_DES"
     printf 'STATUS_TASKS=%s\n' "$S_TSK"
-    printf 'COMPILATION=%s\n' "$COMPILATION"
     printf 'NEXT_REQ=%s\n' "$NEXT_REQ"
     if [[ "$CMD" == "specify" ]]; then printf 'MODE=draft\n'; else printf 'MODE=review\n'; fi
     ;;
   implement)
     printf 'TASKS_DONE=%s\n' "$T_DONE"
     printf 'TASKS_TOTAL=%s\n' "$T_TOTAL"
-    printf 'TASKS_BLOCKED=%s\n' "$T_BLOCKED"
     printf 'ROLE_ORDER=%s\n' "$ROLE_ORDER"
-    printf 'BUILD_ROOT=%s\n' "$BUILD_ROOT"
     printf 'BUILD_BACKEND=%s\n' "$BUILD_BACKEND"
     printf 'BUILD_FRONTEND=%s\n' "$BUILD_FRONTEND"
     printf 'BASELINE=%s\n' "$BASELINE"
-    printf 'BUILD_FILES=%s\n' "$BUILD_FILES"
     ;;
   code-review)
     printf 'BASE=%s\n' "$RS_BASE"
@@ -1342,7 +1319,6 @@ case "$CMD" in
     printf 'REVIEW_PREVIOUS=%s\n' "$R_DATE"
     ;;
   code-fix)
-    printf 'REVIEW=%s\n' "$ST_REVIEW"
     # The report is read here, by the orchestrator, for the triage — so its path
     # is a key of its own and not a line of the prompt-only SPEC_FILES:.
     printf 'REVIEW_PATH=_docs/%s/review.md\n' "$FOLDER"
@@ -1350,15 +1326,8 @@ case "$CMD" in
     printf 'REVIEW_ROOT=%s\n' "$R_ROOT"
     printf 'REVIEW_VERDICT=%s\n' "$R_VERDICT"
     printf 'ROOT=%s\n' "$RS_ROOT"
-    printf 'BUILD_ROOT=%s\n' "$BUILD_ROOT"
     printf 'BUILD_BACKEND=%s\n' "$BUILD_BACKEND"
     printf 'BUILD_FRONTEND=%s\n' "$BUILD_FRONTEND"
-    ;;
-  actualize)
-    printf 'REQUIREMENTS=%s\n' "$ST_REQ"
-    printf 'DESIGN=%s\n' "$ST_DES"
-    printf 'COMPILATION=%s\n' "$COMPILATION"
-    printf 'NEXT_REQ=%s\n' "$NEXT_REQ"
     ;;
 esac
 
@@ -1447,28 +1416,13 @@ if [[ $SPAWNING -eq 1 ]]; then
 fi
 
 case "$CMD" in
-  init)
-    # The stacks this project has, and the command each is usually verified
-    # with. /sdd-init puts them to the human one at a time and writes the
-    # answers into .sdd/sdd.conf; nothing else here reads them.
-    printf '\nDETECTED:\n'
-    [[ -n "$BUILD_DETECTED" ]] && printf '%s\n' "$BUILD_DETECTED"
-    ;;
-  new)
-    printf '\nFEATURES:\n'
-    [[ -n "$FEATURES" ]] && printf '%s\n' "$FEATURES"
-    ;;
   specify)
     printf '\nREQ_DOMAINS:\n'
     [[ -n "$REQ_DOMAINS" ]] && printf '%s\n' "$REQ_DOMAINS"
-    printf '\nREQ_DUPLICATES:\n'
-    [[ -n "$REQ_DUPLICATES" ]] && printf '%s\n' "$REQ_DUPLICATES"
     ;;
   review)
     printf '\nREQ_DOMAINS:\n'
     [[ -n "$REQ_DOMAINS" ]] && printf '%s\n' "$REQ_DOMAINS"
-    printf '\nREQ_DUPLICATES:\n'
-    [[ -n "$REQ_DUPLICATES" ]] && printf '%s\n' "$REQ_DUPLICATES"
     # The coverage matrix, computed: the orchestrator prints COVERAGE: as it
     # stands and asks about UNCOVERED: and UNDECLARED:, reading neither the
     # task list nor the requirement headings for it.

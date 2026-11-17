@@ -2,14 +2,9 @@ GATE=ok
 FEATURE=Cart
 FOLDER=Cart
 STAGE=raw
-RAW=present
-REQUIREMENTS=missing
-DESIGN=missing
-TASKS=missing
 STATUS_REQUIREMENTS=absent
 STATUS_DESIGN=absent
 STATUS_TASKS=absent
-COMPILATION=missing
 NEXT_REQ=REQ-001
 MODE=draft
 
@@ -18,8 +13,6 @@ requirements-engineer|.sdd/protocols/spec-modes.md,.sdd/protocols/requirements-w
 architect|.sdd/protocols/spec-modes.md,.sdd/protocols/architecture-design.md,.sdd/protocols/task-breakdown.md,.sdd/protocols/docs-format.md|design+tasks
 
 REQ_DOMAINS:
-
-REQ_DUPLICATES:
 
 STOP:
 

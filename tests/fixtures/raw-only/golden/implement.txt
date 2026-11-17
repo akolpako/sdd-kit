@@ -4,13 +4,10 @@ FOLDER=Cart
 STAGE=raw
 TASKS_DONE=0
 TASKS_TOTAL=0
-TASKS_BLOCKED=0
 ROLE_ORDER=
-BUILD_ROOT=
 BUILD_BACKEND=
 BUILD_FRONTEND=
 BASELINE=
-BUILD_FILES=0
 
 STOP:
 _docs/Cart/new-requirements.md is missing. /sdd-specify Cart writes it.

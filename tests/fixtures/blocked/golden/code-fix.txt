@@ -2,13 +2,11 @@ GATE=stop
 FEATURE=Cart
 FOLDER=Cart
 STAGE=in progress 1/3, 1 blocked
-REVIEW=missing
 REVIEW_PATH=_docs/Cart/review.md
 REVIEW_DATE=
 REVIEW_ROOT=
 REVIEW_VERDICT=absent
 ROOT=
-BUILD_ROOT=mvn clean verify
 BUILD_BACKEND=mvn clean verify
 BUILD_FRONTEND=mvn clean verify
 

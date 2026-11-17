@@ -4,13 +4,10 @@ FOLDER=Cart
 STAGE=in progress 1/3, 1 blocked
 TASKS_DONE=1
 TASKS_TOTAL=3
-TASKS_BLOCKED=1
 ROLE_ORDER=backend
-BUILD_ROOT=mvn clean verify
 BUILD_BACKEND=mvn clean verify
 BUILD_FRONTEND=mvn clean verify
 BASELINE=mvn clean verify
-BUILD_FILES=1
 
 SPAWN:
 backend-developer|.sdd/protocols/developer.md,.sdd/protocols/task-loop.md|backend

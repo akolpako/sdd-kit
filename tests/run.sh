@@ -852,7 +852,7 @@ ABC-12345x|warn'
   while IFS='|' read -r name want; do
     [[ -n "$name" ]] || continue
     out="$(cd "$work" && "$GATE" new "$name" 2>&1)"
-    warn="$(printf '%s\n' "$out" | sed -n 's/^NAME_WARN=//p')"
+    warn="$(printf '%s\n' "$out" | grep 'neither PascalCase nor a Jira issue key')"
     ok=0
     if [[ "$want" == "quiet" ]]; then
       [[ -z "$warn" ]] || ok=1
@@ -860,7 +860,7 @@ ABC-12345x|warn'
       [[ -n "$warn" ]] || ok=1
     fi
     prop_check name "$name is $want" "$ok" \
-      "NAME_WARN=${warn:-<empty>}"
+      "WARN: ${warn:-<none>}"
   done <<EOF
 $cases
 EOF

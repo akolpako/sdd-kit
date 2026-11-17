@@ -2,14 +2,9 @@ GATE=ok
 FEATURE=Cart
 FOLDER=Cart
 STAGE=specified
-RAW=present
-REQUIREMENTS=present
-DESIGN=present
-TASKS=present
 STATUS_REQUIREMENTS=draft
 STATUS_DESIGN=draft
 STATUS_TASKS=draft
-COMPILATION=present
 NEXT_REQ=REQ-004
 MODE=review
 
@@ -19,9 +14,6 @@ architect|.sdd/protocols/spec-modes.md,.sdd/protocols/spec-checklist.md,.sdd/pro
 
 REQ_DOMAINS:
 -|NEXT=REQ-004|COUNTER=REQ-003|HIGHEST=REQ-002|DECLARED=REQ-003|DECLARED_IN=Cart|COUNT=3
-
-REQ_DUPLICATES:
-REQ-002
 
 COVERAGE:
 REQ-002|Cart holds items|TASK-001,TASK-002

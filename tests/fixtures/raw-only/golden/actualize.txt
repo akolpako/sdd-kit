@@ -2,10 +2,6 @@ GATE=stop
 FEATURE=Cart
 FOLDER=Cart
 STAGE=raw
-REQUIREMENTS=missing
-DESIGN=missing
-COMPILATION=missing
-NEXT_REQ=
 
 REQ_DOMAINS:
 

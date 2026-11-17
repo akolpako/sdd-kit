@@ -2,14 +2,9 @@ GATE=ok
 FEATURE=Wishlist
 FOLDER=Wishlist
 STAGE=specified
-RAW=present
-REQUIREMENTS=present
-DESIGN=present
-TASKS=present
 STATUS_REQUIREMENTS=draft
 STATUS_DESIGN=draft
 STATUS_TASKS=draft
-COMPILATION=present
 NEXT_REQ=REQ-006
 MODE=review
 
@@ -19,8 +14,6 @@ architect|.sdd/protocols/spec-modes.md,.sdd/protocols/spec-checklist.md,.sdd/pro
 
 REQ_DOMAINS:
 -|NEXT=REQ-006|COUNTER=REQ-004|HIGHEST=REQ-003|DECLARED=REQ-005|DECLARED_IN=Wishlist|COUNT=3
-
-REQ_DUPLICATES:
 
 COVERAGE:
 REQ-004|Wishlist holds items|TASK-001

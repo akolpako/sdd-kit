@@ -2,14 +2,9 @@ GATE=ask
 FEATURE=Cart
 FOLDER=Cart
 STAGE=actualized
-RAW=present
-REQUIREMENTS=present
-DESIGN=present
-TASKS=present
 STATUS_REQUIREMENTS=ready
 STATUS_DESIGN=ready
 STATUS_TASKS=ready
-COMPILATION=present
 NEXT_REQ=REQ-004
 MODE=draft
 
@@ -19,8 +14,6 @@ architect|.sdd/protocols/spec-modes.md,.sdd/protocols/architecture-design.md,.sd
 
 REQ_DOMAINS:
 -|NEXT=REQ-004|COUNTER=REQ-004|HIGHEST=REQ-003|DECLARED=REQ-003|DECLARED_IN=Cart|COUNT=3
-
-REQ_DUPLICATES:
 
 STOP:
 

@@ -1,6 +1,5 @@
 GATE=ask
 PROJECT=brownfield
-TEMPLATES=ok
 EXISTING=requirements.md
 BUILD_ROOT=
 BUILD_BACKEND=
@@ -8,9 +7,6 @@ BUILD_FRONTEND=
 
 SPAWN:
 architect|.sdd/protocols/project-baseline.md,.sdd/protocols/docs-format.md|baseline-from-codebase
-
-DETECTED:
-.|pom.xml|mvn clean verify|backend
 
 STOP:
 

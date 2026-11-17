@@ -4,13 +4,10 @@ FOLDER=Cart
 STAGE=
 TASKS_DONE=0
 TASKS_TOTAL=0
-TASKS_BLOCKED=0
 ROLE_ORDER=
-BUILD_ROOT=
 BUILD_BACKEND=
 BUILD_FRONTEND=
 BASELINE=
-BUILD_FILES=0
 
 STOP:
 The project has no _docs/ yet — nothing to implement. Run /sdd-init, then /sdd-next-story Cart.
