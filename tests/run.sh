@@ -575,6 +575,21 @@ check_log() {
   [[ -e "$work/off" ]] && ok=1
   prop_check log "SDD_LOG=0" "$ok" "SDD_LOG=0 created $work/off"
 
+  # Words handed over on stdin are in the record when `-` says the run reads
+  # them, and only then: without `-` stdin is left alone, the record carries
+  # no block, and the child still gets what was sent.
+  ( cd "$work/tree" && printf 'nofile.txt|1|sdd-stdin-words\n' \
+      | SDD_LOG_DIR="$work/in" "$SCRIPTS/spec-edit.sh" marker - ) >/dev/null 2>&1
+  ( cd "$work/tree" && printf 'sdd-unread-words\n' \
+      | SDD_LOG_DIR="$work/in" "$next" ) >/dev/null 2>&1
+  ok=0
+  grep -q '^stdin:$' "$work/in/sdd.log" 2>/dev/null \
+    && grep -qx '| nofile.txt|1|sdd-stdin-words' "$work/in/sdd.log" \
+    && ! grep -q 'sdd-unread-words' "$work/in/sdd.log" \
+    && [[ "$(grep -c '^stdin:$' "$work/in/sdd.log")" == "1" ]] || ok=1
+  prop_check log "stdin block" "$ok" \
+    "expected one stdin: block, from the run given '-', in $work/in/sdd.log"
+
   # A gate run and the scripts it fans out to are one run: the same id, and the
   # nested records ahead of the gate's own, which is written after its child
   # exits.

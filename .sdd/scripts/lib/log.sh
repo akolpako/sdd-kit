@@ -41,6 +41,15 @@
 # is written after its child exits. This is the mechanism, not a bug. The run id
 # is inherited through the environment and ties the records of one run together.
 #
+# A run handed `-` among its arguments reads somebody's words from stdin — the
+# text of `spec-edit.sh answer|section|compile-entry`, the records of
+# `marker -`, the blocks of `spawn-prompt.sh … -`. Those words are what was
+# written, and the argv alone shows only that something was. The wrapper saves
+# stdin to a file, hands that file to the child as its stdin and logs it as a
+# `stdin:` block, capped like the streams. Only when `-` is there: any other
+# run is left reading the stdin it was given, since draining a terminal would
+# wait on a human nobody asked.
+#
 # What this module must never do: change a byte on stdout or stderr, or the exit
 # code; fail a script — every write is best-effort, and an unwritable log
 # directory is silence, not an error; detect the host; create anything when
@@ -138,8 +147,8 @@ sdd_log_stream() {
 }
 
 sdd_log_record() {
-  local rc="$1" start="$2" end="$3" out="$4" err="$5"
-  shift 5
+  local rc="$1" start="$2" end="$3" out="$4" err="$5" in="$6"
+  shift 6
   local log="$SDD_LOG_DIR/sdd.log" head="$SDD_LOG_HEAD"
   case "$SDD_LOG_FULL_STDOUT" in *" $SDD_LOG_NAME "*) head=0 ;; esac
   mkdir -p "$SDD_LOG_DIR" 2>/dev/null || return 0
@@ -149,6 +158,7 @@ sdd_log_record() {
       "$(sdd_log_stamp)" "$SDD_LOG_RUN" "$rc" "$(sdd_log_dur "$start" "$end")" \
       "$SDD_LOG_NAME" "$(sdd_log_argv ${1+"$@"})"
     printf 'cwd=%s\n' "$PWD"
+    [[ -n "$in" ]] && sdd_log_stream stdin "$in" "$SDD_LOG_HEAD" "$SDD_LOG_TAIL"
     sdd_log_stream stdout "$out" "$head" "$SDD_LOG_TAIL"
     if [[ $head -eq 0 ]]; then
       local pf
@@ -249,21 +259,33 @@ EOF
 # Returns only when it could not capture the run; the script then goes on
 # unwrapped, which is the same silence an unwritable log directory gets.
 sdd_log_wrap() {
-  local out err rc start end
+  local out err in="" a rc start end
   out="$(mktemp "${TMPDIR:-/tmp}/sdd-log-out.XXXXXX" 2>/dev/null)" || return 1
   err="$(mktemp "${TMPDIR:-/tmp}/sdd-log-err.XXXXXX" 2>/dev/null)" || { rm -f "$out"; return 1; }
+  # stdin is taken before anything else can fail: past this point the run goes
+  # on wrapped or not at all, and an unwrapped run would find stdin drained.
+  for a in ${1+"$@"}; do
+    [[ "$a" == "-" ]] || continue
+    in="$(mktemp "${TMPDIR:-/tmp}/sdd-log-in.XXXXXX" 2>/dev/null)" || { rm -f "$out" "$err"; return 1; }
+    cat >"$in"
+    break
+  done
 
   start="$(sdd_log_ms)"
-  SDD_LOG_CHILD=1 "${BASH:-bash}" "$0" ${1+"$@"} >"$out" 2>"$err"
+  if [[ -n "$in" ]]; then
+    SDD_LOG_CHILD=1 "${BASH:-bash}" "$0" ${1+"$@"} <"$in" >"$out" 2>"$err"
+  else
+    SDD_LOG_CHILD=1 "${BASH:-bash}" "$0" ${1+"$@"} >"$out" 2>"$err"
+  fi
   rc=$?
   end="$(sdd_log_ms)"
 
   cat "$out"
   cat "$err" >&2
 
-  sdd_log_record "$rc" "$start" "$end" "$out" "$err" ${1+"$@"}
+  sdd_log_record "$rc" "$start" "$end" "$out" "$err" "$in" ${1+"$@"}
 
-  rm -f "$out" "$err"
+  rm -f "$out" "$err" ${in:+"$in"}
   exit "$rc"
 }
 
