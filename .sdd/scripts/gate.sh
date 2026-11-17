@@ -664,11 +664,14 @@ require_specs() {
 }
 
 # The status markers of the three files, as one list: ", new-requirements.md
-# (draft), tasks.md (no status)". Empty when all three are ready.
+# (draft), tasks.md (no status)" — of the files on disk. Empty when every one
+# of them is ready.
 draft_list() {
   local pair marker file out=""
-  for pair in "$S_REQ:new-requirements.md" "$S_DES:design.md" "$S_TSK:tasks.md"; do
-    marker="${pair%%:*}"; file="${pair#*:}"
+  for pair in "$ST_REQ:$S_REQ:new-requirements.md" "$ST_DES:$S_DES:design.md" "$ST_TSK:$S_TSK:tasks.md"; do
+    # A file that is not there is not a draft: it is the stop of its own.
+    [[ "${pair%%:*}" == "present" ]] || continue
+    marker="${pair#*:}"; file="${marker#*:}"; marker="${marker%%:*}"
     [[ "$marker" == "ready" ]] && continue
     [[ "$marker" == "absent" ]] && marker="no status"
     out="$out, $file ($marker)"
@@ -1228,16 +1231,10 @@ EOF
   # Promotion is the one step nothing later reviews: an entry written here is
   # what every next feature is specified against. So whatever says the feature
   # is not finished goes to the human before a line of it is written.
-  local pair marker file draft=""
-  for pair in "$ST_REQ:$S_REQ:new-requirements.md" "$ST_DES:$S_DES:design.md" "$ST_TSK:$S_TSK:tasks.md"; do
-    [[ "${pair%%:*}" == "present" ]] || continue
-    marker="${pair#*:}"; file="${marker#*:}"; marker="${marker%%:*}"
-    [[ "$marker" == "ready" ]] && continue
-    [[ "$marker" == "absent" ]] && marker="no status"
-    draft="$draft, $file ($marker)"
-  done
+  local draft
+  draft="$(draft_list)"
   [[ -n "$draft" ]] && \
-    ask "Not reviewed: ${draft#, }. /sdd-spec-review $FEATURE is what promotes a spec to ready. Promoting anyway writes requirements nobody approved into _docs/requirements.md as final — it needs the human to say so in as many words, and the final report then says the baseline was written from an unreviewed spec."
+    ask "Not reviewed: $draft. /sdd-spec-review $FEATURE is what promotes a spec to ready. Promoting anyway writes requirements nobody approved into _docs/requirements.md as final — it needs the human to say so in as many words, and the final report then says the baseline was written from an unreviewed spec."
 
   if [[ "$ST_TSK" != "present" ]]; then
     ask "_docs/$FOLDER/tasks.md is $ST_TSK — nothing on disk says this feature was implemented. Promoting anyway records its requirements as what the project does; it needs the human to say so in as many words."
