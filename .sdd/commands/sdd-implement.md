@@ -46,7 +46,7 @@ Safe to re-run: `[x]` is the only mark that takes a task out of the work, so a b
    - Tasks a role reports `blocked` do not stop the run: relay the Blocker Report unabridged, and let the remaining tasks that do not build on them proceed. The human decides what happens to the blocked ones.
 
 4. **Verify:**
-   - When a role returns, run `.sdd/scripts/gate.sh implement <FeatureName> --verify --scope=<the scope of that role>`.
+   - When a role returns, run `.sdd/scripts/gate.sh implement <FeatureName> --verify --scope=<the scope of that role>`. The verify after the last role is also the closing count: its `TASKS_DONE`/`TASKS_TOTAL` and `ANOMALIES:` are the feature's, so no gate runs after it.
    - When every role has returned, run the build of step 2 again. Green — the feature is implemented. Red — report its `TAIL:` and `LOG=` with the Blocker Reports, and do not restart a loop: a red that traces to a `BLOCKED` task is attempts already spent, and a red that traces to none of them is said to be exactly that.
 
-5. **Report the next step:** re-run `.sdd/scripts/gate.sh implement <FeatureName>` for `TASKS_DONE`/`TASKS_TOTAL` and any new `ANOMALIES:`, then the tasks the roles reported blocked, by name from their Blocker Reports, then `/sdd-code-review <FeatureName>`. It and `/sdd-actualize <FeatureName>` are optional.
+5. **Report the next step:** `TASKS_DONE`/`TASKS_TOTAL` and any `ANOMALIES:` from the last verify of step 4, then the tasks the roles reported blocked, by name from their Blocker Reports, then `/sdd-code-review <FeatureName>`. It and `/sdd-actualize <FeatureName>` are optional.

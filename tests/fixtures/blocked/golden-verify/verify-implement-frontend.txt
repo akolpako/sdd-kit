@@ -1,4 +1,8 @@
 VERIFY=ok
+TASKS_DONE=1
+TASKS_TOTAL=3
 
 FAIL:
+
+ANOMALIES:
 ### exit=0

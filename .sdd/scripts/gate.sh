@@ -89,7 +89,12 @@
 #
 # Prints under --verify, and nothing else:
 #   VERIFY=ok|fail
+#   TASKS_DONE, TASKS_TOTAL   implement only: the counts of the whole feature,
+#                 not of the scope, for the closing report — read off the same
+#                 run, so the command runs no gate after its last role
 #   FAIL:         one reason per line, worded as the human is told it
+#   ANOMALIES:    implement only, from feature-state.sh, unchanged — what the
+#                 roles' marks left in tasks.md that a reader cannot settle
 #
 # What each step is checked to have left behind:
 #   init         the three files of _docs/ exist and hold something
@@ -624,8 +629,16 @@ if [[ $VERIFY -eq 1 ]]; then
     actualize)   verify_actualize ;;
   esac
   if [[ $N_FAIL -gt 0 ]]; then printf 'VERIFY=fail\n'; else printf 'VERIFY=ok\n'; fi
+  if [[ "$CMD" == "implement" ]]; then
+    printf 'TASKS_DONE=%s\n' "$T_DONE"
+    printf 'TASKS_TOTAL=%s\n' "$T_TOTAL"
+  fi
   printf '\nFAIL:\n'
   for f in ${FAILS[@]+"${FAILS[@]}"}; do printf '%s\n' "$f"; done
+  if [[ "$CMD" == "implement" ]]; then
+    printf '\nANOMALIES:\n'
+    [[ -n "$ANOMALIES" ]] && printf '%s\n' "$ANOMALIES"
+  fi
   [[ $N_FAIL -gt 0 ]] && exit 2
   exit 0
 fi
