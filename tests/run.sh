@@ -2623,6 +2623,26 @@ F-05|Major|Performance|api/src/Repo.java|7|backend'
   prop_check findings "one stack: every finding is the feature's" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
 }
 
+# A rewrite replaces the file by a rename, so a run cut short never leaves half
+# of it. What a rename would lose is kept: the mode of a script a marker lands
+# in, and a symlink, which is written through rather than replaced.
+check_replace() {
+  local work="$TMP/replace-check" edit="$SCRIPTS/spec-edit.sh" ok
+  printf 'replace\n'
+  rm -rf "$work" && mkdir -p "$work/bin" "$work/real" || exit 1
+  printf '#!/bin/sh\necho one\necho two\n' > "$work/bin/run.sh" && chmod 755 "$work/bin/run.sh"
+  printf 'a: 1\nb: 2\n' > "$work/real/conf.yml" && ln -s ../real/conf.yml "$work/bin/conf.yml"
+
+  ( cd "$work" && SDD_LOG=0 "$edit" marker bin/run.sh 3 'Two is wrong.' ) >/dev/null 2>&1
+  ( cd "$work" && SDD_LOG=0 "$edit" marker bin/conf.yml 2 'B is wrong.' ) >/dev/null 2>&1
+  ok=0
+  [[ -x "$work/bin/run.sh" ]] && grep -q 'Two is wrong' "$work/bin/run.sh" \
+    && [[ -L "$work/bin/conf.yml" ]] && grep -q 'B is wrong' "$work/real/conf.yml" \
+    && [[ -z "$(find "$work" -name '*.sdd-new.*')" ]] || ok=1
+  prop_check replace "mode and symlink survive" "$ok" \
+    "after two markers: run.sh $( [[ -x "$work/bin/run.sh" ]] && echo keeps || echo lost ) +x, conf.yml $( [[ -L "$work/bin/conf.yml" ]] && echo 'is still a link' || echo 'is no longer a link' ), leftovers: $(find "$work" -name '*.sdd-new.*' | tr '\n' ' ')"
+}
+
 check_no_requirements() {
   local work="$TMP/no-reqs" state="$SCRIPTS/feature-state.sh" out rc ok f
   printf 'no-requirements\n'
@@ -2730,6 +2750,7 @@ start_job backup           check_backup
 start_job stacks           check_stacks
 start_job collisions       check_collisions
 start_job findings         check_findings
+start_job replace          check_replace
 start_job no-requirements  check_no_requirements
 start_job jira-tokens      check_jira_tokens
 start_job lib-source       check_suite lib-source

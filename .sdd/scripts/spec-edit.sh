@@ -219,9 +219,32 @@ resolve_folder() {
   printf '%s\n' "$folder"
 }
 
-# In place, without a temp file left behind on failure.
+# The new text goes to a file beside the target and is moved over it, so a run
+# cut short leaves the old file or the new one, never half of either — `cat >`
+# into the target truncates it first. Beside it, not under $TMP: a move within
+# one directory is a rename, and across file systems it is a copy again.
+# The copy starts as `cp -p` of the target, so its mode survives the move: a
+# marker lands in code, and a script that lost its +x would stop running.
+# A symlink is written through in place, as before — a move would replace the
+# link with a file. So is a target whose directory takes no new file.
+REPLACE_TMP=""
 replace_file() {
-  local target="$1" source="$2"
+  local target="$1" source="$2" dir base
+  dir="${target%/*}"; [[ "$dir" == "$target" ]] && dir="."
+  base="${target##*/}"
+  if [[ ! -L "$target" && -w "$dir" ]]; then
+    REPLACE_TMP="$dir/.$base.sdd-new.$$"
+    if { [[ ! -e "$target" ]] || cp -p "$target" "$REPLACE_TMP"; } 2>/dev/null \
+      && cat "$source" > "$REPLACE_TMP" 2>/dev/null \
+      && mv -f "$REPLACE_TMP" "$target" 2>/dev/null; then
+      REPLACE_TMP=""
+      return 0
+    fi
+    rm -f "$REPLACE_TMP"
+    REPLACE_TMP=""
+    printf 'ERROR=could not write %s\n' "$target" >&2
+    exit 1
+  fi
   cat "$source" > "$target" || { printf 'ERROR=could not write %s\n' "$target" >&2; exit 1; }
 }
 
@@ -281,7 +304,7 @@ replace_section() {
 }
 
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/sdd-edit.XXXXXX")" || exit 1
-trap 'rm -rf "$TMP"' EXIT
+trap 'rm -rf "$TMP" ${REPLACE_TMP:+"$REPLACE_TMP"}' EXIT
 
 # ── marker, the helpers ───────────────────────────────────────────
 # The comment syntax of a file, by its extension: `<open>|<close>`, or nothing
