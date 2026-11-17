@@ -115,8 +115,8 @@ review-design-tasks|review|design+tasks|
 implement-backend|implement|backend|
 implement-frontend|implement|frontend|
 code-review-review-set|code-review|review-set|
-code-fix-backend|code-fix|findings-backend|TRIAGE=Critical and Major fixed, the rest gets a marker.;FINDINGS=F-01 CartService.java:42 — the total ignores the discount.\nF-02 CartService.java:57 — no test for an empty cart.
-code-fix-frontend|code-fix|findings-frontend|TRIAGE=Fix everything.;FINDINGS=F-03 cart.component.ts:12 — the total is formatted client-side.
+code-fix-backend|code-fix|findings-backend|TRIAGE=Critical and Major fixed, the rest gets a marker.;FINDINGS=F-01\nF-02
+code-fix-frontend|code-fix|findings-frontend|TRIAGE=Fix everything.;FINDINGS=F-03
 actualize-baseline|actualize|baseline-from-feature|
 refused-no-template|implement|no-such-scope|
 refused-no-value|code-fix|findings-backend|TRIAGE=Fix everything.
