@@ -15,7 +15,7 @@ Acts on the report `/sdd-code-review <FeatureName>` wrote. It applies findings, 
   - `.sdd/protocols/orchestration.md`
   - the output of `.sdd/scripts/gate.sh code-fix`
   - the prompts `.sdd/scripts/spawn-prompt.sh` renders
-  - `REVIEW_PATH`, for the findings to triage
+  - `REVIEW_PATH`, for what each finding says and recommends — its number, severity, place and stack are the gate's `FINDINGS:` records, never read out of the prose
 - **Writes,** and nothing before the human's answer in step 2:
   - the `TODO Code Review:` markers, in the files their findings are about
   - the `verdict-stale` line of `review.md`
@@ -28,8 +28,9 @@ Acts on the report `/sdd-code-review <FeatureName>` wrote. It applies findings, 
    - `ask` is always the same question: this project has not said how a stack of it is verified. No yes answers it — put the line to the human, write the answer with `.sdd/scripts/spec-edit.sh conf-set <KEY> -` (the command on stdin), and go on only then.
    - `ROOT` differing from `REVIEW_ROOT` says the code has moved since the review, and a finding may be about a line that is no longer there.
 
-2. **Triage — the orchestrator's own.** Read `REVIEW_PATH`; its findings, by their `F-##` numbers, are the work of this run.
+2. **Triage — the orchestrator's own.** The `FINDINGS:` records — `F-##|severity|category|file|line|stack` — are the work of this run; `REVIEW_PATH` is read for what each one says and recommends.
    - Open with `REVIEW_VERDICT` and `REVIEW_DATE`, then the findings, worst first.
+   - A record whose stack is `-` names no role: ask which stack fixes it in the same question as the policy.
    - **Ask the human for the policy once**, not per finding. The default:
 
      | Severity | Outcome |
@@ -43,9 +44,9 @@ Acts on the report `/sdd-code-review <FeatureName>` wrote. It applies findings, 
    - **The finding's own recommendation wins over the policy** where it is to leave the finding alone: the outcome is **leave as-is**, with no question and no marker over a decision that was taken deliberately.
    - Three outcomes per finding, and no fourth: **fix**, **TODO marker**, **leave as-is**. What is left as-is is named again in the closing report.
 
-3. **Write the markers** — the orchestrator's own, and **before any spawn**: a finding's line number is the line as the review saw it, and a fix moves the lines under it. For every finding marked *TODO marker*, run `.sdd/scripts/spec-edit.sh marker <file> <line> -` with the finding, one line, on stdin — the file and the line the finding is about, never `tasks.md` and never only the chat. A file type the script has no comment syntax for is relayed as the stop it is; the finding then goes back to the human as a fix or a leave-as-is. Within one file, write them from the highest line to the lowest — a marker inserted above a line moves every line below it by one.
+3. **Write the markers** — the orchestrator's own, and **before any spawn**: a finding's line number is the line as the review saw it, and a fix moves the lines under it. For every finding marked *TODO marker*, run `.sdd/scripts/spec-edit.sh marker <file> <line> -` with the finding, one line, on stdin — the file and the line of its record, never `tasks.md` and never only the chat. A record with `-` for the file or the line has no place to put a marker: the finding goes back to the human as a fix or a leave-as-is. A file type the script has no comment syntax for is relayed as the stop it is; the finding then goes back to the human as a fix or a leave-as-is. Within one file, write them from the highest line to the lowest — a marker inserted above a line moves every line below it by one.
 
-4. **Spawn** by the `SPAWN:` records, in the order printed. A record whose stack has no finding marked *fix* is dropped whole. For every record left, run `.sdd/scripts/spawn-prompt.sh code-fix <FeatureName> <scope> -` with two blocks on stdin: `TRIAGE:` — the human's answer, word for word; `FINDINGS:` — the `F-##` numbers of that stack's findings marked fix, one per line and nothing else: the role reads each finding in the report itself, so no finding is retyped. One spawn per role for all of its findings, never one per finding.
+4. **Spawn** by the `SPAWN:` records, in the order printed. A record whose stack has no finding marked *fix* — by the stack of its `FINDINGS:` record, or the human's answer where that was `-` — is dropped whole. For every record left, run `.sdd/scripts/spawn-prompt.sh code-fix <FeatureName> <scope> -` with two blocks on stdin: `TRIAGE:` — the human's answer, word for word; `FINDINGS:` — the `F-##` numbers of that stack's findings marked fix, one per line and nothing else: the role reads each finding in the report itself, so no finding is retyped. One spawn per role for all of its findings, never one per finding.
 
 5. **Verify:** if any code changed, run `.sdd/scripts/build-run.sh <stack>` for each stack a role changed code in — `backend`, `frontend`. `BUILD=green` — the fixes hold. `BUILD=red` — report its `TAIL:` and `LOG=`; the human decides what happens next. A marker is not code: a run that only wrote markers has nothing to re-verify and says so.
 

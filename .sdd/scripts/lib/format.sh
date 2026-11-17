@@ -48,6 +48,9 @@
 #   md_untouched <file> <tmpl>     true when the file holds nothing outside
 #                                  what its template shipped with — the
 #                                  scaffold, copied and never written into
+#   md_findings <file>             one record per finding of a review.md, in
+#                                  file order: `F-##|severity|category|file|line`,
+#                                  `-` for a part the finding does not give
 #
 # The `_set` and `_put` readers write nothing: they print, and the caller decides
 # whether the file is replaced.
@@ -535,4 +538,61 @@ fm { next }
 md_untouched() {
   [[ -f "$1" && -f "$2" ]] || return 1
   [[ "$(md_awk "$1" "$MD_AWK_SKELETON")" == "$(md_awk "$2" "$MD_AWK_SKELETON")" ]]
+}
+
+# The findings of a code review, the format `.sdd/templates/review.md` fixes:
+#
+#   ### F-01 — Critical — Security
+#
+#   > [!danger] Where: `src/main/java/.../CartController.java:42`
+#   > **What:** …
+#
+# and the list form a report written before the callouts carries,
+# `- **Where:** \`path:42\``. The heading gives the number, the severity and the
+# category; the first `Where:` under it gives the place — the first backticked
+# span on that line when there is one, the rest of the line when there is not.
+# The line is the number after the last colon; a range (`:42-48`) is read as
+# its first line, which is where a marker above it belongs, and a place with no
+# number has none. A part the finding does not give comes back as `-`, never as
+# a guess: which line a finding about a whole file is about is not this
+# reader's to say.
+#
+# The template's example lives in a comment, and the comment is cut out first:
+# a fresh report has no findings.
+md_findings() {
+  md_awk "$1" '
+    function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
+    function orno(s) { s = trim(s); return s == "" ? "-" : s }
+    function flush() {
+      if (id != "") print id "|" orno(sev) "|" orno(cat) "|" orno(file) "|" orno(line)
+      id = ""
+    }
+    /^#+[[:space:]]/ {
+      flush()
+      if (match($0, /^#+[[:space:]]+F-[0-9]+/)) {
+        head = substr($0, RSTART, RLENGTH); sub(/^#+[[:space:]]+/, "", head)
+        id = head; sev = ""; cat = ""; file = ""; line = ""; placed = 0
+        rest = substr($0, RSTART + RLENGTH)
+        gsub(/—|–/, "|", rest); gsub(/[[:space:]]-[[:space:]]/, "|", rest)
+        n = split(rest, part, "|"); k = 0
+        for (i = 1; i <= n; i++) {
+          p = trim(part[i]); if (p == "") continue
+          k++; if (k == 1) sev = p; else if (k == 2) cat = p
+        }
+      }
+      next
+    }
+    id != "" && !placed && match($0, /Where:/) {
+      placed = 1
+      where = substr($0, RSTART + RLENGTH); gsub(/\*/, "", where)
+      if (match(where, /`[^`]+`/)) where = substr(where, RSTART + 1, RLENGTH - 2)
+      where = trim(where)
+      if (match(where, /:[0-9]+([-–][0-9]+)?$/)) {
+        line = substr(where, RSTART + 1, RLENGTH - 1); sub(/[-–].*$/, "", line)
+        where = substr(where, 1, RSTART - 1)
+      }
+      file = where
+    }
+    END { flush() }
+  '
 }

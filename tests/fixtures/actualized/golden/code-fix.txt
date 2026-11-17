@@ -16,6 +16,9 @@ SPAWN:
 backend-developer|.sdd/protocols/developer.md|findings-backend
 frontend-developer|.sdd/protocols/developer.md|findings-frontend
 
+FINDINGS:
+F-01|Critical|Security|src/main/java/com/example/CartService.java|12|backend
+
 STOP:
 
 ASK:

@@ -73,7 +73,13 @@
 #                BUILD_BACKEND, BUILD_FRONTEND, BASELINE, BUILD_FILES
 #   code-review  BASE, ROOT, DIFF, CHANGED, REVIEW_PATH, REVIEW_PREVIOUS
 #   code-fix     REVIEW, REVIEW_PATH, REVIEW_DATE, REVIEW_ROOT, REVIEW_VERDICT,
-#                ROOT, BUILD_ROOT, BUILD_BACKEND, BUILD_FRONTEND
+#                ROOT, BUILD_ROOT, BUILD_BACKEND, BUILD_FRONTEND, and FINDINGS:
+#                — one record per finding of the report, in its order,
+#                `F-##|severity|category|file|line|stack`. The line is the first
+#                of a range; `-` is a part the finding does not give. The stack
+#                is the feature's when its breakdown carries one, else the one
+#                of the build file nearest above the file; `-` when that does
+#                not settle it — the human names the role
 #   actualize    REQUIREMENTS, DESIGN, COMPILATION, NEXT_REQ, REQ_DOMAINS:,
 #                COMPILATION_ENTRIES:, and DECLARED: — one record per
 #                requirement the feature declares, `<REQ-…>|new|`,
@@ -1115,7 +1121,43 @@ check_code_fix() {
   # for are the ones its breakdown carries — done tasks included.
   BUILD_STACKS="$(kv "$FS_OUT" TASK_TYPES | tr ',' '\n' | grep -xE 'backend|frontend' | paste -sd, -)"
   check_build_config
+  [[ $FS_RC -eq 0 && "$ST_REVIEW" == "present" ]] && FINDING_RECS="$(code_fix_findings "$BUILD_STACKS")"
   BUILD_STACKS=""
+}
+
+# The findings of the report, each with the stack whose role fixes it:
+# `F-##|severity|category|file|line|stack`. A feature whose breakdown carries
+# one stack has all of its findings there. Otherwise the stack is the one of the
+# build file whose directory holds the finding's file most closely — a
+# `web/package.json` claims `web/...` over a root `pom.xml` — and `-` where no
+# build file claims it, or two of different stacks claim it equally: which role
+# fixes that finding is the human's call, never this gate's guess.
+code_fix_findings() {
+  local only="$1" rec file stack best len d_dir d_file d_cmd d_stack n
+  [[ "$only" == "backend" || "$only" == "frontend" ]] || only=""
+  while IFS= read -r rec; do
+    [[ -n "$rec" ]] || continue
+    IFS='|' read -r _ _ _ file _ <<< "$rec"
+    stack="$only"
+    if [[ -z "$stack" && "$file" != "-" ]]; then
+      stack="-"; best=-1
+      while IFS='|' read -r d_dir d_file d_cmd d_stack; do
+        [[ -n "$d_stack" ]] || continue
+        if [[ "$d_dir" == "." ]]; then n=0
+        elif [[ "$file" == "$d_dir/"* ]]; then n=${#d_dir}
+        else continue
+        fi
+        if   (( n > best )); then best=$n; stack="$d_stack"
+        elif (( n == best )) && [[ "$stack" != "$d_stack" ]]; then stack="-"
+        fi
+      done <<EOF
+$BUILD_DETECTED
+EOF
+    fi
+    printf '%s|%s\n' "$rec" "${stack:--}"
+  done <<EOF
+$(md_findings "$SPECS/$FOLDER/review.md")
+EOF
 }
 
 check_actualize() {
@@ -1221,7 +1263,7 @@ EOF
 
 PROJECT=""; TEMPLATES=""; EXISTING=""
 NAME_OK=""; NAME_WARN=""; FEATURES=""
-TODO_RECS=""; ROLE_ORDER=""; BLOCKED_RECS=""; DECLARED_RECS=""
+TODO_RECS=""; ROLE_ORDER=""; BLOCKED_RECS=""; DECLARED_RECS=""; FINDING_RECS=""
 
 # Two shapes of the same baseline on disk at once is the one state no reader
 # resolves, and it holds for every command — so it is raised here rather than
@@ -1400,9 +1442,9 @@ if [[ $SPAWNING -eq 1 ]]; then
     code-review)
       printf 'code-reviewer|%s/code-review.md,%s/docs-format.md|review-set\n' "$P" "$P" ;;
     code-fix)
-      # Which stacks have findings is in the report's prose and in the triage
-      # the human settled — both candidates are printed, and the command drops
-      # the record for a stack this run has no work in.
+      # Which stacks have work is in the triage the human settled: FINDINGS:
+      # says where each finding is, not whether it is fixed — both candidates
+      # are printed, and the command drops the record for a stack with no fix.
       printf 'backend-developer|%s/developer.md|findings-backend\n' "$P"
       printf 'frontend-developer|%s/developer.md|findings-frontend\n' "$P" ;;
     actualize)
@@ -1469,6 +1511,15 @@ case "$CMD" in
       [[ -n "$BUILD_ROOT" ]] && printf 'root: %s\n' "$BUILD_ROOT"
       [[ -n "$BUILD_BACKEND" && "$BUILD_BACKEND" != "$BUILD_ROOT" ]] && printf 'backend: %s\n' "$BUILD_BACKEND"
       [[ -n "$BUILD_FRONTEND" && "$BUILD_FRONTEND" != "$BUILD_ROOT" ]] && printf 'frontend: %s\n' "$BUILD_FRONTEND"
+    fi
+    ;;
+  code-fix)
+    # What the triage, the markers and the dropped SPAWN: records are decided
+    # from: the place and the stack of each finding, read off the report here
+    # rather than out of its prose by the orchestrator.
+    if [[ $SPAWNING -eq 1 ]]; then
+      printf '\nFINDINGS:\n'
+      [[ -n "$FINDING_RECS" ]] && printf '%s\n' "$FINDING_RECS"
     fi
     ;;
   actualize)

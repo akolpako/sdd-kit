@@ -244,7 +244,7 @@ flowchart LR
   next to what was resolved.
 - **The orchestrator does not read what it does not decide from.** A spawn passes spec file
   *paths*, not contents. The coverage matrix comes computed as `COVERAGE:`, its stops as
-  `UNCOVERED:` and `UNDECLARED:`.
+  `UNCOVERED:` and `UNDECLARED:`; the place and stack of each review finding as `FINDINGS:`.
 - **A format is read in one place** — `lib/format.sh`, sourced by readers and writers.
 - **Nothing tool-specific**: both hosts run the same scripts. `review-set.sh` excludes `_docs/`,
   `.sdd/`, `.claude/` but not `.github/` — the `.gitignore` block already hides the engine there,

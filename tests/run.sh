@@ -2395,6 +2395,76 @@ EOR
 # A feature that declares no requirement has no compilation entry to be told
 # actualized by: the `actualized:` property of its new-requirements.md is the
 # mark, written by spec-edit.sh as the last write of the promotion.
+# The findings of a review, as /sdd-code-fix gets them: the place out of either
+# form of `Where:`, a range read as its first line, and the stack of the build
+# file nearest above the file — `-` where no build file settles it.
+check_findings() {
+  local work="$TMP/findings-check" out ok exp f
+  printf 'findings\n'
+  rm -rf "$work" && mkdir -p "$work/_docs/Cart" "$work/web" "$work/.sdd" || exit 1
+  printf '{}\n' > "$work/web/package.json"
+  mkdir -p "$work/api" && printf '<project/>\n' > "$work/api/pom.xml"
+  printf 'SDD_BUILD_BACKEND=mvn verify\nSDD_BUILD_FRONTEND=cd web && npm test\n' > "$work/.sdd/sdd.conf"
+  for f in new-requirements design; do
+    printf -- '---\nstatus: ready\n---\n\n# %s\n\nBody.\n' "$f" > "$work/_docs/Cart/$f.md"
+  done
+  printf -- '---\nstatus: ready\n---\n\n# T\n\n## Tasks\n\n- [x] **TASK-001** — a\n  - **Type:** backend\n- [x] **TASK-002** — b\n  - **Type:** frontend\n' \
+    > "$work/_docs/Cart/tasks.md"
+  cat > "$work/_docs/Cart/review.md" <<'SDD_REVIEW'
+---
+verdict: BLOCKED
+---
+
+# Code Review — Cart
+
+## Findings
+
+<!--
+### F-09 — Critical — Security
+
+> [!danger] Where: `api/X.java:1`
+-->
+
+### F-01 — Critical — Security
+
+> [!danger] Where: `api/src/Cart.java:42`
+> **What:** x
+
+### F-02 — Minor — Style
+
+> [!note] Where: `web/src/app.ts:10-14`
+
+### F-03 — Suggestion — Quality
+
+> [!tip] Where: `README.md`
+
+### F-04 — Major — Spec Deviation
+
+> [!warning] **What:** no place.
+
+### F-05 — Major — Performance
+- **Where:** `api/src/Repo.java:7`
+
+## Requirement coverage
+
+Where: `api/Elsewhere.java:3`
+SDD_REVIEW
+  exp='F-01|Critical|Security|api/src/Cart.java|42|backend
+F-02|Minor|Style|web/src/app.ts|10|frontend
+F-03|Suggestion|Quality|README.md|-|-
+F-04|Major|Spec Deviation|-|-|-
+F-05|Major|Performance|api/src/Repo.java|7|backend'
+  out="$(cd "$work" && "$GATE" code-fix Cart 2>&1)"
+  ok=0; [[ "$(printf '%s\n' "$out" | sed -n '/^FINDINGS:$/,/^$/p' | sed '1d;/^$/d')" == "$exp" ]] || ok=1
+  prop_check findings "two stacks: each finding goes to the build file above it" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  # One stack in the breakdown: every finding is that stack's, placed or not.
+  sed -i.bak '/TASK-002/,$d' "$work/_docs/Cart/tasks.md" && rm -f "$work/_docs/Cart/tasks.md.bak"
+  out="$(cd "$work" && "$GATE" code-fix Cart 2>&1)"
+  ok=0; [[ "$(printf '%s\n' "$out" | sed -n '/^FINDINGS:$/,/^$/p' | grep -c '|backend$')" == "5" ]] || ok=1
+  prop_check findings "one stack: every finding is the feature's" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+}
+
 check_no_requirements() {
   local work="$TMP/no-reqs" state="$SCRIPTS/feature-state.sh" out rc ok f
   printf 'no-requirements\n'
@@ -2499,6 +2569,7 @@ start_job spec-review      check_spec_review
 start_job conf-set         check_conf_set
 start_job stacks           check_stacks
 start_job collisions       check_collisions
+start_job findings         check_findings
 start_job no-requirements  check_no_requirements
 start_job jira-tokens      check_jira_tokens
 start_job lib-source       check_suite lib-source
