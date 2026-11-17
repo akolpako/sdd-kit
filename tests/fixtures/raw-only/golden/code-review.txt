@@ -5,7 +5,6 @@ STAGE=raw
 BASE=
 ROOT=
 DIFF=
-CHANGED=0
 REVIEW_PATH=_docs/Cart/review.md
 REVIEW_PREVIOUS=
 

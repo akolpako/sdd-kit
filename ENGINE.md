@@ -251,6 +251,8 @@ flowchart LR
 - **Nothing tool-specific**: both hosts run the same scripts. `review-set.sh` excludes `_docs/`,
   `.sdd/`, `.claude/` but not `.github/` — the `.gitignore` block already hides the engine there,
   and excluding it would drop the project's workflows.
+  Lock files are left out of the diff by name and listed apart; the reviewer gets each file's
+  line counts and reads the diff file by file.
 - **A review set is one feature's**: nobody commits, so features share a working tree. The
   diff is taken from the commit `/sdd-implement` started on (`spec-edit.sh start`, a file under
   `_docs/<Feature>/`, never a git ref), and files already dirty then are named as possibly

@@ -11,9 +11,19 @@ The review set of this run, resolved already:
 BASE={{BASE}}
 ROOT={{ROOT}}
 DIFF={{DIFF}}
+DIFF_FILE={{DIFF_FILE}}
 
 `BASE=(none)` means no base branch was found: the set is the uncommitted
 changes alone, and the review is partial and says so.
+
+The files of the diff, `<added>|<deleted>|<path>` — `-|-|` is a binary file:
+
+{{SECTION:FILES}}
+
+Lock files of the set, left out of the diff and of every list here — the
+report names them as not read:
+
+{{SECTION:EXCLUDED}}
 
 Untracked files, part of the same set:
 

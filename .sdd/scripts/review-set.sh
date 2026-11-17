@@ -12,6 +12,7 @@
 #                           branch was found
 #   ROOT=<commit>           what the diff is taken against; empty when nothing is committed yet
 #   DIFF=<command>          the exact diff command of this review set
+#   DIFF_FILE=<command>     the same diff for one file: the path goes last
 #   NOTES:                  what was decided about the base, when it was not
 #                           simply used; empty otherwise
 #   UNTRACKED:              one path per line, then an empty line
@@ -19,8 +20,16 @@
 #                           that were already changed or untracked at the
 #                           starting point: they are reviewed, and may carry
 #                           someone else's work. Empty without a starting point
-#   FILES:                  the paths the diff changes, one per line; with
+#   FILES:                  one record per file the diff changes,
+#                           `<added>|<deleted>|<path>` as `git diff --numstat
+#                           --no-renames` counts them (`-|-|` for a binary); with
 #                           UNTRACKED: they are the whole set
+#   EXCLUDED:               the lock files the set changes or adds, one path per
+#                           line — left out of DIFF, FILES: and UNTRACKED:
+#
+# A lock file is written by a package manager, thousands of lines nobody reads,
+# and is named rather than diffed: by file name, the short list in LOCKS below.
+# Generated code cannot be told by its name, so nothing else is left out.
 #
 # The base is a fork point, not the first name on a preference list: of the
 # integration branches that exist, the one whose merge-base with HEAD sits
@@ -132,16 +141,32 @@ fi
 # project its own workflows, issue templates and dependabot.yml.
 EXCLUDE=(':(exclude)_docs/' ':(exclude).sdd/' ':(exclude).claude/')
 EXCLUDES="':(exclude)_docs/' ':(exclude).sdd/' ':(exclude).claude/'"
+# `*.lock` is yarn, Gemfile, Cargo, composer, poetry and Pipfile at once; a file
+# of another kind that ends so is still named under EXCLUDED:, never lost.
+LOCKS="*.lock package-lock.json npm-shrinkwrap.json pnpm-lock.yaml go.sum gradle.lockfile"
+LOCK_ONLY=()
+set -f
+for l in $LOCKS; do
+  EXCLUDE+=(":(exclude,glob)**/$l")
+  EXCLUDES="$EXCLUDES ':(exclude,glob)**/$l'"
+  LOCK_ONLY+=(":(glob)**/$l")
+done
+set +f
 
 if [[ -n "$ROOT" ]]; then
+  DIFF_ARGS=("$ROOT")
   DIFF="git diff $ROOT -- . $EXCLUDES"
+  DIFF_FILE="git diff $ROOT --"
 else
+  DIFF_ARGS=(--cached)
   DIFF="git diff --cached -- . $EXCLUDES"
+  DIFF_FILE="git diff --cached --"
 fi
 
 printf 'BASE=%s\n' "$BASE"
 printf 'ROOT=%s\n' "$ROOT"
 printf 'DIFF=%s\n' "$DIFF"
+printf 'DIFF_FILE=%s\n' "$DIFF_FILE"
 
 printf '\nNOTES:\n'
 [[ -n "$NOTES" ]] && printf '%s\n' "$NOTES"
@@ -150,17 +175,22 @@ UNTRACKED="$(git ls-files --others --exclude-standard -- . "${EXCLUDE[@]}")"
 printf '\nUNTRACKED:\n'
 [[ -n "$UNTRACKED" ]] && printf '%s\n' "$UNTRACKED"
 
-if [[ -n "$ROOT" ]]; then
-  FILES="$(git diff --name-only "$ROOT" -- . "${EXCLUDE[@]}")"
-else
-  FILES="$(git diff --cached --name-only -- . "${EXCLUDE[@]}")"
-fi
+# Renames are counted as a deletion and an addition: a numstat rename line
+# spells both paths in one field, and a path is what every reader takes from it.
+FILES="$(git diff --numstat --no-renames "${DIFF_ARGS[@]}" -- . "${EXCLUDE[@]}" | awk -F'\t' 'NF >= 3 { p = $3; for (i = 4; i <= NF; i++) p = p "\t" $i; print $1 "|" $2 "|" p }')"
+PATHS=""
+while IFS= read -r r; do
+  [[ -n "$r" ]] || continue
+  r="${r#*|}"; PATHS="$PATHS${r#*|}"$'\n'
+done <<< "$FILES"
+EXCLUDED="$( { git diff --name-only --no-renames "${DIFF_ARGS[@]}" -- "${LOCK_ONLY[@]}"; \
+               git ls-files --others --exclude-standard -- "${LOCK_ONLY[@]}"; } | grep -v -e '^_docs/' -e '^\.sdd/' -e '^\.claude/')"
 
 # Compared by the shell: the lists are paths, one per line, written by the same
-# two git commands on both sides.
+# git commands on both sides.
 printf '\nPREEXISTING:\n'
 if [[ -n "$START" ]]; then
-  SET=$'\n'"$FILES"$'\n'"$UNTRACKED"$'\n'
+  SET=$'\n'"$PATHS"$'\n'"$UNTRACKED"$'\n'
   while IFS= read -r p; do
     [[ -n "$p" && "$SET" == *$'\n'"$p"$'\n'* ]] && printf '%s\n' "$p"
   done <<< "$(md_start_dirty "$START_FILE")"
@@ -168,4 +198,7 @@ fi
 
 printf '\nFILES:\n'
 [[ -n "$FILES" ]] && printf '%s\n' "$FILES"
+
+printf '\nEXCLUDED:\n'
+[[ -n "$EXCLUDED" ]] && printf '%s\n' "$EXCLUDED"
 exit 0

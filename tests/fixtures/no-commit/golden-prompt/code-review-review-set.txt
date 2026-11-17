@@ -18,10 +18,21 @@ The review set of this run, resolved already:
 
 BASE=(none)
 ROOT=(none)
-DIFF=git diff --cached -- . ':(exclude)_docs/' ':(exclude).sdd/' ':(exclude).claude/'
+DIFF=git diff --cached -- . ':(exclude)_docs/' ':(exclude).sdd/' ':(exclude).claude/' ':(exclude,glob)**/*.lock' ':(exclude,glob)**/package-lock.json' ':(exclude,glob)**/npm-shrinkwrap.json' ':(exclude,glob)**/pnpm-lock.yaml' ':(exclude,glob)**/go.sum' ':(exclude,glob)**/gradle.lockfile'
+DIFF_FILE=git diff --cached --
 
 `BASE=(none)` means no base branch was found: the set is the uncommitted
 changes alone, and the review is partial and says so.
+
+The files of the diff, `<added>|<deleted>|<path>` — `-|-|` is a binary file:
+
+3|0|pom.xml
+7|0|src/main/java/com/example/CartService.java
+
+Lock files of the set, left out of the diff and of every list here — the
+report names them as not read:
+
+(none)
 
 Untracked files, part of the same set:
 

@@ -8,8 +8,8 @@ How a change set is reviewed against its specification on this project. **Which*
 
 - Load every installed skill whose description matches what the diff touches. Report a finding only when the code violates the source that wins the precedence order.
 - Read `new-requirements.md`, `design.md`, `tasks.md` from the feature's `_docs/` folder, and `code-style.md` and the architecture baseline from `_docs/`. The baseline is entered through the file the assignment names — `_docs/architecture.index.md`, whose table says which section file holds which topic, or `_docs/architecture.md`; read the sections this review touches, not all of them. It is the architectural yardstick the design does not repeat; a deviation from it is a finding.
-- Use the review set handed over with the assignment — `BASE`, `ROOT`, the `DIFF` command, the untracked files, and the files that were dirty before the feature started — never a detection of your own.
-- Run the `DIFF` command and read its output; a large one is sliced through a pipe and re-run for a second look. Write no scratch file, and least of all outside the project.
+- Use the review set handed over with the assignment — `BASE`, `ROOT`, the `DIFF` command, the files of the diff with their line counts, the lock files left out, the untracked files, and the files that were dirty before the feature started — never a detection of your own.
+- Classify the set (§2) from the line counts before reading any diff. Then read it file by file — `DIFF_FILE` with the path after it — in the order the passes need them, leaving out what §2 excludes; the whole `DIFF` is for a set small enough to read at once. Write no scratch file, and least of all outside the project.
 - Read every untracked file in full — a new file appears in no diff.
 - A spec file the assignment names that you cannot read is reported, never assumed away.
 
@@ -20,8 +20,8 @@ Before a single pass of §3, decide which of these the review set is. The class 
 | Review set | What the review does |
 |------------|----------------------|
 | **Empty or trivial** — whitespace, reformatting, comment reflow, version bumps with no behaviour behind them | Report "no substantive changes" and stop; never invent findings to fill a report. |
-| **Large** — more than ~6000 changed lines | Business logic and security first, the rest as far as it goes. Say that the review was truncated by priority, and name what was left unreviewed. |
-| **Binary or generated files** — lock files, build output, minified bundles, generated clients, snapshots | Excluded from the passes; list them so nobody assumes they were read. Review the generator's input instead when it is in the set. |
+| **Large** — more than ~6000 changed lines, added and deleted counted from the list of files | Business logic and security first, the rest as far as it goes. Say that the review was truncated by priority, and name what was left unreviewed. |
+| **Binary or generated files** — lock files, build output, minified bundles, generated clients, snapshots | Excluded from the passes, and their diff is not read — told by the list of files, not after reading. List them, the lock files the assignment left out included, so nobody assumes they were read. Review the generator's input instead when it is in the set. |
 | **Deletions only** | What the deletion left behind: callers of the removed code, dead code it orphaned, tests still asserting behaviour that no longer exists, config and docs still naming it. |
 | **Tests only** | The assertions themselves: do they assert the behaviour or only run it, are they isolated, are they deterministic. A test that passes for a reason the requirement does not name is a finding. |
 | **Configuration only** | Secrets, parity between environments, feature-flag defaults, and the path where the new setting is absent. |

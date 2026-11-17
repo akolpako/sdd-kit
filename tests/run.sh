@@ -2278,6 +2278,16 @@ check_start() {
   printf '%s\n' "$out" | grep -q 'Other.java' && ok=1
   prop_check start "the set starts at the feature, the dirty files named" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
 
+  mkdir -p "$work/web" && printf '{}\n' > "$work/web/package-lock.json" && printf 'x\n' > "$work/yarn.lock"
+  printf 'more\n' >> "$work/Other.java"
+  out="$(cd "$work" && "$SCRIPTS/review-set.sh" --start=_docs/Cart/.implement-start 2>&1)"
+  ok=0
+  [[ "$(sec EXCLUDED)" == "web/package-lock.json,yarn.lock," ]] || ok=1
+  [[ "$(sec UNTRACKED)" == "Dirty.java,Mine.java," ]] || ok=1
+  [[ "$(sec FILES)" == "1|0|Other.java," ]] || ok=1
+  rm -rf "$work/web" "$work/yarn.lock"; ( cd "$work" && git checkout -q -- Other.java )
+  prop_check start "lock files are named apart, the diff's files counted" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
   out="$(cd "$work" && "$SCRIPTS/review-set.sh" base --start=_docs/Cart/.implement-start 2>&1)"
   ok=0
   printf '%s\n' "$out" | grep -q 'Other.java' || ok=1

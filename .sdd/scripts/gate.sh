@@ -52,7 +52,11 @@
 # Under --prompt-data, and only there:
 #   SPEC_FILES:   the paths of this run, one per line — every command
 #   COMPILATION_ENTRIES:  review
-#   UNTRACKED:, PREEXISTING:, BLOCKED:, BUILD:  code-review — PREEXISTING: is
+#   DIFF_FILE, FILES:, EXCLUDED:, UNTRACKED:, PREEXISTING:, BLOCKED:, BUILD:
+#                 code-review — DIFF_FILE, FILES: (`<added>|<deleted>|<path>`)
+#                 and EXCLUDED: (the lock files left out of the diff) are
+#                 review-set.sh's, so the reviewer sizes the set and reads it
+#                 file by file before any diff; PREEXISTING: is
 #                 the files of the set already dirty when the feature's
 #                 implementation started (review-set.sh); BUILD: is the human's
 #                 build command, one `<stack>: <command>` line per answer, so the
@@ -72,7 +76,7 @@
 #                feature-state.sh — the stops of the coverage matrix)
 #   implement    TASKS_DONE, TASKS_TOTAL, ROLE_ORDER, BUILD_BACKEND,
 #                BUILD_FRONTEND, BASELINE
-#   code-review  BASE, ROOT, DIFF, CHANGED, REVIEW_PATH, REVIEW_PREVIOUS
+#   code-review  BASE, ROOT, DIFF, REVIEW_PATH, REVIEW_PREVIOUS
 #   code-fix     REVIEW_PATH, REVIEW_DATE, REVIEW_ROOT, REVIEW_VERDICT,
 #                ROOT, BUILD_BACKEND, BUILD_FRONTEND, and FINDINGS:
 #                — one record per finding of the report, in its order,
@@ -840,19 +844,24 @@ check_build_config() {
 }
 
 # ── The review set ────────────────────────────────────────────────
-RS_BASE=""; RS_ROOT=""; RS_DIFF=""; RS_UNTRACKED=""; RS_PRE=""; RS_NOTES=""; CHANGED=0
+RS_BASE=""; RS_ROOT=""; RS_DIFF=""; RS_DIFF_FILE=""; RS_UNTRACKED=""; RS_PRE=""; RS_NOTES=""
+RS_FILES=""; RS_EXCLUDED=""; CHANGED=0
 if [[ $NEED_RS -eq 1 && $RS_RC -eq 0 ]]; then
   RS_BASE="$(kv "$RS_OUT" BASE)"
   RS_ROOT="$(kv "$RS_OUT" ROOT)"
   RS_DIFF="$(kv "$RS_OUT" DIFF)"
+  RS_DIFF_FILE="$(kv "$RS_OUT" DIFF_FILE)"
+  RS_FILES="$(section "$RS_OUT" FILES)"
+  RS_EXCLUDED="$(section "$RS_OUT" EXCLUDED)"
   RS_NOTES="$(section "$RS_OUT" NOTES)"
   RS_UNTRACKED="$(section "$RS_OUT" UNTRACKED)"
   RS_PRE="$(section "$RS_OUT" PREEXISTING)"
-  # One path per line in both lists: a file the diff changes, or one git does
-  # not track yet.
+  # One file per line in every list: one the diff changes, one git does not
+  # track yet, or a lock file left out of both — a set of lock files alone is
+  # still not empty.
   while IFS= read -r p; do
     [[ -n "$p" ]] && CHANGED=$(( CHANGED + 1 ))
-  done <<< "$(section "$RS_OUT" FILES)"$'\n'"$RS_UNTRACKED"
+  done <<< "$RS_FILES"$'\n'"$RS_UNTRACKED"$'\n'"$RS_EXCLUDED"
 fi
 
 # ── The next free REQ number ──────────────────────────────────────
@@ -1355,7 +1364,8 @@ case "$CMD" in
     printf 'BASE=%s\n' "$RS_BASE"
     printf 'ROOT=%s\n' "$RS_ROOT"
     printf 'DIFF=%s\n' "$RS_DIFF"
-    printf 'CHANGED=%s\n' "$CHANGED"
+    # The renderer's alone, like the sections: it is the prompt's way to one file.
+    [[ ( "$GATE" == "ok" || "$GATE" == "ask" ) && $PROMPT_DATA -eq 1 ]] && printf 'DIFF_FILE=%s\n' "$RS_DIFF_FILE"
     printf 'REVIEW_PATH=_docs/%s/review.md\n' "$FOLDER"
     printf 'REVIEW_PREVIOUS=%s\n' "$R_DATE"
     ;;
@@ -1490,6 +1500,10 @@ case "$CMD" in
     ;;
   code-review)
     if [[ $PROMPT_ONLY -eq 1 ]]; then
+      printf '\nFILES:\n'
+      [[ -n "$RS_FILES" ]] && printf '%s\n' "$RS_FILES"
+      printf '\nEXCLUDED:\n'
+      [[ -n "$RS_EXCLUDED" ]] && printf '%s\n' "$RS_EXCLUDED"
       printf '\nUNTRACKED:\n'
       [[ -n "$RS_UNTRACKED" ]] && printf '%s\n' "$RS_UNTRACKED"
       printf '\nPREEXISTING:\n'
