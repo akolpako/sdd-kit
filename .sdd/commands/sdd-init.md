@@ -22,6 +22,8 @@ Writes the project-level spec files. No arguments. Safe to re-run: a file that a
 ## Process
 
 1. **Gate:** run `.sdd/scripts/gate.sh init`. `GATE=ok` goes on.
+   - `ask` is the build question, on brownfield only: one line per stack this project has and no answer for. No yes answers it — put each line to the human and write the answer with `.sdd/scripts/spec-edit.sh conf-set <KEY> -`, the key the line names and the command on stdin, before anything else happens. Whatever comes back is the answer, unread and unjudged: a different command, a profile, a wrapper, a flag. `.sdd/sdd.conf` itself is never opened here: it may hold a `JIRA_TOKEN`.
+   - On greenfield nothing is asked: the first `/sdd-implement` asks it, once there is a build to name.
 
 2. **Scaffold:** run `.sdd/scripts/spec-edit.sh scaffold init`. Both branches, and before anything is spawned. `COPIED:` and `UNTOUCHED:` are the files waiting to be written into; `SKIPPED:` already holds answers of its own. `MODE=` says which shape the architecture baseline is in: `split`, a folder of sections under `_docs/architecture/` entered through `_docs/architecture.index.md`, or `mono`, the single `_docs/architecture.md`. A project that wants the single file on a fresh setup gets it from `scaffold init --mono`.
 
@@ -31,29 +33,6 @@ Writes the project-level spec files. No arguments. Safe to re-run: a file that a
 
 5. **Rebuild the index:** on `MODE=split`, run `.sdd/scripts/spec-edit.sh arch-index` once the spawn returns. The role deletes the sections this project has nothing to say about and adds the ones the starting set has no file for, and the index is what says which sections it ended up with. Skipped on `MODE=mono`, which has no index.
 
-6. **The build command** — the orchestrator's own. The answer is what every later build runs.
+6. **Verify:** run `.sdd/scripts/gate.sh init --verify`.
 
-   **Whether to ask.** A `DETECTED:` row is `<dir>|<build file>|<command>|<stack>`. *Answered* means `BUILD_ROOT`, `BUILD_BACKEND` or `BUILD_FRONTEND` already carries a value for that stack; the gate prints the row either way.
-
-   | `DETECTED:` row | The stack | `PROJECT` | What happens |
-   |---|---|---|---|
-   | one | unanswered | brownfield | **ask**, naming the build file found and the command proposed for it |
-   | one | answered | any | **report** it; the question is not asked twice |
-   | none | unanswered | brownfield | **ask** one open question — a Makefile, a script or a monorepo task runner is a build the detection does not know |
-   | none | unanswered | greenfield | **defer**: say the question waits, and that the first `/sdd-implement` asks it |
-   | any | answered | greenfield | **report** it |
-
-   Whatever comes back is the answer, unread and unjudged: a different command, a profile, a wrapper, a flag.
-
-   **Where the answer goes** — `.sdd/scripts/spec-edit.sh conf-set <KEY> -`, the command on stdin, one call per answer:
-
-   | The project | Keys written |
-   |---|---|
-   | both stacks | `SDD_BUILD_BACKEND`, `SDD_BUILD_FRONTEND` |
-   | everything else | `SDD_BUILD_ROOT` |
-
-   The script creates `.sdd/sdd.conf` when it is not there, rewrites only the line of that key, and leaves an answer already on file alone. The file itself is never opened here: it may hold a `JIRA_TOKEN`.
-
-7. **Verify:** run `.sdd/scripts/gate.sh init --verify`.
-
-8. **Report the next step:** name the files and say to read them before going further — `code-style.md` says in its own header how to approve what was proposed. Then `/sdd-next-story <FeatureName>` starts the first feature.
+7. **Report the next step:** name the files and say to read them before going further, and the build commands on file — the gate's `BUILD_*`, or the answers of step 1. `code-style.md` says in its own header how to approve what was proposed. Then `/sdd-next-story <FeatureName>` starts the first feature.

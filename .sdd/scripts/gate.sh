@@ -61,6 +61,7 @@
 # GATE=done no record section is — no role is spawned from them. Per command,
 # on top of the common part:
 #   init         PROJECT=greenfield|brownfield, TEMPLATES=ok|missing:<file,...>,
+#                (on brownfield, an ASK: per stack with no build command)
 #                EXISTING=<file,...>, BUILD_ROOT, BUILD_BACKEND, BUILD_FRONTEND,
 #                DETECTED:
 #   new          NAME_OK=yes|no, NAME_WARN=<text>, RAW=..., FEATURES:
@@ -782,6 +783,12 @@ check_init() {
          -o -name '*.js' -o -name '*.py' -o -name '*.go' -o -name '*.rs' \
          -o -name '*.rb' -o -name '*.php' -o -name '*.cs' \) -print 2>/dev/null | head -1)"
   if [[ -n "$hits" ]]; then PROJECT="brownfield"; else PROJECT="greenfield"; fi
+
+  # The build question, asked here and before the long spawn rather than after
+  # it: a brownfield project has a build to name. A greenfield one has none yet
+  # — its first /sdd-implement asks.
+  [[ "$PROJECT" == "brownfield" ]] && check_build_config
+  return 0
 }
 
 check_new() {

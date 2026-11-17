@@ -1,4 +1,4 @@
-GATE=ok
+GATE=ask
 PROJECT=brownfield
 TEMPLATES=ok
 EXISTING=requirements.md
@@ -15,6 +15,7 @@ DETECTED:
 STOP:
 
 ASK:
+No build command for the backend stack: .sdd/sdd.conf holds no SDD_BUILD_BACKEND, and pom.xml says this project has that stack. Detection proposes `mvn clean verify` — accept it or name another; the answer is written with `spec-edit.sh conf-set SDD_BUILD_BACKEND`. A command is one line run from the project root; nothing is built until it is there, because a proposal is not an answer.
 
 WARN:
 
