@@ -94,6 +94,16 @@
 #       feature that declares no requirement, and so has no compilation entry
 #       to be told actualized by. A feature that declares one is a stop: its
 #       entries are that mark, and a second one could disagree with them.
+#   start <Feature>
+#       Record where the feature's code starts, into
+#       _docs/<Feature>/.implement-start: the commit HEAD is on, and every
+#       path outside _docs/, .sdd/ and .claude/ that is already changed or
+#       untracked — work the review set will hold that may not be this
+#       feature's. Git is only read. Written once: a file already there is kept
+#       as it is (START=kept), or the starting point would move with every
+#       re-run. Outside a git repository, or before its first commit, there is
+#       nothing to take a diff from, and nothing is written (START=none, the
+#       reason under NOTES:). Prints START=written|kept|none, COMMIT=, FILE=.
 #   conf-set <KEY> <value>
 #       Write `KEY=value` into .sdd/sdd.conf: the line already carrying KEY is
 #       rewritten, otherwise one is appended, and the file is created when it
@@ -164,8 +174,8 @@ set -- ${ARGS[@]+"${ARGS[@]}"}
 
 OP="${1:-}"
 case "$OP" in
-  backup|status|verdict-stale|scaffold|arch-index|marker|compile-entry|actualized|conf-set|section|answer) shift ;;
-  "") printf 'ERROR=no operation: spec-edit.sh <op> — backup, status, verdict-stale, scaffold, arch-index, marker, compile-entry, actualized, conf-set, section, answer\n' >&2; exit 1 ;;
+  backup|status|verdict-stale|scaffold|arch-index|marker|compile-entry|actualized|start|conf-set|section|answer) shift ;;
+  "") printf 'ERROR=no operation: spec-edit.sh <op> — backup, status, verdict-stale, scaffold, arch-index, marker, compile-entry, actualized, start, conf-set, section, answer\n' >&2; exit 1 ;;
   *)  printf 'ERROR=unknown operation: %s\n' "$OP" >&2; exit 1 ;;
 esac
 
@@ -405,6 +415,36 @@ actualized)
     || die2 "$path carries no status — the mark goes under it, and is not added where the format has no field block"
   replace_file "$path" "$TMP/f"
   printf 'ACTUALIZED=%s\nFILE=%s\n' "$TODAY" "$path"
+  ;;
+
+# ── start ─────────────────────────────────────────────────────────
+start)
+  FOLDER="$(resolve_folder "${1:-}")" || exit 2
+  path="$SPECS/$FOLDER/$MD_START_FILE"
+  if [[ -f "$path" ]]; then
+    printf 'START=kept\nCOMMIT=%s\nFILE=%s\n' "$(md_start_commit "$path")" "$path"
+    exit 0
+  fi
+  why=""
+  if ! git rev-parse --git-dir >/dev/null 2>&1; then
+    why="Not a git repository — there is no commit to start the review set from, and /sdd-code-review needs git anyway."
+  elif ! commit="$(git rev-parse -q --verify HEAD 2>/dev/null)"; then
+    why="Nothing is committed yet — there is no commit to start the review set from, and the set is the staged tree whatever is recorded."
+  fi
+  if [[ -n "$why" ]]; then
+    printf 'START=none\nCOMMIT=\nFILE=\n\nNOTES:\n%s\n' "$why"
+    exit 0
+  fi
+  # The same paths, with the same exclusions, that review-set.sh compares
+  # against: changed against HEAD, staged or not, and untracked.
+  EXCL=(':(exclude)_docs/' ':(exclude).sdd/' ':(exclude).claude/')
+  {
+    printf 'COMMIT=%s\nDATE=%s\n\nDIRTY:\n' "$commit" "$TODAY"
+    git diff --name-only HEAD -- . "${EXCL[@]}" \
+      && git ls-files --others --exclude-standard -- . "${EXCL[@]}"
+  } > "$TMP/f" || { printf 'ERROR=git could not list the working tree — no starting point is recorded from half a list\n' >&2; exit 1; }
+  replace_file "$path" "$TMP/f"
+  printf 'START=written\nCOMMIT=%s\nFILE=%s\n' "$commit" "$path"
   ;;
 
 # ── arch-index ────────────────────────────────────────────────────

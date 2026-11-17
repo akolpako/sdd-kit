@@ -16,7 +16,7 @@ Safe to re-run: `[x]` is the only mark that takes a task out of the work, so a b
   - the output of `.sdd/scripts/gate.sh implement`
   - the prompts `.sdd/scripts/spawn-prompt.sh` renders
   - never the spec files — those are the roles' to read
-- **Writes:** nothing — the code, the tests, and the task marks in `_docs/<FeatureName>/tasks.md` are the roles'
+- **Writes:** the feature's starting point, `_docs/<FeatureName>/.implement-start`, once — the code, the tests, and the task marks in `_docs/<FeatureName>/tasks.md` are the roles'
 
 ## Process
 
@@ -25,7 +25,7 @@ Safe to re-run: `[x]` is the only mark that takes a task out of the work, so a b
    - An `ask` about the build command is the exception: no yes answers it, only the human's command, written with `.sdd/scripts/spec-edit.sh conf-set <KEY> -` (the command on stdin). Nothing is built or spawned until it is there.
    - `done` means every task is `[x]`.
 
-2. **Baseline build:**
+2. **Starting point, then the baseline build:** run `.sdd/scripts/spec-edit.sh start <FeatureName>` first. It records the commit and the files already dirty, so `/sdd-code-review` reviews this feature's code and not whatever else the working tree holds; a re-run keeps the first record (`START=kept`), and `START=none` — no git, or no commit yet — is not a stop. Then the baseline:
 
    | `BASELINE` | What to run |
    |---|---|

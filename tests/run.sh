@@ -2156,6 +2156,61 @@ EOF
   prop_check blocked-set "the report lists the markers in the tree, _docs/ aside" "$ok" "$out — $(sed -n '/^## Older/,$p' "$proj/_docs/Cart/review.md" | tr '\n' '~')"
 }
 
+# The starting point of a feature: written once, read by the review set, which
+# then holds this feature's code and names what was dirty before it began.
+check_start() {
+  local work="$TMP/start" out ok first sec
+
+  printf 'start\n'
+  rm -rf "$work" && mkdir -p "$work/_docs/Cart" || exit 1
+  out="$(cd "$work" && "$EDITOR_SH" start Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^START=none$' || ok=1
+  [[ -e "$work/_docs/Cart/.implement-start" ]] && ok=1
+  prop_check start "outside git nothing is written" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  ( cd "$work" && git init -q . && git add -A && git commit -qm base --allow-empty && git branch -M base \
+      && git checkout -qb feature && printf 'other\n' > Other.java && git add -A && git commit -qm other \
+      && printf 'dirty\n' > Dirty.java ) >/dev/null 2>&1
+  out="$(cd "$work" && "$EDITOR_SH" start Cart 2>&1)"
+  first="$(cd "$work" && git rev-parse HEAD)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^START=written$' || ok=1
+  grep -qx "COMMIT=$first" "$work/_docs/Cart/.implement-start" || ok=1
+  grep -qx 'Dirty.java' "$work/_docs/Cart/.implement-start" || ok=1
+  prop_check start "the commit and the dirty files are recorded" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  ( cd "$work" && git commit -q --allow-empty -m later ) >/dev/null 2>&1
+  out="$(cd "$work" && "$EDITOR_SH" start Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^START=kept$' || ok=1
+  grep -qx "COMMIT=$first" "$work/_docs/Cart/.implement-start" || ok=1
+  prop_check start "a re-run keeps the first record" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  printf 'class Mine {}\n' > "$work/Mine.java"
+  out="$(cd "$work" && "$SCRIPTS/review-set.sh" --start=_docs/Cart/.implement-start 2>&1)"
+  sec() { printf '%s\n' "$out" | awk -v h="$1:" '/^[A-Z_]+:$/ { inside = ($0 == h); next } inside && NF' | tr '\n' ','; }
+  ok=0
+  printf '%s\n' "$out" | grep -qx "ROOT=$first" || ok=1
+  [[ "$(sec UNTRACKED)" == "Dirty.java,Mine.java," ]] || ok=1
+  [[ "$(sec PREEXISTING)" == "Dirty.java," ]] || ok=1
+  printf '%s\n' "$out" | grep -q 'Other.java' && ok=1
+  prop_check start "the set starts at the feature, the dirty files named" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  out="$(cd "$work" && "$SCRIPTS/review-set.sh" base --start=_docs/Cart/.implement-start 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q 'Other.java' || ok=1
+  [[ -z "$(sec PREEXISTING)" ]] || ok=1
+  prop_check start "an explicit base wins over the starting point" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  ( cd "$work" && git reset -q --hard base && git commit -q --allow-empty -m rewritten ) >/dev/null 2>&1
+  out="$(cd "$work" && "$GATE" code-review Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q 'no longer in the history of HEAD' || ok=1
+  printf '%s\n' "$out" | grep -qx "ROOT=$first" && ok=1
+  prop_check start "a starting commit a reset dropped falls back with a warning" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+}
+
 # The two stops of /sdd-spec-review that used to be judged by eye: the coverage
 # matrix, and whether a file with a question still on it may be called ready.
 check_spec_review() {
@@ -2591,6 +2646,7 @@ start_job relations        check_relations
 start_job text             check_text
 start_job raw              check_raw
 start_job blocked-set      check_blocked_set
+start_job start            check_start
 start_job spec-review      check_spec_review
 start_job conf-set         check_conf_set
 start_job stacks           check_stacks

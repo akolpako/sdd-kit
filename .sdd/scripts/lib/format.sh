@@ -51,6 +51,13 @@
 #   md_findings <file>             one record per finding of a review.md, in
 #                                  file order: `F-##|severity|category|file|line`,
 #                                  `-` for a part the finding does not give
+#   md_feature_folder <specs> <name>
+#                                  the folder under <specs> the name is on disk:
+#                                  itself, else the one differing in case alone,
+#                                  else the name as given
+#   md_start_commit <file>         the commit of a feature's starting point,
+#   md_start_dirty <file>          and the paths that were dirty at it — the
+#                                  file is `_docs/<Feature>/$MD_START_FILE`
 #
 # The `_set` and `_put` readers write nothing: they print, and the caller decides
 # whether the file is replaced.
@@ -376,6 +383,55 @@ md_name_problem() {
   esac
   bad="$(printf '%s' "$1" | LC_ALL=C tr -d 'A-Za-z0-9._-')"
   [[ -z "$bad" ]] || printf "it holds '%s'" "$bad"
+}
+
+# The folder a feature name is on disk under <specs>. On a case-insensitive
+# filesystem `_docs/cart` opens `_docs/Cart`, and a step that only compared the
+# argument with itself would never notice — so the name is compared against the
+# folders actually there: the same name first, then one differing in case alone.
+# A name no folder matches comes back as given. Dot-folders and links are not
+# features. Read by the shell, no program started.
+md_feature_folder() {
+  local d name found=""
+  for d in "$1"/*/; do
+    d="${d%/}"; name="${d##*/}"
+    [[ -d "$d" && ! -L "$d" ]] || continue
+    [[ "$name" == "$2" ]] && { printf '%s' "$name"; return 0; }
+    if [[ -z "$found" ]]; then
+      shopt -s nocasematch
+      [[ "$name" == "$2" ]] && found="$name"
+      shopt -u nocasematch
+    fi
+  done
+  printf '%s' "${found:-$2}"
+}
+
+# Where a feature's code starts: `_docs/<Feature>/.implement-start`, written
+# once by `spec-edit.sh start` before /sdd-implement spawns its first role and
+# never rewritten, read by review-set.sh. Nothing is written into git for it —
+# the commands that took it only read. The format:
+#   COMMIT=<the commit HEAD was on>
+#   DATE=<YYYY-MM-DD>
+#
+#   DIRTY:
+#   <a path the working tree held changed or untracked at that moment>
+MD_START_FILE=".implement-start"
+md_start_commit() {
+  local line
+  [[ -f "$1" ]] || return 0
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ "$line" == COMMIT=* ]] && { printf '%s' "${line#COMMIT=}"; return 0; }
+  done < "$1"
+  return 0
+}
+md_start_dirty() {
+  local line inside=0
+  [[ -f "$1" ]] || return 0
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ "$line" == "DIRTY:" ]]; then inside=1; continue; fi
+    [[ $inside -eq 1 && -n "$line" ]] && printf '%s\n' "$line"
+  done < "$1"
+  return 0
 }
 
 # The feature an entry belongs to — the first name inside its `*(Source: …)*`,

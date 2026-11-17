@@ -52,8 +52,10 @@
 # Under --prompt-data, and only there:
 #   SPEC_FILES:   the paths of this run, one per line — every command
 #   COMPILATION_ENTRIES:  review
-#   UNTRACKED:, BLOCKED:, BUILD:  code-review — BUILD: is the human's build
-#                 command, one `<stack>: <command>` line per answer, so the
+#   UNTRACKED:, PREEXISTING:, BLOCKED:, BUILD:  code-review — PREEXISTING: is
+#                 the files of the set already dirty when the feature's
+#                 implementation started (review-set.sh); BUILD: is the human's
+#                 build command, one `<stack>: <command>` line per answer, so the
 #                 reviewer runs the tests with it and with nothing of its own
 #   TODO:                 implement
 #
@@ -383,8 +385,10 @@ run_child() {
 [[ $NEED_FS -eq 1 ]] && run_child fs "$SCRIPT_DIR/feature-state.sh" "$FEATURE" "$ROOT_DIR"
 [[ $NEED_BC -eq 1 ]] && run_child bc "$SCRIPT_DIR/build-command.sh" "$ROOT_DIR"
 [[ $NEED_NR -eq 1 ]] && run_child nr "$SCRIPT_DIR/next-req.sh" "$ROOT_DIR"
-# review-set.sh reads the repository of the directory it runs in.
-[[ $NEED_RS -eq 1 ]] && ( cd "$ROOT_DIR" && run_child rs "$SCRIPT_DIR/review-set.sh" "$BASE_ARG"; wait )
+# review-set.sh reads the repository of the directory it runs in, so the
+# feature's starting point is named relative to it.
+[[ $NEED_RS -eq 1 ]] && ( cd "$ROOT_DIR" && run_child rs "$SCRIPT_DIR/review-set.sh" "$BASE_ARG" \
+  "--start=_docs/$(md_feature_folder "_docs" "$FEATURE")/$MD_START_FILE"; wait )
 wait
 
 # The value as `$(...)` would have given it — trailing newlines dropped — read
@@ -777,13 +781,14 @@ check_build_config() {
 }
 
 # ── The review set ────────────────────────────────────────────────
-RS_BASE=""; RS_ROOT=""; RS_DIFF=""; RS_UNTRACKED=""; RS_NOTES=""; CHANGED=0
+RS_BASE=""; RS_ROOT=""; RS_DIFF=""; RS_UNTRACKED=""; RS_PRE=""; RS_NOTES=""; CHANGED=0
 if [[ $NEED_RS -eq 1 && $RS_RC -eq 0 ]]; then
   RS_BASE="$(kv "$RS_OUT" BASE)"
   RS_ROOT="$(kv "$RS_OUT" ROOT)"
   RS_DIFF="$(kv "$RS_OUT" DIFF)"
   RS_NOTES="$(section "$RS_OUT" NOTES)"
   RS_UNTRACKED="$(section "$RS_OUT" UNTRACKED)"
+  RS_PRE="$(section "$RS_OUT" PREEXISTING)"
   # A stat row carries ' | '; the trailing "N files changed" summary does not.
   n_diff=$(section "$RS_OUT" DIFFSTAT | grep -c ' | ' || true)
   n_untracked=$(printf '%s\n' "$RS_UNTRACKED" | grep -c . || true)
@@ -1503,6 +1508,8 @@ case "$CMD" in
     if [[ $PROMPT_ONLY -eq 1 ]]; then
       printf '\nUNTRACKED:\n'
       [[ -n "$RS_UNTRACKED" ]] && printf '%s\n' "$RS_UNTRACKED"
+      printf '\nPREEXISTING:\n'
+      [[ -n "$RS_PRE" ]] && printf '%s\n' "$RS_PRE"
       printf '\nBLOCKED:\n'
       [[ -n "$BLOCKED_RECS" ]] && printf '%s\n' "$BLOCKED_RECS"
       # The answers as build-command.sh resolved them. A stack command standing

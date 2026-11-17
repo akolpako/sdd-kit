@@ -19,6 +19,12 @@ Untracked files, part of the same set:
 
 {{SECTION:UNTRACKED}}
 
+Files of the set that were already changed or untracked when this feature's
+implementation started — reviewed like the rest, but part of what they hold may
+be someone else's work, and a finding in one says so:
+
+{{SECTION:PREEXISTING}}
+
 Tasks the implementation came back `blocked` on — code missing for these is not
 a finding:
 

@@ -8,7 +8,7 @@ How a change set is reviewed against its specification on this project. **Which*
 
 - Load every installed skill whose description matches what the diff touches. Report a finding only when the code violates the source that wins the precedence order.
 - Read `new-requirements.md`, `design.md`, `tasks.md` from the feature's `_docs/` folder, and `code-style.md` and the architecture baseline from `_docs/`. The baseline is entered through the file the assignment names — `_docs/architecture.index.md`, whose table says which section file holds which topic, or `_docs/architecture.md`; read the sections this review touches, not all of them. It is the architectural yardstick the design does not repeat; a deviation from it is a finding.
-- Use the review set handed over with the assignment — `BASE`, `ROOT`, the `DIFF` command, and the untracked files — never a detection of your own.
+- Use the review set handed over with the assignment — `BASE`, `ROOT`, the `DIFF` command, the untracked files, and the files that were dirty before the feature started — never a detection of your own.
 - Run the `DIFF` command and read its output; a large one is sliced through a pipe and re-run for a second look. Write no scratch file, and least of all outside the project.
 - Read every untracked file in full — a new file appears in no diff.
 - A spec file the assignment names that you cannot read is reported, never assumed away.
