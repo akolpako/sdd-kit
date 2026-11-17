@@ -249,7 +249,8 @@ flowchart LR
 - **Nothing tool-specific**: both hosts run the same scripts. `review-set.sh` excludes `_docs/`,
   `.sdd/`, `.claude/` but not `.github/` — the `.gitignore` block already hides the engine there,
   and excluding it would drop the project's workflows.
-- **bash 3.2 is the floor** (macOS): no `mapfile`, no `${#array[@]}` under `set -u`, no GNU BRE.
+- **bash 3.2 is the floor** (macOS): no `mapfile`, no `${#array[@]}` under `set -u`, no GNU BRE. `tests/run.sh --bash=/bin/bash`
+  runs every script under test on it; the installer alone asks for bash 4+, and says so.
 - **Only the human's build command is run.** `build-command.sh` reads `SDD_BUILD_*` from
   `.sdd/sdd.conf`; detection is a proposal carried in the gate's `ASK:`, never run. Resolved once
   per command run and passed in every prompt.

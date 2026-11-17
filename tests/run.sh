@@ -34,13 +34,17 @@
 # recording them as a tree would record the state the defect has nothing to do
 # with.
 #
-# Usage: run.sh [--update] [--checks=<job,...>|none] [--no-fixtures] [<fixture> ...]
+# Usage: run.sh [--update] [--checks=<job,...>|none] [--no-fixtures] [--bash=<path>] [<fixture> ...]
 #   no argument   every check and every fixture
 #   <fixture>     the name of a directory under fixtures/
 #   --checks=     only these property checks — the names of the queue below
 #                 (`collisions`, `stacks`, `jira-publish`, …); `none` runs no
 #                 check. A name the queue does not hold is an error.
 #   --no-fixtures no fixture at all, only the checks
+#   --bash=       the bash every script under test runs on — `--bash=/bin/bash`
+#                 is macOS's 3.2, the floor the engine keeps to. The runner
+#                 itself stays on the bash that started it: under 3.2 it would
+#                 lose `wait -n` and run every job one after another.
 #   --update      overwrite the golden files with what the scripts print now.
 #                 A golden is a decision: run this only after reading the diff
 #                 the plain run printed, never to make a red run green.
@@ -209,12 +213,15 @@ UPDATE=0
 SELECTED=""
 CHECKS=""
 NO_FIXTURES=0
+BASH_UNDER_TEST=""
 while (( $# > 0 )); do
   case "$1" in
     --update) UPDATE=1 ;;
     --checks=*) CHECKS="${1#--checks=}"; [[ -n "$CHECKS" ]] || { printf 'ERROR=--checks= names nothing: a list of checks, or none\n' >&2; exit 1; } ;;
     --no-fixtures) NO_FIXTURES=1 ;;
-    -h|--help) sed -n '2,44p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --bash=*) BASH_UNDER_TEST="${1#--bash=}"
+              [[ -x "$BASH_UNDER_TEST" ]] || { printf 'ERROR=--bash= is not an executable: %s\n' "$BASH_UNDER_TEST" >&2; exit 1; } ;;
+    -h|--help) sed -n '2,52p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     -*) printf 'ERROR=unknown option: %s\n' "$1" >&2; exit 1 ;;
     *)  SELECTED="$SELECTED $1" ;;
   esac
@@ -232,6 +239,14 @@ TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/sdd-tests.XXXXXX")" || exit 1
 # shell reports collapsed, so a path normalized against the uncollapsed one
 # comes back through the golden with the machine's name still on it.
 TMP_ROOT="$(cd "$TMP_ROOT" && pwd)" || exit 1
+
+# The scripts start with `#!/usr/bin/env bash`, so the first bash on PATH is
+# the one they run on.
+if [[ -n "$BASH_UNDER_TEST" ]]; then
+  mkdir -p "$TMP_ROOT/bash-under-test" && ln -s "$BASH_UNDER_TEST" "$TMP_ROOT/bash-under-test/bash" || exit 1
+  export PATH="$TMP_ROOT/bash-under-test:$PATH"
+  printf 'scripts run on: %s\n' "$("$TMP_ROOT/bash-under-test/bash" -c 'printf %s "$BASH_VERSION"')"
+fi
 trap 'rm -rf "$TMP_ROOT"' EXIT
 mkdir -p "$TMP_ROOT/out" "$TMP_ROOT/res" "$TMP_ROOT/rc" || exit 1
 
