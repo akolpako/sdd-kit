@@ -1,6 +1,6 @@
 ---
 name: jira
-description: 'Reads and writes Jira Server / Data Center issues. Reads an issue into a Markdown file — summary, type, status and the description — with the images and files the description shows downloaded beside it. Publishes from Markdown: creates an issue, replaces an issue''s description or summary, attaches files, always after a dry run the user has seen. Use whenever a Jira issue link (…/browse/<KEY>, …/projects/<P>/issues/<KEY>, ?selectedIssue=<KEY>) or issue key such as ABC-123 has to be read, or something has to be put into Jira, instead of WebFetch or curl, which cannot sign in.'
+description: 'Reads and publishes Jira Server / Data Center issues — an issue into Markdown with the files its description shows, Markdown out to a new issue, a description, a summary or an attachment after a dry run the user has seen. Use whenever a Jira issue link (…/browse/<KEY>, …/projects/<P>/issues/<KEY>, ?selectedIssue=<KEY>) or a key such as ABC-123 is to be read or written, instead of WebFetch or curl, which cannot sign in.'
 ---
 
 # Jira

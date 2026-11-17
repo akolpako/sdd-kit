@@ -1,6 +1,6 @@
 ---
 name: confluence
-description: 'Reads, searches and writes Confluence Data Center pages. Reads a page into a Markdown file, with the images and attachments it shows downloaded beside it. Searches pages by text, title or CQL, in a space or everywhere. Publishes from Markdown: creates a page in a space or under a parent, replaces a page''s body or title, attaches files, always after a dry run the user has seen. Use whenever a Confluence page link (…/spaces/<SPACE>/pages/<id>/…, viewpage.action?pageId=, /display/, /x/) or page id has to be read, a page has to be found, or something has to be put into Confluence, instead of WebFetch or curl, which cannot sign in.'
+description: 'Reads, searches and publishes Confluence Data Center pages — a page into Markdown with its images and attachments, a search by text, title or CQL, Markdown out to a new or existing page after a dry run the user has seen. Use whenever a Confluence page link (…/spaces/<SPACE>/pages/<id>/…, viewpage.action?pageId=, /display/, /x/) or page id is to be read, found or written, instead of WebFetch or curl, which cannot sign in.'
 ---
 
 # Confluence
