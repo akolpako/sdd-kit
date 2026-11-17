@@ -8,10 +8,16 @@
 #
 # Usage: spec-edit.sh <op> [args ...] [--root <project-root>]
 #
-#   backup
-#       Snapshot every .md under _docs/ into _docs/.backup/<YYYYMMDD-HHMMSS>/,
-#       relative paths kept. No list of files to get wrong, and the state of
-#       _docs/ is restorable whole. Nothing copied when nothing is there.
+#   backup [<Feature>]
+#       Snapshot .md files of _docs/ into _docs/.backup/<YYYYMMDD-HHMMSS>/,
+#       relative paths kept: with a feature, its folder and the project's own
+#       files — _docs/*.md and _docs/architecture/ — which is everything a
+#       command writes; without one, every .md under _docs/. No list of files
+#       to get wrong. Nothing copied when nothing is there.
+#       Then the oldest snapshots go, down to the last SDD_BACKUP_KEEP of
+#       .sdd/sdd.conf (a positive number; 20 when it is not one). Only a folder
+#       named as this op names them is ever deleted — anything else under
+#       _docs/.backup/ is somebody's, and stays. PRUNED= is how many went.
 #   status <Feature> ready|draft <file ...>
 #       Rewrite the `> Status:` line of each named file of the feature. A file
 #       without that line is left alone and the op fails: a status is never
@@ -158,6 +164,12 @@ fi
 # entry or a marker is found here exactly where the readers find it, and never
 # inside an HTML comment holding the template's example.
 . "$SCRIPT_DIR/lib/format.sh"
+# .sdd/sdd.conf is read by its one parser, never sourced: it may hold a token.
+if [[ ! -r "$SCRIPT_DIR/lib/conf.sh" ]]; then
+  printf 'ERROR=missing: %s/lib/conf.sh\n' "$SCRIPT_DIR" >&2
+  exit 1
+fi
+. "$SCRIPT_DIR/lib/conf.sh"
 
 # ── Arguments ─────────────────────────────────────────────────────
 ROOT_DIR="."
@@ -319,10 +331,22 @@ case "$OP" in
 # ── backup ────────────────────────────────────────────────────────
 backup)
   [[ -d "$SPECS" ]] || die2 "no $SPECS/ — there is nothing to back up"
-  find "$SPECS" -type f -name '*.md' ! -path "$SPECS/.backup/*" | LC_ALL=C sort > "$TMP/list"
+  if [[ -n "${1:-}" ]]; then
+    # What a command can overwrite: its feature and the project's files. The
+    # other features are not touched by it, and a copy of them on every run is
+    # what filled the folder — and every search of _docs/ — with duplicates.
+    FOLDER="$(resolve_folder "$1")" || exit 2
+    {
+      find "$SPECS" -maxdepth 1 -type f -name '*.md'
+      [[ -d "$SPECS/architecture" ]] && find "$SPECS/architecture" -type f -name '*.md'
+      find "$SPECS/$FOLDER" -type f -name '*.md'
+    } | LC_ALL=C sort -u > "$TMP/list"
+  else
+    find "$SPECS" -type f -name '*.md' ! -path "$SPECS/.backup/*" | LC_ALL=C sort > "$TMP/list"
+  fi
   n=$(grep -c . < "$TMP/list" || true)
   if [[ "$n" -eq 0 ]]; then
-    printf 'BACKUP=\nFILES=0\n\nNOTES:\nNo .md file under %s/ — nothing was copied, and nothing is at risk.\n' "$SPECS"
+    printf 'BACKUP=\nFILES=0\nPRUNED=0\n\nNOTES:\nNo .md file under %s/ — nothing was copied, and nothing is at risk.\n' "$SPECS"
     exit 0
   fi
   DEST="$SPECS/.backup/$(date +%Y%m%d-%H%M%S)"
@@ -332,7 +356,24 @@ backup)
     mkdir -p "$DEST/$(dirname "$rel")" || exit 1
     cp "$f" "$DEST/$rel" || { printf 'ERROR=could not copy %s — nothing is overwritten without its copy\n' "$f" >&2; exit 1; }
   done < "$TMP/list"
-  printf 'BACKUP=%s\nFILES=%s\n\nCOPIED:\n' "$DEST" "$n"
+  # The oldest go once the new one is whole. The glob is sorted, and the names
+  # sort as the times they carry.
+  KEEP="$(sdd_conf_read .sdd/sdd.conf '^SDD_BACKUP_KEEP$' | tail -n 1)"; KEEP="${KEEP#*=}"
+  case "$KEEP" in ''|*[!0-9]*) KEEP=20 ;; esac
+  KEEP=$(( 10#$KEEP )); (( KEEP > 0 )) || KEEP=20
+  TS_RE='^[0-9]{8}-[0-9]{6}$'
+  snaps=(); n_snaps=0
+  for d in "$SPECS/.backup"/*/; do
+    d="${d%/}"
+    [[ -d "$d" && ! -L "$d" && "${d##*/}" =~ $TS_RE ]] || continue
+    snaps+=("$d"); n_snaps=$(( n_snaps + 1 ))
+  done
+  pruned=0
+  while (( n_snaps - pruned > KEEP )); do
+    rm -rf "${snaps[$pruned]}" || { printf 'ERROR=could not delete %s\n' "${snaps[$pruned]}" >&2; exit 1; }
+    pruned=$(( pruned + 1 ))
+  done
+  printf 'BACKUP=%s\nFILES=%s\nPRUNED=%s\n\nCOPIED:\n' "$DEST" "$n" "$pruned"
   sed "s|^$SPECS/||" "$TMP/list"
   ;;
 
@@ -815,8 +856,6 @@ conf-set)
   # The line that counts is the one build-command.sh reads, found by the same
   # parser: the last line carrying KEY. Its value is compared as that reader
   # sees it, so an answer already there is not written twice.
-  [[ -r "$SCRIPT_DIR/lib/conf.sh" ]] || { printf 'ERROR=missing: %s/lib/conf.sh\n' "$SCRIPT_DIR" >&2; exit 1; }
-  . "$SCRIPT_DIR/lib/conf.sh"
   found="$(sdd_conf_read "$CONF" "^$KEY\$" n | tail -n 1)"
   at="${found%%|*}"; current="${found#*|$KEY=}"
   action="added"

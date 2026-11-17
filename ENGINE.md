@@ -155,7 +155,9 @@ Behaviour worth knowing:
 
 - A task whose build keeps failing is marked `BLOCKED`; the loop moves on.
 - A task of a stack no developer covers stops `/sdd-implement`.
-- Before an overwrite, all of `_docs/` is copied to `_docs/.backup/<timestamp>/`.
+- Before an overwrite, the feature's folder and the project's files of `_docs/` are copied to
+  `_docs/.backup/<timestamp>/`; the last `SDD_BACKUP_KEEP` (20) are kept, and `.gitignore` covers
+  them.
 - `REQ-###` are numbered at `/sdd-specify`, reach `requirements.md` only at `/sdd-actualize`.
 - `_docs/architecture.md` (`scaffold init --mono`) may replace `architecture/` — never both.
 

@@ -52,7 +52,7 @@ Both commands are interactive. Your edits to kit files are never overwritten wit
 For scripts and uninstall, see [installer options](#installer-options).
 
 **Notes:** one host per project (to switch, uninstall and install again) · kit files are
-git-ignored, so every teammate runs the installer · add `_docs/**/.backup/` to `.gitignore` ·
+git-ignored, so every teammate runs the installer, and so are the backups under `_docs/.backup/` ·
 for Claude Code the kit adds `.claude/settings.json`, which turns off built-in features SDD
 does not use.
 

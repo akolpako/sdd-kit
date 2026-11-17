@@ -196,6 +196,7 @@ This command was rewritten by the project.
 # SDD:BEGIN
 .sdd/*
 .github/
+_docs/.backup/
 # SDD:END
 ### manifest
 # Written by install.sh. Do not edit.

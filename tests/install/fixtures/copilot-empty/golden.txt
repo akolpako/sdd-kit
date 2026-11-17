@@ -196,6 +196,7 @@ Whatever communication style the session is set to, anything written to `_docs/*
 # SDD:BEGIN
 .sdd/*
 .github/
+_docs/.backup/
 # SDD:END
 ### manifest
 # Written by install.sh. Do not edit.

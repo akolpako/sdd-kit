@@ -28,7 +28,7 @@ Promotes what a finished feature decided into the project-level files. Safe to r
    - `ok` promotes.
    - `ask` says the feature is not finished — a spec nobody reviewed, tasks left open, a review that blocked, a review that fixes have since outdated. It promotes only on an explicit yes to each line, and what was accepted this way is named again in the final report, in those words.
 
-2. **Back up:** run `.sdd/scripts/spec-edit.sh backup`. If it exits non-zero, stop.
+2. **Back up:** run `.sdd/scripts/spec-edit.sh backup <FeatureName>`. If it exits non-zero, stop.
 
 3. **Spawn** the `SPAWN:` record: run `.sdd/scripts/spawn-prompt.sh actualize <FeatureName> baseline-from-feature`.
 

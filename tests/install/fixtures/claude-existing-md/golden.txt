@@ -152,6 +152,7 @@ target/
 # SDD:BEGIN
 .sdd/*
 .claude/
+_docs/.backup/
 # SDD:END
 ### file CLAUDE.md
 # Cart

@@ -156,6 +156,7 @@ f  CLAUDE.md
 # SDD:BEGIN
 .sdd/*
 .claude/
+_docs/.backup/
 # SDD:END
 ### file .sdd/templates/requirements.md
 ---

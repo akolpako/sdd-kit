@@ -153,7 +153,7 @@ refused-no-verify|review|'
 # stands for the feature name of the fixture. Each case runs on its own copy of
 # the project; the golden records what the script printed and what changed on
 # disk.
-EDIT_CASES='backup|backup
+EDIT_CASES='backup|backup;<F>
 status-ready|status;<F>;ready;new-requirements.md;design.md;tasks.md
 status-draft|status;<F>;draft;new-requirements.md
 status-repeat|status;<F>;ready;new-requirements.md;new-requirements.md
@@ -2386,6 +2386,26 @@ check_conf_set() {
   prop_check conf-set "a key set twice is written where the reader reads it" "$ok" "$out / $(tr '\n' '~' < "$dup/.sdd/sdd.conf")"
 }
 
+# The backups: one feature and the project's files per snapshot, and only the
+# last SDD_BACKUP_KEEP snapshots kept — never a folder the op did not name.
+check_backup() {
+  local work="$TMP/backup" out ok i left
+
+  printf 'backup\n'
+  rm -rf "$work" && mkdir -p "$work/.sdd" "$work/_docs/Cart" "$work/_docs/Promo" "$work/_docs/architecture" "$work/_docs/.backup/mine" || exit 1
+  for f in requirements.md architecture/01-context.md Cart/tasks.md Promo/tasks.md; do printf 'x\n' > "$work/_docs/$f"; done
+  for i in 1 2 3 4; do mkdir -p "$work/_docs/.backup/2026010$i-000000"; done
+  printf 'SDD_BACKUP_KEEP=3\n' > "$work/.sdd/sdd.conf"
+  out="$(cd "$work" && "$EDITOR_SH" backup cart 2>&1)"
+  left="$(cd "$work/_docs/.backup" && ls | tr '\n' ' ')"
+  ok=0
+  printf '%s\n' "$out" | grep -qx 'FILES=3' || ok=1
+  printf '%s\n' "$out" | grep -qx 'PRUNED=2' || ok=1
+  printf '%s\n' "$out" | grep -q 'Promo' && ok=1
+  [[ "$left" == 20260103-000000\ 20260104-000000\ 2*\ mine\  ]] || ok=1
+  prop_check backup "one feature and the project's files, the oldest pruned, the rest left" "$ok" "$(printf '%s' "$out" | tr '\n' '~') / left: $left"
+}
+
 # A two-stack project asks for the build of the stacks a feature builds, and
 # no more; a marker goes into the languages a brownfield tree is told by.
 check_stacks() {
@@ -2691,6 +2711,7 @@ start_job blocked-set      check_blocked_set
 start_job start            check_start
 start_job spec-review      check_spec_review
 start_job conf-set         check_conf_set
+start_job backup           check_backup
 start_job stacks           check_stacks
 start_job collisions       check_collisions
 start_job findings         check_findings

@@ -1,12 +1,8 @@
 BACKUP=_docs/.backup/<ts>
-FILES=14
+FILES=9
+PRUNED=0
 
 COPIED:
-Cart/design.md
-Cart/new-requirements.md
-Cart/raw.md
-Cart/review.md
-Cart/tasks.md
 Wishlist/design.md
 Wishlist/new-requirements.md
 Wishlist/raw.md

@@ -27,7 +27,7 @@ Turns a `draft` spec into a `ready` one through the checklist and an interview. 
 
 1. **Gate:** run `.sdd/scripts/gate.sh review <FeatureName>`. `GATE=ok` reviews. `ANOMALIES:` open the session rather than close it — several of them are exactly what this review exists to settle.
 
-   Then back up: run `.sdd/scripts/spec-edit.sh backup` — the roles rewrite the spec in place. If it exits non-zero, stop.
+   Then back up: run `.sdd/scripts/spec-edit.sh backup <FeatureName>` — the roles rewrite the spec in place. If it exits non-zero, stop.
 
    Then reset: run `.sdd/scripts/spec-edit.sh status <FeatureName> draft <file ...>`, naming each file whose `STATUS_*` is `ready`, and skip the call when none is. `ready` is the verdict of this run, never one carried over: the roles are about to change those files, and a run cut short must not leave a rewritten spec marked as reviewed.
 

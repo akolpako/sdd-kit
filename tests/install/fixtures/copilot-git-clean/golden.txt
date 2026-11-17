@@ -213,6 +213,7 @@ jobs:
 # SDD:BEGIN
 .sdd/*
 .github/
+_docs/.backup/
 # SDD:END
 ### file .sdd/sdd.conf
 SDD_BUILD_ROOT=make verify

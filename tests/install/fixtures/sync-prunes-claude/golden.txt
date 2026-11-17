@@ -147,6 +147,7 @@ f  CLAUDE.md
 # SDD:BEGIN
 .sdd/*
 .claude/
+_docs/.backup/
 # SDD:END
 ### file CLAUDE.md
 <!-- SDD:BEGIN -->

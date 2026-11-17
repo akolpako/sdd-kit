@@ -157,6 +157,7 @@ This command was rewritten by the project.
 # SDD:BEGIN
 .sdd/*
 .claude/
+_docs/.backup/
 # SDD:END
 ### file CLAUDE.md
 <!-- SDD:BEGIN -->
