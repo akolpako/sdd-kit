@@ -911,7 +911,9 @@ check_review() {
     warn "_docs/requirements.md is not there — the requirements of this feature cannot be compared against the ones the project already has."
   arch_present || \
     warn "$ARCH_ENTRY is not there — the design is reviewed without the architecture context, and /sdd-init is what creates it."
-  [[ $NR_RC -eq 2 ]] && NEXT_REQ=""
+  # The same answer /sdd-specify gets: with no compilation, numbering starts
+  # where its template's counter does.
+  [[ $NR_RC -eq 2 ]] && NEXT_REQ="REQ-001"
   [[ -n "$REQ_DUPLICATES" ]] && \
     warn "The compilation carries the same number more than once: $(printf '%s' "$REQ_DUPLICATES" | tr '\n' ' ') — repair it before this session issues a new number."
 }

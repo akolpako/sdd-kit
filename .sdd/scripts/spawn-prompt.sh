@@ -41,7 +41,9 @@
 #
 # Templates: `.sdd/prompts/<command>-<scope>.md`, addressed to the role.
 #   {{KEY}}            inline, replaced by the value; a multi-line value here
-#                      is an error, not a squashed line
+#                      is an error, not a squashed line. An empty value reads
+#                      `(none)`, as a block does: a sentence with a hole in it
+#                      reads as a number or a ref nobody gave
 #   {{KEY}} alone on a line, and {{SECTION:NAME}}
 #                      the block form: the whole value, or the whole section of
 #                      the gate's output. Nothing to print reads `(none)`
@@ -272,6 +274,7 @@ render_inline() {
       fail "the value of {{$token}} is more than one line: give the placeholder a line of its own"
       return
     fi
+    [[ -n "$value" ]] || value='(none)'
     out="$out$value"
   done
   printf '%s%s\n' "$out" "$line"

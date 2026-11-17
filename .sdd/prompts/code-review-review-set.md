@@ -12,7 +12,7 @@ BASE={{BASE}}
 ROOT={{ROOT}}
 DIFF={{DIFF}}
 
-An empty `BASE` means no base branch was found: the set is the uncommitted
+`BASE=(none)` means no base branch was found: the set is the uncommitted
 changes alone, and the review is partial and says so.
 
 Untracked files, part of the same set:
