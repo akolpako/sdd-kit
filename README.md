@@ -148,7 +148,6 @@ Spec files have `status: draft | ready` in their frontmatter. You can open `_doc
 | For | Install |
 |---|---|
 | Angular reference | `npx skills add angular/skills --skill angular-developer` |
-| Obsidian syntax | `npx skills add kepano/obsidian-skills --skill obsidian-markdown` |
 | Clean Architecture | `npx skills add wondelai/skills --skill clean-architecture` |
 | Domain-Driven Design | `npx skills add wondelai/skills --skill domain-driven-design` |
 | Clean Code | `npx skills add wondelai/skills --skill clean-code` |

@@ -46,4 +46,3 @@ Before returning. Run the build the assignment names as part of every verificati
 ## Skills
 
 - **Before the work starts:** look through the skills installed in this project and load each one whose description matches the work — the language, frameworks and test tools of the code I change, clean code and architecture principles, the libraries the task uses. A skill that becomes relevant mid-task is loaded then. None matching is not a blocker.
-- **Before a `.md` file is written:** an installed Obsidian Markdown skill, if there is one. Load it then, not before. A checkbox ticked in a file I was handed is not that; text written into one is.

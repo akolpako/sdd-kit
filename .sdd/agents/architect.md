@@ -46,4 +46,3 @@ Before returning:
 ## Skills
 
 - **Before the design starts:** look through the skills installed in this project and load each one whose description matches the work — architecture principles (Clean or Hexagonal architecture, DDD), and the frameworks of the stacks the design touches. None matching is not a blocker.
-- **Before a `.md` file is written:** an installed Obsidian Markdown skill, if there is one. Load it then, not before.

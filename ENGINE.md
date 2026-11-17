@@ -206,7 +206,7 @@ violate does not pay for itself.
 | **Expertise** | rules that can be broken | it lists topics |
 | **Edge Cases** | *when X, do Y instead of the obvious* | it lists things "to consider" |
 | **Self-Check** | stack/discipline checks the protocol cannot know | it repeats a protocol's checklist |
-| **Skills** | load the installed skills whose description matches the work; the Obsidian skill before writing `.md` | it names a skill or explains delivery |
+| **Skills** | load the installed skills whose description matches the work | it names a skill or explains delivery |
 
 No agent file names a stack or addresses the engine's editor: roles are split by layer
 (backend, frontend), and a stack is swapped by installing its skills, not by editing a role. A condition on a skill is a

@@ -2,7 +2,7 @@
 
 *Addressed to any role that writes a file under `_docs/`. It names no command and no agent.*
 
-Every file under `_docs/` is Obsidian Flavored Markdown. This protocol says which of its syntax the specs use, and where. An Obsidian Markdown skill installed in the project carries the rest; where the two differ, this protocol wins — it is written against a repository that is read in Obsidian, in an editor, and on a repository page, and the skill is written for a vault alone.
+Every file under `_docs/` is Obsidian Flavored Markdown. This protocol says which of its syntax the specs use, and where, and a spec uses none it does not name: it is written against a repository that is read in Obsidian, in an editor, and on a repository page, not against a vault alone.
 
 ## Links: Markdown, never wikilinks
 
