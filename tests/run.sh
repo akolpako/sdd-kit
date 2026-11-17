@@ -868,6 +868,33 @@ quote-around|pom.xml|SDD_BUILD_ROOT="mvn -q verify"|mvn -q verify|mvn -q verify|
   done <<EOF
 $cases
 EOF
+
+  # build-run.sh: the verdict comes back, the output stays in the log.
+  local br="$SCRIPTS/build-run.sh" rc
+  rm -rf "$work" && mkdir -p "$work/.sdd" || exit 1
+  printf '<project/>\n' > "$work/pom.xml"
+  printf 'SDD_BUILD_ROOT=echo quiet-line\n' > "$work/.sdd/sdd.conf"
+  out="$(cd "$work" && "$br" root 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 0 ]] || ok=1
+  printf '%s\n' "$out" | grep -q '^BUILD=green$' || ok=1
+  printf '%s\n' "$out" | grep -qx 'quiet-line' && ok=1
+  grep -qx 'quiet-line' "$work/.sdd/build/root.log" || ok=1
+  prop_check build "a green build answers green and keeps its output in the log" "$ok" "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
+  printf 'SDD_BUILD_BACKEND=echo first; echo broke >&2; exit 3\n' > "$work/.sdd/sdd.conf"
+  out="$(cd "$work" && "$br" backend 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 0 ]] || ok=1
+  printf '%s\n' "$out" | grep -q '^BUILD=red$' || ok=1
+  printf '%s\n' "$out" | grep -q '^EXIT=3$' || ok=1
+  [[ "$(printf '%s\n' "$out" | sed -n '/^TAIL:$/,$p' | tr '\n' '~')" == 'TAIL:~first~broke~' ]] || ok=1
+  prop_check build "a red build answers red with the tail" "$ok" "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
+  out="$(cd "$work" && "$br" frontend 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 2 && "$out" == *"no build command for frontend"* ]] || ok=1
+  [[ -f "$work/.sdd/build/frontend.log" ]] && ok=1
+  prop_check build "no command is a stop, never a guess" "$ok" "exit $rc: $out"
 }
 
 # What `/sdd-init` left behind, over the one state no fixture can hold: the

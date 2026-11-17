@@ -104,6 +104,7 @@ c  .sdd/protocols/task-breakdown.md = <engine>/.sdd/protocols/task-breakdown.md
 c  .sdd/protocols/task-loop.md = <engine>/.sdd/protocols/task-loop.md
 d  .sdd/scripts/
 c  .sdd/scripts/build-command.sh = <engine>/.sdd/scripts/build-command.sh
+c  .sdd/scripts/build-run.sh = <engine>/.sdd/scripts/build-run.sh
 c  .sdd/scripts/feature-state.sh = <engine>/.sdd/scripts/feature-state.sh
 c  .sdd/scripts/gate.sh = <engine>/.sdd/scripts/gate.sh
 c  .sdd/scripts/jira-import.sh = <engine>/.sdd/scripts/jira-import.sh
@@ -260,6 +261,7 @@ host	claude
 <sum>	.sdd/protocols/task-breakdown.md
 <sum>	.sdd/protocols/task-loop.md
 <sum>	.sdd/scripts/build-command.sh
+<sum>	.sdd/scripts/build-run.sh
 <sum>	.sdd/scripts/feature-state.sh
 <sum>	.sdd/scripts/gate.sh
 <sum>	.sdd/scripts/jira-import.sh

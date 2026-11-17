@@ -828,7 +828,7 @@ sdd_walk_skips() {
   local name="$1" host
   case "$name" in
     _gitignore.claude|_gitignore.copilot) return 0 ;;
-    log|sdd.conf|.venv) return 0 ;;
+    log|build|sdd.conf|.venv) return 0 ;;
   esac
   for host in claude copilot; do
     if adapter_dest "$host" "$name"; then

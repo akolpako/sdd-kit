@@ -47,7 +47,7 @@ Acts on the report `/sdd-code-review <FeatureName>` wrote. It applies findings, 
 
 4. **Spawn** by the `SPAWN:` records, in the order printed. A record whose stack has no finding marked *fix* is dropped whole. For every record left, run `.sdd/scripts/spawn-prompt.sh code-fix <FeatureName> <scope> -` with two blocks on stdin: `TRIAGE:` — the human's answer, word for word; `FINDINGS:` — the `F-##` numbers of that stack's findings marked fix, one per line and nothing else: the role reads each finding in the report itself, so no finding is retyped. One spawn per role for all of its findings, never one per finding.
 
-5. **Verify:** if any code changed, run the build command of the stacks that changed — `BUILD_BACKEND`, `BUILD_FRONTEND`. Green — the fixes hold. Red — report the failure with the output; the human decides what happens next. A marker is not code: a run that only wrote markers has nothing to re-verify and says so.
+5. **Verify:** if any code changed, run `.sdd/scripts/build-run.sh <stack>` for each stack a role changed code in — `backend`, `frontend`. `BUILD=green` — the fixes hold. `BUILD=red` — report its `TAIL:` and `LOG=`; the human decides what happens next. A marker is not code: a run that only wrote markers has nothing to re-verify and says so.
 
 6. **Invalidate the report** — the last write of the run. If anything changed, run `.sdd/scripts/spec-edit.sh verdict-stale <FeatureName>`. The findings are left standing — a re-run of `/sdd-code-review` is what replaces them. If nothing changed, the file is left exactly as it was and the script is not run.
 

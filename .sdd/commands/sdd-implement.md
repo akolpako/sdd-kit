@@ -29,13 +29,15 @@ Safe to re-run: `[x]` is the only mark that takes a task out of the work, so a b
 
    | `BASELINE` | What to run |
    |---|---|
-   | set | `BASELINE` |
-   | empty | `BUILD_BACKEND`, then `BUILD_FRONTEND` — an empty one is a stack this feature has no task in, and is not run |
+   | set | `.sdd/scripts/build-run.sh root` |
+   | empty | `.sdd/scripts/build-run.sh <stack>` for each stack of `ROLE_ORDER`, in that order |
 
-   | Result | What happens |
+   The script runs the human's command and answers `BUILD=` — the build's own output stays in its `LOG=` file and is not read here.
+
+   | `BUILD` | What happens |
    |---|---|
    | green | start |
-   | red | stop, report the failing output, and proceed only on the human's explicit go-ahead |
+   | red | stop, report its `TAIL:` and `LOG=`, and proceed only on the human's explicit go-ahead |
 
    A bootstrap first task has no baseline to establish: say so and start with it — the baseline is the build it produces.
 
@@ -45,6 +47,6 @@ Safe to re-run: `[x]` is the only mark that takes a task out of the work, so a b
 
 4. **Verify:**
    - When a role returns, run `.sdd/scripts/gate.sh implement <FeatureName> --verify --scope=<the scope of that role>`.
-   - When every role has returned, run the build of step 2 again. Green — the feature is implemented. Red — report the failing output with the Blocker Reports, and do not restart a loop: a red that traces to a `BLOCKED` task is attempts already spent, and a red that traces to none of them is said to be exactly that.
+   - When every role has returned, run the build of step 2 again. Green — the feature is implemented. Red — report its `TAIL:` and `LOG=` with the Blocker Reports, and do not restart a loop: a red that traces to a `BLOCKED` task is attempts already spent, and a red that traces to none of them is said to be exactly that.
 
 5. **Report the next step:** re-run `.sdd/scripts/gate.sh implement <FeatureName>` for `TASKS_DONE`/`TASKS_TOTAL` and any new `ANOMALIES:`, then the tasks the roles reported blocked, by name from their Blocker Reports, then `/sdd-code-review <FeatureName>`. It and `/sdd-actualize <FeatureName>` are optional.

@@ -23,7 +23,7 @@ Each path below holds exactly this, and a fact lives in one of them (see *Where 
 | `templates/*.md` | The structure of every generated file. Not a channel for instructions. |
 | `rules/*.md` | Text needed from the first token (see *Adapters* for who inherits it). None shipped. |
 | `_gitignore.<host>`, `_claude/settings.json` | Host packaging: the `.gitignore` block; Claude Code session settings that turn off bundled skills, claude.ai connectors and `claude-in-chrome`. |
-| `log/`, `sdd.conf`, `.sdd-manifest` | Not shipped — written in the project at run or install time. |
+| `log/`, `build/`, `sdd.conf`, `.sdd-manifest` | Not shipped — written in the project at run or install time. |
 
 `tests/` holds fixtures, goldens and `run.sh` (`install/` for the installer).
 
@@ -229,6 +229,8 @@ flowchart LR
     SPN -->|"--prompt-data"| GATE
     GATE --> FS
     GATE --> BC["build-command.sh"]
+    CMD --> BR["build-run.sh"]
+    BR --> BC
     GATE --> NR["next-req.sh"]
     GATE --> RS["review-set.sh"]
     FS --> FMT["lib/format.sh"]
@@ -250,6 +252,8 @@ flowchart LR
 - **Only the human's build command is run.** `build-command.sh` reads `SDD_BUILD_*` from
   `.sdd/sdd.conf`; detection is a proposal carried in the gate's `ASK:`, never run. Resolved once
   per command run and passed in every prompt.
+  The orchestrator runs it through `build-run.sh`, which keeps the output in `.sdd/build/` and
+  answers green or red with the tail of a red one.
 - **The log (`lib/log.sh`) is written, never read** — no script, prompt or command branches on
   it. It wraps each script by re-exec; stdout, stderr and exit code stay byte-identical, and the
   goldens assert it.
