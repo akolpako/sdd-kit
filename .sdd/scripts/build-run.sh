@@ -27,9 +27,10 @@
 #             for that stack: nothing ran, and nothing is guessed in its place.
 
 set -uo pipefail
-[[ -r "$(dirname "$0")/lib/log.sh" ]] && . "$(dirname "$0")/lib/log.sh"
+SDD_HERE="${0%/*}"; [[ "$SDD_HERE" == "$0" ]] && SDD_HERE="."
+[[ -r "$SDD_HERE/lib/log.sh" ]] && . "$SDD_HERE/lib/log.sh"
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$SDD_HERE" && pwd)"
 STACK="${1:-}"
 ROOT_DIR="${2:-.}"
 

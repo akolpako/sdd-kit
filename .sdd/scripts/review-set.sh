@@ -23,7 +23,8 @@
 # command line shares no commit with HEAD.
 
 set -uo pipefail
-[[ -r "$(dirname "$0")/lib/log.sh" ]] && . "$(dirname "$0")/lib/log.sh"
+SDD_HERE="${0%/*}"; [[ "$SDD_HERE" == "$0" ]] && SDD_HERE="."
+[[ -r "$SDD_HERE/lib/log.sh" ]] && . "$SDD_HERE/lib/log.sh"
 
 git rev-parse --git-dir >/dev/null 2>&1 || exit 1
 

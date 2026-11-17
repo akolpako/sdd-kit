@@ -112,7 +112,8 @@
 #             holds for the check as it does for everything else.
 
 set -uo pipefail
-[[ -r "$(dirname "$0")/lib/log.sh" ]] && . "$(dirname "$0")/lib/log.sh"
+SDD_HERE="${0%/*}"; [[ "$SDD_HERE" == "$0" ]] && SDD_HERE="."
+[[ -r "$SDD_HERE/lib/log.sh" ]] && . "$SDD_HERE/lib/log.sh"
 
 # ── Arguments ─────────────────────────────────────────────────────
 # --prompt-data adds the sections only a spawn prompt is built from. It is for
@@ -197,7 +198,7 @@ else
   fi
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$SDD_HERE" && pwd)"
 TEMPLATE_DIR="$SCRIPT_DIR/../templates"
 SPECS="$ROOT_DIR/_docs"
 
@@ -353,30 +354,41 @@ fi
 
 # Every script runs before anything is reported: a violation found in the first
 # one never skips the second, so the human gets every reason in one message.
-FS_ERR="$(mktemp)"; BC_ERR="$(mktemp)"; NR_ERR="$(mktemp)"; RS_ERR="$(mktemp)"
-trap 'rm -f "$FS_ERR" "$BC_ERR" "$NR_ERR" "$RS_ERR"' EXIT
+#
+# They run side by side: none reads what another prints, and each spends its
+# time starting programs rather than computing, so the gate waits for the
+# slowest of them instead of for all of them in turn. Each writes its stdout,
+# stderr and exit code into files of its own, read back once all are done.
+GATE_TMP="$(mktemp -d "${TMPDIR:-/tmp}/sdd-gate.XXXXXX")" || exit 1
+trap 'rm -rf "$GATE_TMP"' EXIT
 
 FS_OUT=""; FS_RC=0; FS_ERRLINE=""
 BC_OUT=""; BC_RC=0; BC_ERRLINE=""
 NR_OUT=""; NR_RC=0; NR_ERRLINE=""
 RS_OUT=""; RS_RC=0; RS_ERRLINE=""
 
-if [[ $NEED_FS -eq 1 ]]; then
-  FS_OUT="$("$SCRIPT_DIR/feature-state.sh" "$FEATURE" "$ROOT_DIR" 2>"$FS_ERR")"; FS_RC=$?
-  FS_ERRLINE="$(cat "$FS_ERR")"
-fi
-if [[ $NEED_BC -eq 1 ]]; then
-  BC_OUT="$("$SCRIPT_DIR/build-command.sh" "$ROOT_DIR" 2>"$BC_ERR")"; BC_RC=$?
-  BC_ERRLINE="$(cat "$BC_ERR")"
-fi
-if [[ $NEED_NR -eq 1 ]]; then
-  NR_OUT="$("$SCRIPT_DIR/next-req.sh" "$ROOT_DIR" 2>"$NR_ERR")"; NR_RC=$?
-  NR_ERRLINE="$(cat "$NR_ERR")"
-fi
-if [[ $NEED_RS -eq 1 ]]; then
-  RS_OUT="$(cd "$ROOT_DIR" && "$SCRIPT_DIR/review-set.sh" "$BASE_ARG" 2>"$RS_ERR")"; RS_RC=$?
-  RS_ERRLINE="$(cat "$RS_ERR")"
-fi
+# run_child <tag> <command ...> — in the background, from the gate's own
+# directory; the exit code is written last, so a missing one is a child that
+# never finished.
+run_child() {
+  local tag="$1"; shift
+  { "$@" > "$GATE_TMP/$tag.out" 2> "$GATE_TMP/$tag.err"; printf '%s' "$?" > "$GATE_TMP/$tag.rc"; } &
+}
+[[ $NEED_FS -eq 1 ]] && run_child fs "$SCRIPT_DIR/feature-state.sh" "$FEATURE" "$ROOT_DIR"
+[[ $NEED_BC -eq 1 ]] && run_child bc "$SCRIPT_DIR/build-command.sh" "$ROOT_DIR"
+[[ $NEED_NR -eq 1 ]] && run_child nr "$SCRIPT_DIR/next-req.sh" "$ROOT_DIR"
+# review-set.sh reads the repository of the directory it runs in.
+[[ $NEED_RS -eq 1 ]] && ( cd "$ROOT_DIR" && run_child rs "$SCRIPT_DIR/review-set.sh" "$BASE_ARG"; wait )
+wait
+
+# The value as `$(...)` would have given it — trailing newlines dropped — read
+# by the shell rather than by cat.
+read_child() { [[ -f "$GATE_TMP/$1" ]] && printf '%s' "$(< "$GATE_TMP/$1")"; return 0; }
+child_rc()   { local rc; rc="$(read_child "$1.rc")"; printf '%s' "${rc:-1}"; }
+if [[ $NEED_FS -eq 1 ]]; then FS_OUT="$(read_child fs.out)"; FS_RC="$(child_rc fs)"; FS_ERRLINE="$(read_child fs.err)"; fi
+if [[ $NEED_BC -eq 1 ]]; then BC_OUT="$(read_child bc.out)"; BC_RC="$(child_rc bc)"; BC_ERRLINE="$(read_child bc.err)"; fi
+if [[ $NEED_NR -eq 1 ]]; then NR_OUT="$(read_child nr.out)"; NR_RC="$(child_rc nr)"; NR_ERRLINE="$(read_child nr.err)"; fi
+if [[ $NEED_RS -eq 1 ]]; then RS_OUT="$(read_child rs.out)"; RS_RC="$(child_rc rs)"; RS_ERRLINE="$(read_child rs.err)"; fi
 
 # Exit 1 is the environment, never the project: it is relayed and nothing else
 # is decided from a run that could not read its own inputs.

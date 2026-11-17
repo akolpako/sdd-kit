@@ -3,7 +3,10 @@
 #
 # Sourced, never run, and sourced before the script reads its arguments, so the
 # module sees the raw `$@`:
-#   [[ -r "$(dirname "$0")/lib/log.sh" ]] && . "$(dirname "$0")/lib/log.sh"
+#   SDD_HERE="${0%/*}"; [[ "$SDD_HERE" == "$0" ]] && SDD_HERE="."
+#   [[ -r "$SDD_HERE/lib/log.sh" ]] && . "$SDD_HERE/lib/log.sh"
+# (the directory taken off $0 by the shell: `dirname` is a program, and
+# starting one costs more than the rest of the line)
 #
 # The scripts are run by the agent, inside a host session. Their output goes
 # into a context the human never sees and which dies with the session, so a run

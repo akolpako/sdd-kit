@@ -63,7 +63,8 @@
 #             becomes a verdict.
 
 set -uo pipefail
-[[ -r "$(dirname "$0")/lib/log.sh" ]] && . "$(dirname "$0")/lib/log.sh"
+SDD_HERE="${0%/*}"; [[ "$SDD_HERE" == "$0" ]] && SDD_HERE="."
+[[ -r "$SDD_HERE/lib/log.sh" ]] && . "$SDD_HERE/lib/log.sh"
 
 ROOT_DIR="${1:-.}"
 if [[ ! -d "$ROOT_DIR" ]]; then

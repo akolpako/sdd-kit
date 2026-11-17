@@ -65,9 +65,10 @@
 #             assignment, there is no template for it, or a value is missing.
 
 set -uo pipefail
-[[ -r "$(dirname "$0")/lib/log.sh" ]] && . "$(dirname "$0")/lib/log.sh"
+SDD_HERE="${0%/*}"; [[ "$SDD_HERE" == "$0" ]] && SDD_HERE="."
+[[ -r "$SDD_HERE/lib/log.sh" ]] && . "$SDD_HERE/lib/log.sh"
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$SDD_HERE" && pwd)"
 GATE="$SCRIPT_DIR/gate.sh"
 PROMPTS="$SCRIPT_DIR/../prompts"
 
