@@ -37,10 +37,8 @@ Run your checklist passes over `_docs/Cart/design.md` and
 settle yourself, and write it into those files — no one else writes them.
 
 What only the human can settle goes into `## Open Questions` of
-`_docs/Cart/design.md`, one line each, carrying your recommended answer.
-A line already carrying an `**Answer:**` is the human's: fold it into the design
-it belongs to, retire the `A-##` that line names, and delete the line. Leave
-every line without an answer as it stands, word for word.
+`_docs/Cart/design.md`, and a line there already carrying an
+`**Answer:**` is folded in — both as the spec-modes protocol fixes them.
 
 `tasks.md` is yours to bring in line with the revised requirements and design.
 
