@@ -8,10 +8,10 @@ How a change set is reviewed against its specification on this project. **Which*
 
 - Load every installed skill whose description matches what the diff touches. Report a finding only when the code violates the source that wins the precedence order.
 - Read `new-requirements.md`, `design.md`, `tasks.md` from the feature's `_docs/` folder, and `code-style.md` and the architecture baseline from `_docs/`. The baseline is entered through the file the assignment names — `_docs/architecture.index.md`, whose table says which section file holds which topic, or `_docs/architecture.md`; read the sections this review touches, not all of them. It is the architectural yardstick the design does not repeat; a deviation from it is a finding.
-- Use the review set handed over with the assignment — `BASE`, `ROOT`, the `DIFF` command, and the untracked files — never a detection of your own. Only if it was not handed over, run `.sdd/scripts/review-set.sh` and say in the report that the base was self-detected.
+- Use the review set handed over with the assignment — `BASE`, `ROOT`, the `DIFF` command, and the untracked files — never a detection of your own.
 - Run the `DIFF` command and read its output; a large one is sliced through a pipe and re-run for a second look. Write no scratch file, and least of all outside the project.
 - Read every untracked file in full — a new file appears in no diff.
-- Stop and report if a spec file is missing or the review set is empty.
+- A spec file the assignment names that you cannot read is reported, never assumed away.
 
 ## 2. Classify the Review Set
 
@@ -92,5 +92,3 @@ The report closes with one verdict and one line naming what decided it. It follo
 The other properties of the frontmatter and the last section, `## Older TODO Code Review markers`, are filled in outside this assignment: leave them exactly as they stand.
 
 Then return a summary, not the report again: the verdict and the line that decided it, the number of findings per severity, the `N more findings` line when there is one, and the gaps.
-
-An assignment that names no file for the report gets it returned in one piece instead: the class of the review set, the issue list within its cap, the coverage rows, and the verdict.

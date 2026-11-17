@@ -12,9 +12,7 @@ Reports the state of every feature, or of one. No argument — the summary; with
 
 ## Context
 
-- **Reads:**
-  - `.sdd/protocols/orchestration.md`
-  - the output of `.sdd/scripts/feature-state.sh`
+- **Reads:** the output of `.sdd/scripts/feature-state.sh`, and nothing else
 - **Writes:** nothing — the report goes to the chat
 
 ## Process
