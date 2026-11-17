@@ -16,6 +16,11 @@ Files of this run:
 
 {{SECTION:SPEC_FILES}}
 
+The spec — opened only for a finding that names a requirement or the design,
+a Spec Deviation:
+
+{{SECTION:SPEC_REFERENCE}}
+
 The triage the human settled, in their own words:
 
 {{TRIAGE}}

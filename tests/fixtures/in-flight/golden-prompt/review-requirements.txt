@@ -21,8 +21,6 @@ Files of this run:
 
 _docs/Wishlist/raw.md
 _docs/Wishlist/new-requirements.md
-_docs/Wishlist/design.md
-_docs/Wishlist/tasks.md
 _docs/architecture.index.md
 _docs/requirements.md
 

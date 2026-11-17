@@ -20,8 +20,6 @@ Files of this run:
 
 _docs/Cart/raw.md
 _docs/Cart/new-requirements.md
-_docs/Cart/design.md
-_docs/Cart/tasks.md
 _docs/architecture.index.md
 _docs/requirements.md
 

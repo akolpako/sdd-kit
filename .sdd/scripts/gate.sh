@@ -51,6 +51,10 @@
 #
 # Under --prompt-data, and only there:
 #   SPEC_FILES:   the paths of this run, one per line — every command
+#   REQUIREMENTS_FILES:   specify, review — the paths of the requirements scope,
+#                 which reads neither design.md nor tasks.md
+#   SPEC_REFERENCE:       code-fix — the spec, opened only for a finding that
+#                 names it; SPEC_FILES: is then the report and the yardsticks
 #   COMPILATION_ENTRIES:  review
 #   DIFF_FILE, FILES:, EXCLUDED:, UNTRACKED:, PREEXISTING:, BLOCKED:, BUILD:
 #                 code-review — DIFF_FILE, FILES: (`<added>|<deleted>|<path>`)
@@ -1404,6 +1408,13 @@ if [[ $PROMPT_ONLY -eq 1 ]]; then
       printf '_docs/%s/new-requirements.md\n' "$FOLDER"
       printf '_docs/%s/design.md\n' "$FOLDER"
       printf '_docs/%s/tasks.md\n' "$FOLDER"
+      printf '%s\n_docs/requirements.md\n' "$ARCH_ENTRY"
+      # The requirements are written before the design and the breakdown, and
+      # checked without them: those two files are a template or another
+      # role's work there, and nothing in them is read.
+      printf '\nREQUIREMENTS_FILES:\n'
+      printf '_docs/%s/raw.md\n' "$FOLDER"
+      printf '_docs/%s/new-requirements.md\n' "$FOLDER"
       printf '%s\n_docs/requirements.md\n' "$ARCH_ENTRY" ;;
     implement|code-review)
       printf '\nSPEC_FILES:\n'
@@ -1412,12 +1423,14 @@ if [[ $PROMPT_ONLY -eq 1 ]]; then
       printf '_docs/%s/tasks.md\n' "$FOLDER"
       printf '_docs/code-style.md\n%s\n' "$ARCH_ENTRY" ;;
     code-fix)
+      # A fix works from its finding: the spec is opened for the one that names
+      # it, and tasks.md is not this run's to read or write.
       printf '\nSPEC_FILES:\n'
       printf '_docs/%s/review.md\n' "$FOLDER"
+      printf '_docs/code-style.md\n%s\n' "$ARCH_ENTRY"
+      printf '\nSPEC_REFERENCE:\n'
       printf '_docs/%s/new-requirements.md\n' "$FOLDER"
-      printf '_docs/%s/design.md\n' "$FOLDER"
-      printf '_docs/%s/tasks.md\n' "$FOLDER"
-      printf '_docs/code-style.md\n%s\n' "$ARCH_ENTRY" ;;
+      printf '_docs/%s/design.md\n' "$FOLDER" ;;
     actualize)
       printf '\nSPEC_FILES:\n'
       printf '_docs/%s/new-requirements.md\n' "$FOLDER"

@@ -22,11 +22,14 @@ It is run as `.sdd/scripts/build-run.sh backend`, and in no other way.
 Files of this run:
 
 _docs/Cart/review.md
-_docs/Cart/new-requirements.md
-_docs/Cart/design.md
-_docs/Cart/tasks.md
 _docs/code-style.md
 _docs/architecture.index.md
+
+The spec — opened only for a finding that names a requirement or the design,
+a Spec Deviation:
+
+_docs/Cart/new-requirements.md
+_docs/Cart/design.md
 
 The triage the human settled, in their own words:
 

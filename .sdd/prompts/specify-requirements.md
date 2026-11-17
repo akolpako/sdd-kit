@@ -9,7 +9,7 @@ FEATURE={{FEATURE}}
 
 Files of this run:
 
-{{SECTION:SPEC_FILES}}
+{{SECTION:REQUIREMENTS_FILES}}
 
 Kept by the human from an earlier run — input to read, never rewritten:
 

@@ -9,7 +9,7 @@ FEATURE={{FEATURE}}
 
 Files of this run:
 
-{{SECTION:SPEC_FILES}}
+{{SECTION:REQUIREMENTS_FILES}}
 
 Entries of the compilation this feature sourced:
 
