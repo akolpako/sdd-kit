@@ -556,29 +556,26 @@ verify_actualize() {
     return 0
   fi
   # Every requirement the feature declares, against what the compilation now
-  # holds. A draft entry is only one way a promotion stays unfinished: an entry
-  # never written and a refinement never applied leave no draft behind at all.
-  local d_id d_rel d_target t_line
-  while IFS='|' read -r d_id d_rel d_target; do
+  # holds — read by lib/format.sh, as feature-state.sh reads it for the stage.
+  # A draft entry is only one way a promotion stays unfinished: an entry never
+  # written and a refinement never applied leave no draft behind at all.
+  local d_id d_why d_what
+  while IFS='|' read -r d_id d_why d_what; do
     [[ -n "$d_id" ]] || continue
-    case "$d_rel" in
-      new|supersedes)
-        if [[ -z "$(md_req_lines "$SPECS/requirements.md" "$d_id")" ]]; then
-          fail "$d_id is declared by _docs/$FOLDER/new-requirements.md and _docs/requirements.md holds no entry for it — it was not promoted."
-        elif [[ -n "$(foreign_source "$d_id")" ]]; then
-          fail "$d_id in _docs/requirements.md is an entry of $(foreign_source "$d_id"), not of $FOLDER — this feature's requirement of that number was never promoted, or was written over another feature's."
-        fi
-        [[ "$d_rel" == "new" ]] && continue
-        t_line="$(md_req_lines "$SPECS/requirements.md" "$d_target" | head -n 1)"
-        if [[ -n "$t_line" ]] && ! sed -n "${t_line}p" "$SPECS/requirements.md" | grep -q "superseded by $d_id"; then
-          fail "$d_id supersedes $d_target, and the entry of $d_target in _docs/requirements.md does not say so — it still reads as a requirement in force."
-        fi ;;
-      refines)
-        printf '%s\n' "$COMP_RECS" | grep -q "^$d_target|" || \
-          fail "$d_id refines $d_target, and the entry of $d_target in _docs/requirements.md carries no trace of this feature — the new wording was not written into it." ;;
+    case "$d_why" in
+      missing)
+        fail "$d_id is declared by _docs/$FOLDER/new-requirements.md and _docs/requirements.md holds no entry for it — it was not promoted." ;;
+      foreign)
+        fail "$d_id in _docs/requirements.md is an entry of $d_what, not of $FOLDER — this feature's requirement of that number was never promoted, or was written over another feature's." ;;
+      no-target)
+        fail "$d_id supersedes ${d_what:-a requirement it does not name}, and _docs/requirements.md holds no entry of it — nothing on file says what $d_id replaced." ;;
+      unmarked)
+        fail "$d_id supersedes $d_what, and the entry of $d_what in _docs/requirements.md does not say so — it still reads as a requirement in force." ;;
+      unrefined)
+        fail "$d_id refines $d_what, and the entry of $d_what in _docs/requirements.md carries no trace of this feature — the new wording was not written into it." ;;
     esac
   done <<EOF
-$(md_req_relations "$SPECS/$FOLDER/new-requirements.md")
+$(md_unpromoted "$SPECS/requirements.md" "$SPECS/$FOLDER/new-requirements.md" "$FOLDER")
 EOF
   # A feature that declares nothing has no entry to be found by: the mark is
   # what takes it to actualized, and a run that did not write it left the

@@ -453,25 +453,9 @@ collect() {
   # entry on file is not a promoted feature: /sdd-actualize writes the entries
   # one at a time, and a run cut off after the first left the rest behind.
   UNPROMOTED=""
-  if [[ "$COMPILATION_STATE" == "present" && "$ST_REQ" == "present" ]]; then
-    local d_id d_rel d_target t_line own_ids=" "
-    for rec in ${COMP_RECS[@]+"${COMP_RECS[@]}"}; do own_ids="$own_ids${rec%%|*} "; done
-    while IFS='|' read -r d_id d_rel d_target; do
-      [[ -n "$d_id" ]] || continue
-      case "$d_rel" in
-        new) [[ "$own_ids" == *" $d_id "* ]] || UNPROMOTED="${UNPROMOTED:+$UNPROMOTED, }$d_id" ;;
-        refines)
-          [[ -n "$d_target" && "$own_ids" == *" $d_target "* ]] || UNPROMOTED="${UNPROMOTED:+$UNPROMOTED, }$d_id" ;;
-        supersedes)
-          t_line="$(md_req_lines "$COMPILATION_FILE" "$d_target" | head -n 1)"
-          if [[ "$own_ids" != *" $d_id "* || -z "$t_line" ]] \
-             || ! sed -n "${t_line}p" "$COMPILATION_FILE" | grep -q "superseded by $d_id"; then
-            UNPROMOTED="${UNPROMOTED:+$UNPROMOTED, }$d_id"
-          fi ;;
-      esac
-    done <<EOF
-$DECL_RECS
-EOF
+  if [[ "$COMPILATION_STATE" == "present" && "$ST_REQ" == "present" && -n "$DECL_RECS" ]]; then
+    UNPROMOTED="$(md_unpromoted "$COMPILATION_FILE" "$dir/new-requirements.md" "$f" | awk -F'|' '
+      !seen[$1]++ { printf "%s%s", sep, $1; sep = ", " }')"
   fi
 
   # ── Coverage ────────────────────────────────────────────────────

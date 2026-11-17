@@ -776,6 +776,35 @@ check_format() {
   ok=0; md_untouched "$work/fresh.md" "$work/no-template.md" && ok=1
   prop_check format "no template is not an answer" "$ok" \
     "a template that is not on disk read as matching the file"
+
+  # Whether a feature was promoted as it declares: one reader for the stage and
+  # for --verify. A replacement whose target has no entry is not promoted.
+  cat > "$work/comp.md" <<'SDD_T'
+## Requirements
+
+- **REQ-001** — Old. *(Source: Cart, superseded by REQ-004)*
+- **REQ-002** — Other. *(Source: Promo, refined by cart)*
+- **REQ-003** — Mine. *(Source: Cart)*
+- **REQ-004** — Replacement. *(Source: Cart)*
+- **REQ-006** — Foreign. *(Source: Promo)*
+- **REQ-007** — Replacement of nothing. *(Source: Cart)*
+SDD_T
+  cat > "$work/decl.md" <<'SDD_T'
+## Requirements
+
+### REQ-002 — Reworded
+**Refines:** REQ-002
+### REQ-003 — Mine
+### REQ-004 — Replacement
+**Supersedes:** REQ-001
+### REQ-005 — Never written
+### REQ-006 — Taken
+### REQ-007 — Replacement of nothing
+**Supersedes:** REQ-009
+SDD_T
+  out="$(md_unpromoted "$work/comp.md" "$work/decl.md" Cart | tr '\n' ' ')"
+  ok=0; [[ "$out" == "REQ-005|missing| REQ-006|foreign|Promo REQ-007|no-target|REQ-009 " ]] || ok=1
+  prop_check format "md_unpromoted names what is not there as declared" "$ok" "printed: $out"
 }
 
 # The build command, by the shape of the project. Which keys `.sdd/sdd.conf`

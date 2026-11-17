@@ -38,6 +38,10 @@
 #   md_req_relations <file>       one record per requirement it declares:
 #                                  `<REQ-…>|new|`, `<REQ-…>|refines|<REQ-…>`
 #                                  or `<REQ-…>|supersedes|<REQ-…>`
+#   md_unpromoted <compilation> <new-requirements> <feature>
+#                                  one record per requirement the feature
+#                                  declares that the compilation does not hold
+#                                  as declared: `<REQ>|<reason>|<detail>`
 #   md_counter <file> [<domain>]   REQ-… the `<!-- Next free number: -->`
 #                                  marker of that domain says; empty when there
 #                                  is none. The default domain is the empty one
@@ -459,6 +463,67 @@ md_req_source() {
       print src; exit
     }
   ' -v want="$2"
+}
+
+# Whether a feature was promoted as it declares, in one place: the stage
+# (feature-state.sh) and the postcondition of /sdd-actualize (gate.sh --verify)
+# read it here, so the two cannot disagree about the same compilation. A record
+# per way a declared requirement is not there as declared — a replacement can
+# owe two:
+#   <REQ>|missing|             new, supersedes — no entry carries the number
+#   <REQ>|foreign|<source>     new, supersedes — the entry is another feature's
+#   <REQ>|no-target|<target>   supersedes — the replaced requirement has no entry
+#   <REQ>|unmarked|<target>    supersedes — its entry does not say
+#                              `superseded by <REQ>`
+#   <REQ>|unrefined|<target>   refines — its entry is neither this feature's nor
+#                              carries `refined by <feature>`
+# The first entry of a number is the one read, as everywhere else; sources are
+# compared as folders are, case aside. Nothing printed is a feature promoted.
+md_unpromoted() {
+  local decl
+  decl="$(md_req_relations "$2")"
+  [[ -n "$decl" ]] || return 0
+  if [[ ! -f "$1" ]]; then
+    printf '%s\n' "$decl" | awk -F'|' 'NF && $2 != "refines" { print $1 "|missing|" } NF && $2 == "refines" { print $1 "|unrefined|" $3 }'
+    return 0
+  fi
+  SDD_DECL="$decl" SDD_FEATURE="$3" md_awk "$1" "$MD_AWK_ENTRY"'
+    function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
+    BEGIN { me = tolower(ENVIRON["SDD_FEATURE"]) }
+    md_is_entry($0) {
+      id = md_id($0)
+      if (id in seen) next
+      seen[id] = 1; src[id] = ""; mine[id] = 0; sup[id] = ""
+      p = index($0, "(Source:")
+      if (p == 0) next
+      rest = substr($0, p + 8); q = index(rest, ")"); if (q > 0) rest = substr(rest, 1, q - 1)
+      n = split(rest, part, ",")
+      src[id] = trim(part[1])
+      for (i = 2; i <= n; i++) {
+        f = trim(part[i])
+        if (f ~ /^refined by /) { if (tolower(trim(substr(f, 12))) == me) mine[id] = 1 }
+        else if (f ~ /^superseded by /) sup[id] = md_id(f)
+      }
+    }
+    END {
+      n = split(ENVIRON["SDD_DECL"], rec, "\n")
+      for (i = 1; i <= n; i++) {
+        if (split(rec[i], r, "|") < 2) continue
+        d = r[1]; rel = r[2]; t = r[3]
+        if (rel == "refines") {
+          if (t == "" || !(t in seen) || (tolower(src[t]) != me && !mine[t])) print d "|unrefined|" t
+          continue
+        }
+        # A replacement owes two things, its own entry and the mark on the
+        # one it replaced, and each missing one is a record of its own.
+        if (!(d in seen))                print d "|missing|"
+        else if (tolower(src[d]) != me)  print d "|foreign|" src[d]
+        if (rel != "supersedes")         continue
+        if (t == "" || !(t in seen))     print d "|no-target|" t
+        else if (sup[t] != d)            print d "|unmarked|" t
+      }
+    }
+  '
 }
 
 # What a feature declares is what holds the number: the entry in
