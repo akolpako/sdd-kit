@@ -15,7 +15,7 @@ Turns a `draft` spec into a `ready` one through the checklist and an interview. 
   - `.sdd/protocols/orchestration.md`
   - the output of `.sdd/scripts/gate.sh review`
   - the prompts `.sdd/scripts/spawn-prompt.sh` renders
-  - the `## Open Questions` section of `new-requirements.md` and `design.md`, and the `REQ-###` headings of `new-requirements.md` for the matrix
+  - the `## Open Questions` section of `new-requirements.md` and `design.md`
   - nothing else of the feature's spec files — those are the roles' to read
 - **Writes,** and nothing else in either file — everything else in their bodies is the roles':
   - the snapshot that precedes the run
@@ -46,9 +46,9 @@ Turns a `draft` spec into a `ready` one through the checklist and an interview. 
    - For a requirement the question is always the same one — is it a **refinement** of the existing entry or its **replacement** — and the answer is written back onto its line by the same `spec-edit.sh answer` call. The role then records it as the `Refines:` / `Supersedes:` line under the requirement's heading; that line is what `/sdd-actualize` applies to the compilation. Nothing is written into `new-requirements.md` by hand here.
    - No conflict is left unresolved: a conflict line still unanswered when the rounds are spent is a critical gap, and the verdict of step 7 is `NOT READY`.
 
-5. **Re-run the gate:** the roles have been rewriting `tasks.md` since step 1, so the `TASKS:` records the matrix of step 6 reads come from this run, never from the first one.
+5. **Re-run the gate:** the roles have been rewriting `tasks.md` since step 1, so the matrix of step 6 comes from this run, never from the first one.
 
-6. **Print the coverage matrix** — the orchestrator's own, to the chat, never into a file. Every `REQ-###` declared in `new-requirements.md`, against the `requires` field of the `TASKS:` records of step 5:
+6. **Print the coverage matrix** — the orchestrator's own, to the chat, never into a file: the gate's `COVERAGE:` records of step 5, `<REQ>|<title>|<tasks>`, one row each, as they stand:
 
      | Requirement | Covered by |
      |-------------|------------|

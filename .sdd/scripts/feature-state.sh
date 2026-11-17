@@ -67,6 +67,10 @@
 #                           status is active, draft, superseded by REQ-###,
 #                           or refined — an entry of another feature that
 #                           this one reworded
+#   COVERAGE:               <REQ-…>|<title>|<TASK-…,TASK-…> — every
+#                           requirement the feature declares (Out of Scope
+#                           excluded) and the tasks whose Requires: name it;
+#                           `-` where none does. The matrix, computed
 #   UNCOVERED:              <REQ-…>|<title> — a requirement the feature
 #                           declares (Out of Scope excluded) that no task's
 #                           Requires: names
@@ -451,9 +455,9 @@ EOF
   # ── Coverage ────────────────────────────────────────────────────
   # The requirement → task matrix, computed here so that no command counts it
   # by eye: a requirement no task names, and a task naming one nobody declares.
-  UNCOVERED=""; UNDECLARED=""
+  UNCOVERED=""; UNDECLARED=""; COVERAGE=""
   if [[ "$ST_REQ" == "present" && "$ST_TSK" == "present" ]]; then
-    local requires=" " declared=" " r t_id t_req pairs="" title
+    local requires=" " declared=" " r t_id t_req pairs="" title titles covered
     for rec in ${TASK_RECS[@]+"${TASK_RECS[@]}"}; do
       t_id="${rec%%|*}"; t_req="${rec#*|*|*|}"; t_req="${t_req%%|*}"
       for r in $(printf '%s' "$t_req" | grep -oE "$MD_REQ_RE"); do
@@ -461,15 +465,18 @@ EOF
         pairs="$pairs$t_id|$r"$'\n'
       done
     done
+    # Every heading's title in one pass, `<REQ>|<title>`.
+    titles="$(md_uncomment "$dir/new-requirements.md" | awk "$MD_AWK_DECL"'
+      md_is_req_heading($0) { id = md_id($0)
+        sub(/^#+[[:space:]]*/, ""); sub(/^[^[:space:]]+[[:space:]]*/, "")
+        sub(/^(—|–|-)[[:space:]]*/, ""); gsub(/\|/, "/"); print id "|" $0 }')"
     while IFS='|' read -r d_id _rest; do
       [[ -n "$d_id" ]] || continue
       declared="$declared$d_id "
-      [[ "$requires" == *" $d_id "* ]] && continue
-      title="$(md_uncomment "$dir/new-requirements.md" | awk -v id="$d_id" "$MD_AWK_DECL"'
-        md_is_req_heading($0) && md_id($0) == id {
-          sub(/^#+[[:space:]]*/, ""); sub(/^[^[:space:]]+[[:space:]]*/, "")
-          sub(/^(—|–|-)[[:space:]]*/, ""); gsub(/\|/, "/"); print; exit }')"
-      UNCOVERED="$UNCOVERED$d_id|$title"$'\n'
+      title="$(printf '%s\n' "$titles" | awk -F'|' -v id="$d_id" '$1 == id { sub(/^[^|]*\|/, ""); print; exit }')"
+      covered="$(printf '%s' "$pairs" | awk -F'|' -v id="$d_id" '$2 == id { printf "%s%s", sep, $1; sep = "," }')"
+      COVERAGE="$COVERAGE$d_id|$title|${covered:--}"$'\n'
+      [[ -z "$covered" ]] && UNCOVERED="$UNCOVERED$d_id|$title"$'\n'
     done < <(md_req_relations "$dir/new-requirements.md")
     while IFS='|' read -r t_id r; do
       [[ -n "$t_id" && "$declared" != *" $r "* ]] && UNDECLARED="$UNDECLARED$t_id|$r"$'\n'
@@ -563,6 +570,7 @@ print_feature() {
   printf '\nCOMPILATION_ENTRIES:\n'
   for rec in ${COMP_RECS[@]+"${COMP_RECS[@]}"}; do printf '%s\n' "$rec"; done
 
+  printf '\nCOVERAGE:\n%s' "$COVERAGE"
   printf '\nUNCOVERED:\n%s' "$UNCOVERED"
   printf '\nUNDECLARED:\n%s' "$UNDECLARED"
 }

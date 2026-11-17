@@ -67,7 +67,7 @@
 #   new          NAME_OK=yes|no, NAME_WARN=<text>, RAW=..., FEATURES:
 #   specify      RAW, REQUIREMENTS, DESIGN, TASKS, STATUS_*, COMPILATION,
 #                NEXT_REQ=REQ-###, MODE=draft, REQ_DOMAINS:, REQ_DUPLICATES:
-#   review       the same, plus TASKS:, UNCOVERED:, UNDECLARED: (from
+#   review       the same, plus COVERAGE:, UNCOVERED:, UNDECLARED: (from
 #                feature-state.sh — the stops of the coverage matrix)
 #   implement    TASKS_DONE, TASKS_TOTAL, TASKS_BLOCKED, ROLE_ORDER, BUILD_ROOT,
 #                BUILD_BACKEND, BUILD_FRONTEND, BASELINE, BUILD_FILES
@@ -1404,12 +1404,12 @@ case "$CMD" in
     [[ -n "$REQ_DOMAINS" ]] && printf '%s\n' "$REQ_DOMAINS"
     printf '\nREQ_DUPLICATES:\n'
     [[ -n "$REQ_DUPLICATES" ]] && printf '%s\n' "$REQ_DUPLICATES"
-    # TASKS: stays: the coverage matrix is the orchestrator's own work. What
-    # it is read for — a requirement no task names, a task naming one nobody
-    # declares — comes computed, so the stop of the matrix is not a count by eye.
+    # The coverage matrix, computed: the orchestrator prints COVERAGE: as it
+    # stands and asks about UNCOVERED: and UNDECLARED:, reading neither the
+    # task list nor the requirement headings for it.
     if [[ $SPAWNING -eq 1 ]]; then
-      printf '\nTASKS:\n'
-      [[ -n "$TASK_RECS" ]] && printf '%s\n' "$TASK_RECS"
+      printf '\nCOVERAGE:\n'
+      section "$FS_OUT" COVERAGE
       printf '\nUNCOVERED:\n'
       section "$FS_OUT" UNCOVERED
       printf '\nUNDECLARED:\n'

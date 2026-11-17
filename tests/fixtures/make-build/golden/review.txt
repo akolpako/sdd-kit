@@ -22,11 +22,9 @@ REQ_DOMAINS:
 
 REQ_DUPLICATES:
 
-TASKS:
-TASK-001|open|backend|REQ-002|Cart table and entity|
-TASK-002|open|backend|REQ-002|Add and remove items|
-TASK-003|open|backend|REQ-003|Cart totals|
-TASK-004|open|backend|REQ-002,REQ-003|Cart REST endpoints|
+COVERAGE:
+REQ-002|Cart holds items|TASK-001,TASK-002,TASK-004
+REQ-003|Cart totals|TASK-003,TASK-004
 
 UNCOVERED:
 

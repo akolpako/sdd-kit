@@ -242,8 +242,8 @@ flowchart LR
 - **Output**: `KEY=value` lines, then `SECTION:` blocks, one record per line; print what was read
   next to what was resolved.
 - **The orchestrator does not read what it does not decide from.** A spawn passes spec file
-  *paths*, not contents. `TASKS:` is the exception — the coverage matrix is the orchestrator's;
-  its stops come computed as `UNCOVERED:` and `UNDECLARED:`.
+  *paths*, not contents. The coverage matrix comes computed as `COVERAGE:`, its stops as
+  `UNCOVERED:` and `UNDECLARED:`.
 - **A format is read in one place** — `lib/format.sh`, sourced by readers and writers.
 - **Nothing tool-specific**: both hosts run the same scripts. `review-set.sh` excludes `_docs/`,
   `.sdd/`, `.claude/` but not `.github/` — the `.gitignore` block already hides the engine there,
