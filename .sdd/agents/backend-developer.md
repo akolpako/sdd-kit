@@ -39,7 +39,7 @@ Before returning. Run the build the assignment names as part of every verificati
 - [ ] The build passes: compilation and the full test suite, not only the tests I wrote
 - [ ] Every endpoint whose behaviour I changed has an integration test
 - [ ] Every new class or module with logic has a unit test — DTOs, configuration and simple converters excepted
-- [ ] Every schema change has a migration, and it runs against a database that already holds data
+- [ ] Every schema change has a migration written for tables that already hold rows: a new required column carries a default or a backfill, and nothing is dropped or renamed in the same step that stops using it
 - [ ] Every third-party behaviour I relied on was read from the library, not recalled
 - [ ] Nothing in the assignment is left unbuilt — where it is, my reply says so and why
 
