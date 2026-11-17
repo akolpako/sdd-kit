@@ -19,7 +19,8 @@
 #                           that were already changed or untracked at the
 #                           starting point: they are reviewed, and may carry
 #                           someone else's work. Empty without a starting point
-#   DIFFSTAT:               the overview of the diff
+#   FILES:                  the paths the diff changes, one per line; with
+#                           UNTRACKED: they are the whole set
 #
 # The base is a fork point, not the first name on a preference list: of the
 # integration branches that exist, the one whose merge-base with HEAD sits
@@ -149,19 +150,22 @@ UNTRACKED="$(git ls-files --others --exclude-standard -- . "${EXCLUDE[@]}")"
 printf '\nUNTRACKED:\n'
 [[ -n "$UNTRACKED" ]] && printf '%s\n' "$UNTRACKED"
 
+if [[ -n "$ROOT" ]]; then
+  FILES="$(git diff --name-only "$ROOT" -- . "${EXCLUDE[@]}")"
+else
+  FILES="$(git diff --cached --name-only -- . "${EXCLUDE[@]}")"
+fi
+
 # Compared by the shell: the lists are paths, one per line, written by the same
 # two git commands on both sides.
 printf '\nPREEXISTING:\n'
 if [[ -n "$START" ]]; then
-  SET=$'\n'"$(git diff --name-only "$ROOT" -- . "${EXCLUDE[@]}")"$'\n'"$UNTRACKED"$'\n'
+  SET=$'\n'"$FILES"$'\n'"$UNTRACKED"$'\n'
   while IFS= read -r p; do
     [[ -n "$p" && "$SET" == *$'\n'"$p"$'\n'* ]] && printf '%s\n' "$p"
   done <<< "$(md_start_dirty "$START_FILE")"
 fi
 
-printf '\nDIFFSTAT:\n'
-if [[ -n "$ROOT" ]]; then
-  git diff --stat "$ROOT" -- . "${EXCLUDE[@]}"
-else
-  git diff --cached --stat -- . "${EXCLUDE[@]}"
-fi
+printf '\nFILES:\n'
+[[ -n "$FILES" ]] && printf '%s\n' "$FILES"
+exit 0

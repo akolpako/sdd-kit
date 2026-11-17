@@ -794,10 +794,11 @@ if [[ $NEED_RS -eq 1 && $RS_RC -eq 0 ]]; then
   RS_NOTES="$(section "$RS_OUT" NOTES)"
   RS_UNTRACKED="$(section "$RS_OUT" UNTRACKED)"
   RS_PRE="$(section "$RS_OUT" PREEXISTING)"
-  # A stat row carries ' | '; the trailing "N files changed" summary does not.
-  n_diff=$(section "$RS_OUT" DIFFSTAT | grep -c ' | ' || true)
-  n_untracked=$(printf '%s\n' "$RS_UNTRACKED" | grep -c . || true)
-  CHANGED=$(( n_diff + n_untracked ))
+  # One path per line in both lists: a file the diff changes, or one git does
+  # not track yet.
+  while IFS= read -r p; do
+    [[ -n "$p" ]] && CHANGED=$(( CHANGED + 1 ))
+  done <<< "$(section "$RS_OUT" FILES)"$'\n'"$RS_UNTRACKED"
 fi
 
 # ── The next free REQ number ──────────────────────────────────────
