@@ -54,4 +54,4 @@ Inside double quotes on a command line a backtick runs a command and a `$` expan
 
 **Before any overwrite, `.sdd/scripts/spec-edit.sh backup`.** A non-zero exit is a stop: nothing is overwritten without its copy, and no role is spawned to write it.
 
-**The command file never reaches the role** — what the role needs is in the spawn prompt, as the core instructions every role is loaded with say. `.sdd/scripts/spawn-prompt.sh` renders it from the gate's `SPAWN:` record; relay it word for word, adding only the `KEY=value` a script could not know and editing nothing inside.
+**The command file never reaches the role** — what the role needs is in the spawn prompt, as the core instructions every role is loaded with say. `.sdd/scripts/spawn-prompt.sh` renders it from the gate's `SPAWN:` record into a file and prints `PASS=`: the spawn call carries that line and nothing else. What a script could not know goes into the file as an argument of `spawn-prompt.sh` — `KEY=value`, or a `KEY:` block on stdin — never as text added to the spawn call. The file is not opened, retyped or summarised here.

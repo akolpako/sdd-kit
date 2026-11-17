@@ -165,7 +165,7 @@ This project uses Spec-Driven Development.
 
 ## The assignment
 
-**The prompt carries everything the role needs**: the protocols it is to follow, the paths it may read and write, and whatever was already resolved — the build command, a starting number, the records of the work. A role looks nothing up that the prompt did not name, and reads nothing in a folder the prompt did not name.
+**The prompt carries everything the role needs** — or the file it points at, read whole before anything else: the protocols it is to follow, the paths it may read and write, and whatever was already resolved — the build command, a starting number, the records of the work. A role looks nothing up that the prompt did not name, and reads nothing in a folder the prompt did not name.
 
 What a role changed is read from the working tree, never from its prose.
 

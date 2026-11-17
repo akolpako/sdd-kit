@@ -83,15 +83,15 @@ other's files — one agent with two definitions, one command defined twice.
 | the human | Runs every command. Nothing chains; every decision is put to them. |
 | the command `.sdd/commands/*.md` | The step order of this step. |
 | `gate.sh` | Every precondition, the wording of every stop, and the `SPAWN:` table (`role \| protocols \| scope`) — one edit in one file to add a role or rename a protocol. |
-| `spawn-prompt.sh` | Renders `.sdd/prompts/<command>-<scope>.md` into one assignment, taking values from `gate.sh --prompt-data` outside the orchestrator's context. Opens every prompt with the working directory — the root of every relative path in it. |
+| `spawn-prompt.sh` | Renders `.sdd/prompts/<command>-<scope>.md` into one assignment, taking values from `gate.sh --prompt-data` outside the orchestrator's context. Opens every prompt with the working directory — the root of every relative path in it. Writes it to `.sdd/run/<command>-<Feature>-<scope>.md` and prints `PASS=`, the line the spawn call carries; `--print` shows the text instead. |
 | the protocol `.sdd/protocols/*.md` | The procedure the role performs. Reaches the role only inside the prompt; the only protocol a command names is `orchestration.md`. |
 | the agent `.sdd/agents/*.md` | Does the assignment and writes its files. Never reads a command file, never learns the flow. |
 | `spec-edit.sh` | Writes whose format, place and date are fixed. The command supplies only the words — on stdin, through a quoted here-document, never inside double quotes on a command line. Also the build answers into `.sdd/sdd.conf` (`conf-set`), a file the orchestrator never opens: it may hold a token. |
 | `jira-import.sh` | The Jira issue as `raw.md`: runs the `jira` skill's fetch script, which owns everything about Jira (config keys, REST call, wiki-markup → Markdown, attachments), then appends the two sections the flow reads by name. The only script that touches the network or needs `curl`/`jq`. |
 
 **A command does five things and nothing else:** run `gate.sh` (a `stop` or `ask` ends the run
-there, in the gate's words); spawn each role its `SPAWN:` records name, with the prompt
-`spawn-prompt.sh` renders, word for word; write what only it can write, through `spec-edit.sh`;
+there, in the gate's words); spawn each role its `SPAWN:` records name, passing the one `PASS=` line
+`spawn-prompt.sh` prints — the prompt itself is a file the role reads; write what only it can write, through `spec-edit.sh`;
 check with `gate.sh --verify` plus the build; report and name the next command. How each is done
 is `orchestration.md`.
 

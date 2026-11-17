@@ -62,8 +62,9 @@
 
 SDD_LOG_NAME="$(basename "$0")"
 
-# spawn-prompt.sh is exempt from the per-stream cap: its stdout is logged whole.
-# That output is the assignment a role received, and *the role did the wrong
+# spawn-prompt.sh is exempt from the per-stream cap: its stdout is logged whole,
+# and so is the file its PROMPT= line names, as a `prompt:` block. That text is
+# the assignment a role received, and *the role did the wrong
 # thing* is a question only the full text answers. It cannot be recovered any
 # other way — the prompt is rendered from a gate run over the tree as it stood
 # at that moment, and by the time anybody is reading the log the tree has moved
@@ -146,6 +147,11 @@ sdd_log_record() {
       "$SDD_LOG_NAME" "$(sdd_log_argv ${1+"$@"})"
     printf 'cwd=%s\n' "$PWD"
     sdd_log_stream stdout "$out" "$head" "$SDD_LOG_TAIL"
+    if [[ $head -eq 0 ]]; then
+      local pf
+      pf="$(sed -n 's/^PROMPT=//p' "$out" 2>/dev/null | head -n 1)"
+      [[ -n "$pf" && -f "$pf" ]] && sdd_log_stream prompt "$pf" 0 0
+    fi
     sdd_log_stream stderr "$err" "$SDD_LOG_HEAD" "$SDD_LOG_TAIL"
     # stderr is silenced before the append, not after: a redirection bash
     # cannot open is reported on whichever stderr is current at that point,

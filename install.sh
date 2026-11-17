@@ -814,8 +814,8 @@ adapter_dest() {
 # to — Copilot CLI's — which every spawn prompt points at. rules is the exception, and the map says so with MAP_KEEP: the walk
 # installs it at .sdd/rules/ and the map adds the host's copy on top of that.
 #
-# log/ and sdd.conf are skipped for a different reason: the engine ships
-# neither, but both appear inside a clone the moment someone runs the engine's
+# log/, build/, run/ and sdd.conf are skipped for a different reason: the
+# engine ships none of them, but both appear inside a clone the moment someone runs the engine's
 # own scripts or commands there. Copied into a project they would carry that
 # clone's log and that clone's build commands into every install.
 #
@@ -828,7 +828,7 @@ sdd_walk_skips() {
   local name="$1" host
   case "$name" in
     _gitignore.claude|_gitignore.copilot) return 0 ;;
-    log|build|sdd.conf|.venv) return 0 ;;
+    log|build|run|sdd.conf|.venv) return 0 ;;
   esac
   for host in claude copilot; do
     if adapter_dest "$host" "$name"; then
@@ -1513,6 +1513,14 @@ remove_installed() {
     rm -rf "$target/.sdd/log"
     printf "  ${RED}\u2212${RESET}  .sdd/log/ ${DIM}(the engine's own log)${RESET}\n"
   fi
+  # The same for the other two the scripts write: the build logs of
+  # build-run.sh and the prompts of spawn-prompt.sh.
+  for dir in build run; do
+    if [[ -d "$target/.sdd/$dir" ]]; then
+      rm -rf "$target/.sdd/$dir"
+      printf "  ${RED}\u2212${RESET}  .sdd/$dir/ ${DIM}(the engine's own output)${RESET}\n"
+    fi
+  done
 
   manifest_read "$target"
   sums_prime_manifest "$target"

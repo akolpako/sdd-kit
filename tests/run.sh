@@ -383,9 +383,9 @@ run_prompt_case() {
   fi
 
   if [[ "$cmd" == "init" ]]; then
-    out="$(cd "$project" && "$RENDERER" init "$scope" ${argv[@]+"${argv[@]}"} 2>"$err")"; rc=$?
+    out="$(cd "$project" && "$RENDERER" init "$scope" ${argv[@]+"${argv[@]}"} --print 2>"$err")"; rc=$?
   else
-    out="$(cd "$project" && "$RENDERER" "$cmd" "$feature" "$scope" ${argv[@]+"${argv[@]}"} 2>"$err")"; rc=$?
+    out="$(cd "$project" && "$RENDERER" "$cmd" "$feature" "$scope" ${argv[@]+"${argv[@]}"} --print 2>"$err")"; rc=$?
   fi
 
   record "$out" "$rc" "$err" "$actual"
@@ -1948,9 +1948,9 @@ SDD_TEXT
   # ── spawn-prompt.sh, values on stdin ────────────────────────────
   local proj="$TMP/text-prompt" a b
   rm -rf "$proj" && mkdir -p "$proj" && cp -R "$FIXTURES/actualized/tree/." "$proj/" || exit 1
-  a="$(cd "$proj" && "$RENDERER" code-fix Cart findings-backend "TRIAGE=Fix all." "FINDINGS=F-01 a.java:1 — x
+  a="$(cd "$proj" && "$RENDERER" code-fix Cart findings-backend --print "TRIAGE=Fix all." "FINDINGS=F-01 a.java:1 — x
 F-02 b.java:2 — y" 2>&1)"
-  b="$(cd "$proj" && "$RENDERER" code-fix Cart findings-backend - 2>&1 <<'SDD_VALUES'
+  b="$(cd "$proj" && "$RENDERER" code-fix Cart findings-backend --print - 2>&1 <<'SDD_VALUES'
 
 TRIAGE:
 Fix all.
@@ -1964,7 +1964,7 @@ SDD_VALUES
   ok=0; [[ -n "$a" && "$a" == "$b" ]] || ok=1
   prop_check text "stdin blocks render as the arguments do" "$ok" "$(diff <(printf '%s\n' "$a") <(printf '%s\n' "$b") | tr '\n' '~')"
 
-  b="$(cd "$proj" && "$RENDERER" code-fix Cart findings-backend - 2>&1 <<'SDD_VALUES'
+  b="$(cd "$proj" && "$RENDERER" code-fix Cart findings-backend --print - 2>&1 <<'SDD_VALUES'
 TRIAGE:
 Keep `$HOME` and \d+ as written.
 FINDINGS:
@@ -1977,6 +1977,15 @@ SDD_VALUES
   out="$(cd "$proj" && printf 'TRIAGE:\nx\nFINDINGS:\ny\n' | "$RENDERER" code-fix Cart findings-backend - "TRIAGE=z" 2>&1)"; rc=$?
   ok=0; [[ $rc -eq 1 && "$out" == *"given twice"* ]] || ok=1
   prop_check text "a key given twice is refused" "$ok" "exit $rc: $out"
+
+  # Without --print the prompt goes to a file and the spawn call carries one line.
+  local file
+  out="$(cd "$proj" && "$RENDERER" code-fix Cart findings-backend "TRIAGE=Fix all." "FINDINGS=F-01" 2>&1)"; rc=$?
+  file="$proj/.sdd/run/code-fix-Cart-findings-backend.md"
+  b="$(cd "$proj" && "$RENDERER" code-fix Cart findings-backend --print "TRIAGE=Fix all." "FINDINGS=F-01" 2>&1)"
+  ok=0; [[ $rc -eq 0 && -f "$file" && "$(cat "$file")" == "$b" ]] || ok=1
+  [[ "$out" == "PROMPT=$file"$'\n'"PASS=Your assignment is in $file. Read it whole and follow it." ]] || ok=1
+  prop_check text "the prompt is written to .sdd/run/ and PASS= names it" "$ok" "exit $rc: $out"
 }
 
 # A raw.md that is still the template the scaffold copied holds no description:

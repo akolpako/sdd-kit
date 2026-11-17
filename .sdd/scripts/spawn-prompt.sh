@@ -1,13 +1,23 @@
 #!/usr/bin/env bash
 # The spawn prompt of one assignment, rendered from a template — the whole text
-# a role is given, printed ready to relay.
+# a role is given, written to a file the role is pointed at.
 #
-# The command runs this and hands the output to the role word for word: it adds
-# nothing and drops nothing. What goes into a prompt is `.sdd/prompts/`, and the
-# values are this run's own — the gate's, and the `KEY=value` arguments for what
-# only a human or a role could have said.
+# The text never passes through the command that spawns: a prompt retyped into
+# a spawn call costs its whole length in output and can come out reworded, with
+# nothing to tell. The command passes one line, PASS=, and the role reads the
+# rest from disk. What goes into a prompt is `.sdd/prompts/`, and the values are
+# this run's own — the gate's, and the `KEY=value` arguments for what only a
+# human or a role could have said.
 #
-# Usage: spawn-prompt.sh <command> <FeatureName> <scope> [KEY=value ...]
+# Usage: spawn-prompt.sh <command> <FeatureName> <scope> [KEY=value ...] [--print]
+#
+# Prints:
+#   PROMPT=<path>   .sdd/run/<command>-<FeatureName>-<scope>.md (init:
+#                   init-<scope>.md), absolute, overwritten by the next run of
+#                   the same assignment
+#   PASS=<line>     the whole of what the spawn call carries
+# --print prints the prompt itself instead and writes no file — for a human
+# reading what a role would get.
 #   init            takes no feature name: spawn-prompt.sh init <scope> [KEY=value ...]
 #   <scope>         the third field of the gate's SPAWN: record
 #   KEY=value       a value the gate cannot know: KEPT=, TRIAGE=, FINDINGS=,
@@ -50,7 +60,7 @@
 #   A placeholder with no value is an error and no prompt is printed: half an
 #   assignment is worse than none.
 #
-# Exit codes: 0 — the prompt was printed; 1 — the environment is wrong;
+# Exit codes: 0 — the prompt was written (printed, under --print); 1 — the environment is wrong;
 #             2 — nothing to render: the gate stopped, this run has no such
 #             assignment, there is no template for it, or a value is missing.
 
@@ -97,10 +107,14 @@ mkdir -p "$VALS" "$SECS" "$ARGS"
 
 BASE_ARG=""
 FROM_STDIN=0
+PRINT=0
 while (( $# > 0 )); do
   case "$1" in
     -)
       FROM_STDIN=1
+      ;;
+    --print)
+      PRINT=1
       ;;
     [A-Z]*=*)
       key="${1%%=*}"; val="${1#*=}"
@@ -314,5 +328,16 @@ if [[ $FAIL -ne 0 ]]; then
   exit 2
 fi
 
-cat "$RENDERED"
+if [[ $PRINT -eq 1 ]]; then
+  cat "$RENDERED"
+  exit 0
+fi
+
+# Written whole or not at all: a role pointed at half a file would take it for
+# the whole assignment.
+OUT_DIR="$PWD/.sdd/run"
+if [[ "$CMD" == "init" ]]; then OUT="$OUT_DIR/init-$SCOPE.md"; else OUT="$OUT_DIR/$CMD-$FEATURE-$SCOPE.md"; fi
+mkdir -p "$OUT_DIR" && cp "$RENDERED" "$OUT.tmp" && mv -f "$OUT.tmp" "$OUT" \
+  || { rm -f "$OUT.tmp"; printf 'ERROR=could not write %s\n' "$OUT" >&2; exit 1; }
+printf 'PROMPT=%s\nPASS=Your assignment is in %s. Read it whole and follow it.\n' "$OUT" "$OUT"
 exit 0
