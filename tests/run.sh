@@ -2334,6 +2334,58 @@ EOR
   prop_check collisions "one number declared by two features is reported" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
 }
 
+# A feature that declares no requirement has no compilation entry to be told
+# actualized by: the `actualized:` property of its new-requirements.md is the
+# mark, written by spec-edit.sh as the last write of the promotion.
+check_no_requirements() {
+  local work="$TMP/no-reqs" state="$SCRIPTS/feature-state.sh" out rc ok f
+  printf 'no-requirements\n'
+  rm -rf "$work" && mkdir -p "$work/_docs/Tidy" "$work/_docs/architecture" || exit 1
+  printf '<!-- Next free number: REQ-002 -->\n\n## Requirements\n\n- **REQ-001** — Catalog. Browse. *(Source: Catalog)* ^req-001\n' > "$work/_docs/requirements.md"
+  f="$work/_docs/Tidy/new-requirements.md"
+  printf -- '---\ntype: requirements\nstatus: ready\ntags:\n  - sdd/requirements\n---\n\n# R\n\n## Requirements\n\nNone — a refactor.\n' > "$f"
+  printf -- '---\nstatus: ready\n---\n\n# D\n\nBody.\n' > "$work/_docs/Tidy/design.md"
+  printf -- '---\nstatus: ready\n---\n\n# T\n\n## Tasks\n\n- [x] **TASK-001** — Tidy\n  - **Type:** backend\n' > "$work/_docs/Tidy/tasks.md"
+  printf 'raw\n' > "$work/_docs/Tidy/raw.md"
+  printf '# Overview\n\nText.\n' > "$work/_docs/architecture/01-system-overview.md"
+  printf '| Topic | Path |\n' > "$work/_docs/architecture.index.md"
+
+  out="$(cd "$work" && "$state" Tidy 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -qx 'STAGE=implemented' || ok=1
+  [[ "$out" != *"holds no entry sourced by this feature"* ]] || ok=1
+  prop_check no-requirements "no mark: implemented, and no complaint about entries it never declared" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  out="$(cd "$work" && "$GATE" actualize Tidy --verify 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 2 && "$out" == *"carries no 'actualized:' property"* ]] || ok=1
+  prop_check no-requirements "verify fails while the mark is missing" "$ok" "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
+  out="$(cd "$work" && "$EDITOR_SH" actualized Tidy 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 0 ]] || ok=1
+  [[ "$(sed -n 3,4p "$f" | tr '\n' '~')" == "status: ready~actualized: $(date +%Y-%m-%d)~" ]] || ok=1
+  prop_check no-requirements "the mark goes in as a property under status" "$ok" "exit $rc: $out — $(tr '\n' '~' < "$f")"
+
+  out="$(cd "$work" && "$state" Tidy 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -qx 'STAGE=actualized' || ok=1
+  out="$(cd "$work" && "$GATE" actualize Tidy --verify 2>&1)"; rc=$?
+  [[ $rc -eq 0 ]] || ok=1
+  prop_check no-requirements "with the mark: actualized, and verify passes" "$ok" "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
+  ( cd "$work" && "$EDITOR_SH" actualized Tidy ) >/dev/null 2>&1
+  ok=0; [[ "$(grep -c '^actualized:' "$f")" == 1 ]] || ok=1
+  prop_check no-requirements "a second run rewrites the mark, never adds one" "$ok" "$(tr '\n' '~' < "$f")"
+
+  printf '# R\n\n> Status: ready\n\n## Requirements\n\nNone.\n' > "$f"
+  ( cd "$work" && "$EDITOR_SH" actualized Tidy ) >/dev/null 2>&1
+  ok=0; [[ "$(sed -n 4p "$f")" == "> Actualized: $(date +%Y-%m-%d)" ]] || ok=1
+  prop_check no-requirements "a document without frontmatter gets the blockquote form" "$ok" "$(tr '\n' '~' < "$f")"
+
+  printf -- '---\nstatus: ready\n---\n\n## Requirements\n\n### REQ-002 — Tidy\n- **Description:** x ^req-002\n' > "$f"
+  out="$(cd "$work" && "$EDITOR_SH" actualized Tidy 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 2 && "$out" == *"declares REQ-002"* ]] || ok=1
+  grep -q 'actualized' "$f" && ok=1
+  prop_check no-requirements "a feature with requirements is refused the mark" "$ok" "exit $rc: $out"
+}
+
 job_body() {
   local name="$1"; shift
   # Nothing a job runs has a question to ask: every case is scripted, and a
@@ -2387,6 +2439,7 @@ start_job spec-review      check_spec_review
 start_job conf-set         check_conf_set
 start_job stacks           check_stacks
 start_job collisions       check_collisions
+start_job no-requirements  check_no_requirements
 start_job jira-tokens      check_jira_tokens
 start_job lib-source       check_suite lib-source
 start_job confluence-fetch   check_suite confluence

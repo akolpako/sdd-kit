@@ -46,8 +46,10 @@ Promotes what a finished feature decided into the project-level files. Safe to r
 
    The wording goes on stdin, as `orchestration.md` says — it is one line.
 
+   No `DECLARED:` record — the feature declares no requirement, and nothing of it reaches the compilation: the last write is `spec-edit.sh actualized <FeatureName>` instead, the mark that takes the feature to actualized.
+
    `COMPILATION_ENTRIES:` from the gate lists the entries this feature already has in the file — `refined` marks one it reworded. On a re-run, that is what a half-finished run left behind.
 
-6. **Verify:** run `.sdd/scripts/gate.sh actualize <FeatureName> --verify` — a declared requirement that did not arrive, an entry left `draft`, or a counter standing on a number already handed out, is what the next feature collides with.
+6. **Verify:** run `.sdd/scripts/gate.sh actualize <FeatureName> --verify` — a declared requirement that did not arrive, an entry left `draft`, or a counter standing on a number already handed out, or the mark missing on a feature with no requirement, is what the next feature collides with.
 
 7. **Report the next step:** what changed in the architecture baseline and in `requirements.md`, and every `ASK:` line of step 1 that was accepted. The feature is done.

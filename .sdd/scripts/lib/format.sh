@@ -23,7 +23,10 @@
 #                                  a blank one is skipped by both
 #   md_field_set <file> <key> <v>  the file with that line rewritten, to stdout,
 #                                  in the form the line already had
-#   md_req_is_id <text>            true when it is a requirement id
+#   md_field_put <file> <key> <v> <anchor>
+#                                  the same, inserting the field under the
+#                                  <anchor> field's line when it is not there
+#   md_req_is_id <text>           true when it is a requirement id
 #   md_req_domain <REQ-…>          its domain, empty for an undomained id
 #   md_req_number <REQ-…>          its number, as written
 #   md_req_id <domain> <n>         the id those two make, zero-padded to three
@@ -46,7 +49,7 @@
 #                                  what its template shipped with — the
 #                                  scaffold, copied and never written into
 #
-# The two `_set` readers write nothing: they print, and the caller decides
+# The `_set` and `_put` readers write nothing: they print, and the caller decides
 # whether the file is replaced.
 #
 # Line numbers are the numbers of the file itself: the scanner cuts the comment
@@ -288,6 +291,29 @@ md_field_set() {
       next
     }
     { print }
+  ' "$1"
+}
+
+# A field the document may not carry yet: rewritten where it is, otherwise
+# inserted as the line after the <anchor> field, in the form that line has — a
+# frontmatter property `key: value`, or `> Key: value` in a document written
+# before frontmatter. Fails, printing nothing, when there is no anchor line to
+# put it under: a field is never added where the format has no field block.
+md_field_put() {
+  local n
+  if [[ -n "$(md_field_line "$1" "$2")" ]]; then
+    md_field_set "$1" "$2" "$3"
+    return
+  fi
+  n="$(md_field_line "$1" "$4")"
+  [[ -n "$n" ]] || return 1
+  MD_KEY="$2" MD_VAL="$3" awk -v n="$n" '
+    { print }
+    NR == n {
+      k = tolower(ENVIRON["MD_KEY"])
+      if ($0 ~ /^>/) printf "> %s%s: %s\n", toupper(substr(k, 1, 1)), substr(k, 2), ENVIRON["MD_VAL"]
+      else           printf "%s: %s\n", k, ENVIRON["MD_VAL"]
+    }
   ' "$1"
 }
 

@@ -98,7 +98,10 @@
 #                           declares is in the compilation as its
 #                           Refines:/Supersedes: line says, no entry of it
 #                           `draft`. A promotion cut short stays at
-#                           `implemented`, with NEXT=/sdd-actualize
+#                           `implemented`, with NEXT=/sdd-actualize. A feature
+#                           that declares no requirement has no entry to show:
+#                           the `actualized:` property of its
+#                           new-requirements.md is its mark instead
 # The stage is the furthest one whose signals all hold. Signals that disagree
 # leave the earlier stage standing, and the disagreement goes to ANOMALIES.
 # `, K blocked` is appended to the stage whenever K > 0.
@@ -298,6 +301,16 @@ collect() {
   ST_DES=$(file_state "$dir/design.md")
   ST_TSK=$(file_state "$dir/tasks.md")
 
+  # What the feature declares, read once: the promotion check, the coverage
+  # matrix and the stage all read the same records.
+  DECL_RECS=""; A_MARK=""
+  if [[ "$ST_REQ" == "present" ]]; then
+    DECL_RECS="$(md_req_relations "$dir/new-requirements.md")"
+    A_MARK="$(md_field "$dir/new-requirements.md" actualized)"
+    [[ -n "$A_MARK" && -n "$DECL_RECS" ]] && \
+      anom "new-requirements.md carries 'actualized: $A_MARK' and declares requirements — the mark counts only for a feature that declares none; its entries in the compilation decide."
+  fi
+
   S_REQ=$(md_status "$dir/new-requirements.md")
   S_DES=$(md_status "$dir/design.md")
   S_TSK=$(md_status "$dir/tasks.md")
@@ -448,7 +461,7 @@ collect() {
           fi ;;
       esac
     done <<EOF
-$(md_req_relations "$dir/new-requirements.md")
+$DECL_RECS
 EOF
   fi
 
@@ -477,7 +490,9 @@ EOF
       covered="$(printf '%s' "$pairs" | awk -F'|' -v id="$d_id" '$2 == id { printf "%s%s", sep, $1; sep = "," }')"
       COVERAGE="$COVERAGE$d_id|$title|${covered:--}"$'\n'
       [[ -z "$covered" ]] && UNCOVERED="$UNCOVERED$d_id|$title"$'\n'
-    done < <(md_req_relations "$dir/new-requirements.md")
+    done <<EOF
+$DECL_RECS
+EOF
     while IFS='|' read -r t_id r; do
       [[ -n "$t_id" && "$declared" != *" $r "* ]] && UNDECLARED="$UNDECLARED$t_id|$r"$'\n'
     done <<< "$pairs"
@@ -500,7 +515,11 @@ EOF
   elif [[ $T_DONE -lt $T_TOTAL ]]; then
     STAGE="in progress $T_DONE/$T_TOTAL"; STAGE_RANK=5; NEXT="/sdd-implement $f"
   else
-    if [[ "$COMPILATION_STATE" == "present" && $N_COMP_RECS -gt 0 && $C_DRAFT -eq 0 && -z "$UNPROMOTED" ]]; then
+    # Two ways to be promoted: by the entries of what the feature declares, or,
+    # for a feature that declares nothing and so has no entry to show, by the
+    # `actualized:` mark of its new-requirements.md.
+    if [[ "$COMPILATION_STATE" == "present" && $N_COMP_RECS -gt 0 && $C_DRAFT -eq 0 && -z "$UNPROMOTED" ]] \
+       || [[ "$ST_REQ" == "present" && -z "$DECL_RECS" && -n "$A_MARK" && $C_DRAFT -eq 0 ]]; then
       STAGE="actualized"; STAGE_RANK=7; NEXT=""
     else
       STAGE="implemented"; STAGE_RANK=6
@@ -519,7 +538,7 @@ EOF
         *)         NEXT="/sdd-code-review $f" ;;
       esac
       [[ $C_DRAFT -gt 0 ]] && anom "The compilation still holds $C_DRAFT draft entry(ies) for a feature that is implemented — /sdd-actualize is what promotes them."
-      [[ "$COMPILATION_STATE" == "present" && $N_COMP_RECS -eq 0 ]] && \
+      [[ "$COMPILATION_STATE" == "present" && $N_COMP_RECS -eq 0 && -n "$DECL_RECS" ]] && \
         anom "Every task is done and the compilation holds no entry sourced by this feature — nothing can take it past 'implemented'; /sdd-actualize is what writes them."
       # Part of the feature is in the compilation and part is not: a promotion
       # cut short. A re-run of /sdd-actualize finishes it, whatever the review

@@ -78,6 +78,12 @@
 #       <text> and gains `refined by <Feature>` after its source, the only trace
 #       on disk that the feature was promoted at all. A number carried by two
 #       entries is a stop.
+#   actualized <Feature>
+#       Set the `actualized: <today>` property of the feature's
+#       new-requirements.md, under its status — the mark of a promotion for a
+#       feature that declares no requirement, and so has no compilation entry
+#       to be told actualized by. A feature that declares one is a stop: its
+#       entries are that mark, and a second one could disagree with them.
 #   conf-set <KEY> <value>
 #       Write `KEY=value` into .sdd/sdd.conf: the line already carrying KEY is
 #       rewritten, otherwise one is appended, and the file is created when it
@@ -147,8 +153,8 @@ set -- ${ARGS[@]+"${ARGS[@]}"}
 
 OP="${1:-}"
 case "$OP" in
-  backup|status|verdict-stale|scaffold|arch-index|marker|compile-entry|conf-set|section|answer) shift ;;
-  "") printf 'ERROR=no operation: spec-edit.sh <op> — backup, status, verdict-stale, scaffold, arch-index, marker, compile-entry, conf-set, section, answer\n' >&2; exit 1 ;;
+  backup|status|verdict-stale|scaffold|arch-index|marker|compile-entry|actualized|conf-set|section|answer) shift ;;
+  "") printf 'ERROR=no operation: spec-edit.sh <op> — backup, status, verdict-stale, scaffold, arch-index, marker, compile-entry, actualized, conf-set, section, answer\n' >&2; exit 1 ;;
   *)  printf 'ERROR=unknown operation: %s\n' "$OP" >&2; exit 1 ;;
 esac
 
@@ -332,6 +338,19 @@ verdict-stale)
   md_field_set "$path" Verdict "$line" > "$TMP/f" || exit 1
   replace_file "$path" "$TMP/f"
   printf 'VERDICT=%s\nFILE=%s\n' "$line" "$path"
+  ;;
+
+# ── actualized ────────────────────────────────────────────────────
+actualized)
+  FOLDER="$(resolve_folder "${1:-}")" || exit 2
+  path="$SPECS/$FOLDER/new-requirements.md"
+  [[ -f "$path" ]] || die2 "no such file: $path — the mark is written into the feature's requirements"
+  decl="$(md_req_relations "$path" | cut -d'|' -f1 | paste -sd, -)"
+  [[ -z "$decl" ]] || die2 "$path declares $decl — a feature with requirements is marked actualized by its entries in $SPECS/requirements.md, which compile-entry writes"
+  md_field_put "$path" actualized "$TODAY" status > "$TMP/f" \
+    || die2 "$path carries no status — the mark goes under it, and is not added where the format has no field block"
+  replace_file "$path" "$TMP/f"
+  printf 'ACTUALIZED=%s\nFILE=%s\n' "$TODAY" "$path"
   ;;
 
 # ── arch-index ────────────────────────────────────────────────────

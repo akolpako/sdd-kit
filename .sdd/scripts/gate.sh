@@ -98,7 +98,8 @@
 #   actualize    every requirement the feature declares is in the compilation
 #                as what DECLARED: says it is, no entry this feature sourced is
 #                still `draft`, and the compilation counter stands past every
-#                number handed out
+#                number handed out. A feature that declares none carries the
+#                `actualized:` property in its new-requirements.md
 #   review, code-fix have no --verify: what they leave behind is the human's
 #   yes and the writes of spec-edit.sh, and both are mechanical already.
 #   Whether the text is any good is not checked here at all — that is the work
@@ -553,6 +554,13 @@ verify_actualize() {
   done <<EOF
 $(md_req_relations "$SPECS/$FOLDER/new-requirements.md")
 EOF
+  # A feature that declares nothing has no entry to be found by: the mark is
+  # what takes it to actualized, and a run that did not write it left the
+  # feature at implemented.
+  if [[ -f "$SPECS/$FOLDER/new-requirements.md" && -z "$(md_req_relations "$SPECS/$FOLDER/new-requirements.md")" \
+        && -z "$(md_field "$SPECS/$FOLDER/new-requirements.md" actualized)" ]]; then
+    fail "_docs/$FOLDER/new-requirements.md declares no requirement and carries no 'actualized:' property — nothing marks the feature as promoted, and it stays at implemented."
+  fi
 
   local drafts counter highest
   drafts="$(printf '%s\n' "$COMP_RECS" | awk -F'|' '
@@ -1155,7 +1163,7 @@ EOF
   [[ -n "$mine" ]] && \
     stop "Declared by more than one feature: $mine. One number cannot become two entries — renumber the requirement in one of the features before either is promoted."
   [[ "$ST_REQ" == "present" && -z "$DECLARED_RECS" ]] && \
-    warn "_docs/$FOLDER/new-requirements.md declares no requirement — nothing of it reaches _docs/requirements.md, and only the architecture baseline is promoted."
+    warn "_docs/$FOLDER/new-requirements.md declares no requirement — nothing of it reaches _docs/requirements.md, only the architecture baseline is promoted, and the 'actualized:' property of new-requirements.md is what marks it done."
 
   # Promotion is the one step nothing later reviews: an entry written here is
   # what every next feature is specified against. So whatever says the feature
