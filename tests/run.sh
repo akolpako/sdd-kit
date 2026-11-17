@@ -248,7 +248,7 @@ if [[ -n "$BASH_UNDER_TEST" ]]; then
   printf 'scripts run on: %s\n' "$("$TMP_ROOT/bash-under-test/bash" -c 'printf %s "$BASH_VERSION"')"
 fi
 trap 'rm -rf "$TMP_ROOT"' EXIT
-mkdir -p "$TMP_ROOT/out" "$TMP_ROOT/res" "$TMP_ROOT/rc" || exit 1
+mkdir -p "$TMP_ROOT/out" "$TMP_ROOT/res" "$TMP_ROOT/rc" "$TMP_ROOT/time" || exit 1
 
 # git reads the machine's identity, its default branch and its global ignore
 # file. A test that inherits those passes on one machine and fails on the next.
@@ -1526,6 +1526,39 @@ EOF
     "exit=$rc, where a task requiring REQ-0041 was read as using REQ-004 and moved the answer off it"
 }
 
+# The cases of one fixture run side by side, CASE_JOBS at a time. A script
+# spends its time starting programs rather than computing, so a fixture run
+# case after case was the whole wall time of the suite. Each case gets a root
+# of its own holding a copy of the project at the same relative path — what
+# `normalize` rewrites to `<tmp>` reads back exactly as before — and its output
+# is printed in case order once the fixture is done.
+CASE_JOBS="${SDD_TEST_CASE_JOBS:-8}"
+case "$CASE_JOBS" in ''|*[!0-9]*|0) CASE_JOBS=8 ;; esac
+CASE_N=0
+case_bg() {
+  local i=$CASE_N fixture="$1"
+  shift
+  CASE_N=$(( CASE_N + 1 ))
+  (
+    local root="$TMP/case-$i" a args=()
+    mkdir -p "$root" && cp -R "$TMP/$fixture" "$root/$fixture" || exit 1
+    for a in "$@"; do args+=("${a//@PROJECT@/$root/$fixture}"); done
+    TMP="$root"
+    "${args[@]}"
+    printf '0\n' > "$root.rc"
+  ) > "$TMP/case-$i.out" 2>&1 &
+  (( CASE_N % CASE_JOBS == 0 )) && wait
+  return 0
+}
+case_collect() {
+  local i
+  wait
+  for (( i = 0; i < CASE_N; i++ )); do
+    cat "$TMP/case-$i.out"
+    [[ "$(cat "$TMP/case-$i.rc" 2>/dev/null)" == "0" ]] || { printf 'ERROR=case %s did not finish\n' "$i" >&2; exit 1; }
+  done
+}
+
 run_fixture() {
   local fixture="$1"
   local dir="$FIXTURES/$fixture"
@@ -1566,7 +1599,7 @@ run_fixture() {
 
   printf '%s\n' "$fixture"
   for cmd in $COMMANDS; do
-    run_case "$fixture" "$cmd" "$project" "$FEATURE" "$EXTRA"
+    case_bg "$fixture" run_case "$fixture" "$cmd" @PROJECT@ "$FEATURE" "$EXTRA"
   done
 
   local line name pcmd pscope pargs
@@ -1577,7 +1610,7 @@ run_fixture() {
     if [[ "$pcmd" == "code-review" && -n "$EXTRA" && "$pargs" != *BASE=* ]]; then
       pargs="BASE=$EXTRA${pargs:+;$pargs}"
     fi
-    run_prompt_case "$fixture" "$name" "$pcmd" "$pscope" "$pargs" "$project" "$FEATURE"
+    case_bg "$fixture" run_prompt_case "$fixture" "$name" "$pcmd" "$pscope" "$pargs" @PROJECT@ "$FEATURE"
   done <<EOF
 $PROMPT_CASES
 EOF
@@ -1585,7 +1618,7 @@ EOF
   local vcmd vopts
   while IFS='|' read -r name vcmd vopts; do
     [[ -n "$name" ]] || continue
-    run_verify_case "$fixture" "$name" "$vcmd" "$vopts" "$project" "$FEATURE"
+    case_bg "$fixture" run_verify_case "$fixture" "$name" "$vcmd" "$vopts" @PROJECT@ "$FEATURE"
   done <<EOF
 $VERIFY_CASES
 EOF
@@ -1593,7 +1626,7 @@ EOF
   local eargs
   while IFS='|' read -r name eargs; do
     [[ -n "$name" ]] || continue
-    run_edit_case "$fixture" "$name" "$eargs" "$project" "$FEATURE"
+    case_bg "$fixture" run_edit_case "$fixture" "$name" "$eargs" @PROJECT@ "$FEATURE"
   done <<EOF
 $EDIT_CASES
 EOF
@@ -1601,10 +1634,11 @@ EOF
   local jjson jargs jenv
   while IFS='|' read -r name jjson jargs jenv; do
     [[ -n "$name" ]] || continue
-    run_jira_case "$fixture" "$name" "$jjson" "$jargs" "$jenv" "$project" "$FEATURE"
+    case_bg "$fixture" run_jira_case "$fixture" "$name" "$jjson" "$jargs" "$jenv" @PROJECT@ "$FEATURE"
   done <<EOF
 $JIRA_CASES
 EOF
+  case_collect
 }
 
 # ── The jobs ──────────────────────────────────────────────────────
@@ -2422,7 +2456,9 @@ job_body() {
   : > "$RESULTS"
   printf '1\n' > "$TMP_ROOT/rc/$name"
   job_env "j-$name"
+  local start=$SECONDS
   "$@"
+  printf '%s %s\n' "$(( SECONDS - start ))" "$name" > "$TMP_ROOT/time/$name"
   printf '0\n' > "$TMP_ROOT/rc/$name"
 }
 
@@ -2512,6 +2548,8 @@ for name in ${JOB_NAMES[@]+"${JOB_NAMES[@]}"}; do
   WRITTEN=$(( WRITTEN + $(grep -c '^W$' "$TMP_ROOT/res/$name" || true) ))
 done
 
+# The jobs that set the wall time: the run is as long as its slowest one.
+printf '\nslowest: %s\n' "$(cat "$TMP_ROOT/time/"* 2>/dev/null | sort -rn | head -n 5 | awk '{ printf "%s%s %ss", sep, $2, $1; sep = ", " }')"
 printf '\n%s passed, %s failed' "$PASSED" "$FAILED"
 (( UPDATE )) && printf ', %s written' "$WRITTEN"
 printf '\n'
