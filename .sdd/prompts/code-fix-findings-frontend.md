@@ -4,6 +4,9 @@ Follow these protocols, in this order:
 
 {{PROTOCOLS}}
 
+Load only the installed skills that the findings below touch, as your
+`## Skills` section matches them — not every one that matches the feature.
+
 FEATURE={{FEATURE}}
 
 Build command — the verification of this run, resolved already:
