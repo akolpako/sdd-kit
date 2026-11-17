@@ -128,7 +128,15 @@ detect_in() {
   fi
 
   if [[ -f "$dir/package.json" ]]; then
-    cmd="npm run build && npm test"
+    # Only the scripts the file names: `npm run build` on a package with no
+    # build script fails before a test runs, and the proposal is what the human
+    # is most likely to accept unread. Neither named — the usual pair stands,
+    # as a proposal the human corrects.
+    local pkg; pkg="$(< "$dir/package.json")"
+    cmd=""
+    [[ "$pkg" =~ \"build\"[[:space:]]*: ]] && cmd="npm run build"
+    [[ "$pkg" =~ \"test\"[[:space:]]*: ]] && cmd="${cmd:+$cmd && }npm test"
+    [[ -n "$cmd" ]] || cmd="npm run build && npm test"
     [[ "$rel" != "." ]] && cmd="cd $rel && $cmd"
     DETECTED+=("$rel|package.json|$cmd|frontend"); N_DETECTED=$(( N_DETECTED + 1 ))
     HAS_FRONTEND=1

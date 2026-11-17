@@ -2557,6 +2557,17 @@ check_stacks() {
   printf '%s\n' "$out" | grep -q 'holds no SDD_BUILD_FRONTEND' || ok=1
   prop_check stacks "a frontend task asks for the frontend build" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
 
+  # The proposal names only the scripts package.json has: a `build` it lacks
+  # would fail before a test ran.
+  printf '{ "scripts": { "test": "node --test" } }\n' > "$work/web/package.json"
+  out="$(cd "$work" && "$SCRIPTS/build-command.sh" . 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -qx 'web|package.json|cd web && npm test|frontend' || ok=1
+  printf '{ "scripts": { "build": "tsc", "test": "jest" } }\n' > "$work/web/package.json"
+  out="$out~$(cd "$work" && "$SCRIPTS/build-command.sh" . 2>&1)"
+  printf '%s\n' "$out" | grep -qx 'web|package.json|cd web && npm run build && npm test|frontend' || ok=1
+  printf '{}\n' > "$work/web/package.json"
+  prop_check stacks "the npm proposal names only the scripts package.json has" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
   # The same backend-only feature under /sdd-code-fix: a finding is about this
   # feature's code, so its stacks are the breakdown's.
   ( cd "$work" && sed -i.bak '/TASK-002/,$d' _docs/Cart/tasks.md && rm -f _docs/Cart/tasks.md.bak \
