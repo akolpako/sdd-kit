@@ -124,6 +124,10 @@ if [[ ! -d "$ROOT_DIR" ]]; then
   printf 'ERROR=not a directory: %s\n' "$ROOT_DIR" >&2
   exit 1
 fi
+if [[ -n "$FEATURE" && -n "$(md_name_problem "$FEATURE")" ]]; then
+  printf "ERROR=no such feature: '%s' is not a feature name — %s\n" "$FEATURE" "$(md_name_problem "$FEATURE")" >&2
+  exit 2
+fi
 
 SPECS="$ROOT_DIR/_docs"
 COMPILATION_FILE="$SPECS/requirements.md"

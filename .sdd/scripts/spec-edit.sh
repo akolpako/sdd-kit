@@ -170,8 +170,10 @@ one_line() {
 # The folder on disk, matched without regard to case: a feature typed `cart`
 # and a folder named `Cart` are the same feature.
 resolve_folder() {
-  local want="$1" d name
+  local want="$1" d name problem
   [[ -n "$want" ]] || die2 "no feature name"
+  problem="$(md_name_problem "$want")"
+  [[ -z "$problem" ]] || die2 "not a feature name: '$want' — $problem"
   if [[ -d "$SPECS/$want" ]]; then printf '%s\n' "$want"; return 0; fi
   for d in "$SPECS"/*/; do
     [[ -d "$d" ]] || continue
@@ -421,6 +423,8 @@ scaffold)
   feature)
     FEATURE="${1:-}"
     [[ -n "$FEATURE" ]] || die2 "no feature name: scaffold feature <Feature>"
+    problem="$(md_name_problem "$FEATURE")"
+    [[ -z "$problem" ]] || die2 "not a feature name: '$FEATURE' — $problem"
     src="$TEMPLATE_DIR/raw.md"
     [[ -f "$src" ]] || die2 "no template $src"
     FOLDER="$FEATURE"

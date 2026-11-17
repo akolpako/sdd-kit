@@ -209,6 +209,18 @@ if [[ ! -r "$SCRIPT_DIR/lib/format.sh" ]]; then
 fi
 . "$SCRIPT_DIR/lib/format.sh"
 
+# A name that is not a path segment would send every write of the run outside
+# _docs/<name>/. /sdd-next-story judges the name as a stop of its own, with the
+# rule spelled out; every other command is handed a name that already exists,
+# and one that cannot is an argument wrongly given.
+if [[ "$CMD" != "init" && "$CMD" != "new" ]]; then
+  NAME_PROBLEM="$(md_name_problem "$FEATURE")"
+  if [[ -n "$NAME_PROBLEM" ]]; then
+    printf "ERROR=not a feature name: '%s' — %s. A feature is a folder directly under _docs/\n" "$FEATURE" "$NAME_PROBLEM" >&2
+    exit 1
+  fi
+fi
+
 # Counters, not ${#array[@]}: on bash 3.2 an empty array counts as unset under
 # `set -u` and reading its length aborts the script.
 STOPS=(); N_STOP=0
@@ -811,18 +823,10 @@ check_init() {
 }
 
 check_new() {
-  local bad reason="" lc other exact=0
+  local reason lc other exact=0
   # The name alone, before anything on disk is read.
   NAME_OK="yes"; NAME_WARN=""
-  case "$FEATURE" in
-    */*|*\\*) reason="it carries a path separator" ;;
-    .|..)     reason="it is '$FEATURE'" ;;
-    .*)       reason="it starts with a dot" ;;
-  esac
-  if [[ -z "$reason" ]]; then
-    bad="$(printf '%s' "$FEATURE" | LC_ALL=C tr -d 'A-Za-z0-9._-')"
-    [[ -n "$bad" ]] && reason="it holds '$bad'"
-  fi
+  reason="$(md_name_problem "$FEATURE")"
   if [[ -n "$reason" ]]; then
     NAME_OK="no"
     stop "'$FEATURE' is not a usable folder name: $reason. A usable name holds only letters, digits, '-', '_' and '.', carries no path separator, is not '.' or '..', and does not start with '.'."

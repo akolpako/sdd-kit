@@ -303,6 +303,23 @@ md_req_lines() {
   '
 }
 
+# Why <name> cannot be a feature folder under _docs/, or nothing when it can.
+# A feature name is a path segment and nothing more: a separator, `.`/`..` or a
+# leading dot would put the files a command writes somewhere other than
+# _docs/<name>/. A trailing slash is refused rather than trimmed — the name is
+# used on disk exactly as given.
+md_name_problem() {
+  local bad
+  case "$1" in
+    "")       printf 'it is empty'; return 0 ;;
+    */*|*\\*) printf 'it carries a path separator'; return 0 ;;
+    .|..)     printf "it is '%s'" "$1"; return 0 ;;
+    .*)       printf 'it starts with a dot'; return 0 ;;
+  esac
+  bad="$(printf '%s' "$1" | LC_ALL=C tr -d 'A-Za-z0-9._-')"
+  [[ -z "$bad" ]] || printf "it holds '%s'" "$bad"
+}
+
 # The feature an entry belongs to — the first name inside its `*(Source: …)*`,
 # as written. Empty when the compilation holds no entry with that id, or the
 # entry names no source. Whose entry it is decides whether a feature promoting

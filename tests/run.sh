@@ -576,7 +576,7 @@ check_log() {
 . "$SCRIPTS/lib/format.sh"
 
 check_format() {
-  local work="$TMP/format-check" ok n v val out
+  local work="$TMP/format-check" ok n v val out rc
 
   printf 'format\n'
   rm -rf "$work" && mkdir -p "$work" || exit 1
@@ -691,22 +691,18 @@ check_format() {
       "wrote '$val' over $n line(s) where the file had 3, and the marker does not carry it"
   done
 
-  # A compilation record is three fields split on `|`. A source carrying one
-  # used to shift every field after it: the status was read as the source, and
-  # the entry landed in the wrong counter — the one that decides `actualized`
-  # against `implemented`.
+  # A compilation record is three fields split on `|`, and a source carrying one
+  # used to shift every field after it. A feature name holding `|` is refused at
+  # every entry point now — it never reaches a per-feature record at all.
   mkdir -p "$work/pipe/_docs/Ca|rt" || exit 1
   printf '# Requirements Compilation\n\n<!-- Next free number: REQ-002 -->\n\n## Requirements\n\n- **REQ-001** — Cart holds items. A shopper keeps picked items until checkout. *(Source: Ca|rt, draft)*\n' \
     > "$work/pipe/_docs/requirements.md"
   printf '# Requirements — Ca|rt\n\n> Status: ready\n\n## Requirements\n\n### REQ-001 — Cart holds items\n\nA shopper keeps picked items until checkout.\n' \
     > "$work/pipe/_docs/Ca|rt/new-requirements.md"
-  out="$(cd "$work/pipe" && "$SCRIPTS/feature-state.sh" 'Ca|rt' 2>&1)"
-  n="$(printf '%s\n' "$out" | sed -n '/^COMPILATION_ENTRIES:$/,$p' | sed -n '2p')"
-  v="$(printf '%s\n' "$out" | awk -F= '$1 == "COMPILATION_DRAFT" { print $2 }')"
+  out="$(cd "$work/pipe" && "$SCRIPTS/feature-state.sh" 'Ca|rt' 2>&1)"; rc=$?
   ok=0
-  [[ "$v" == "1" && "$n" == "REQ-001|draft" ]] || ok=1
-  prop_check format "compilation source is |-sanitized" "$ok" \
-    "the record came back as '$n' and COMPILATION_DRAFT=$v, where 'REQ-001|draft' and 1 are the entry"
+  [[ $rc -eq 2 && "$out" == *"is not a feature name — it holds '|'"* ]] || ok=1
+  prop_check format "a name holding | is refused" "$ok" "exit $rc: $out"
   ok=0
   printf '%s\n' "$out" | grep -q 'name the source' && ok=1
   prop_check format "no drift against its own folder" "$ok" \
@@ -799,6 +795,25 @@ ABC-12345x|warn'
   done <<EOF
 $cases
 EOF
+}
+
+# A name that is not a path segment is refused wherever a feature is named, so no
+# write lands outside _docs/<name>/.
+check_name_everywhere() {
+  local work="$TMP/name-everywhere" out rc ok name
+  printf 'name everywhere\n'
+  rm -rf "$work" && mkdir -p "$work" && cp -R "$FIXTURES/two-stacks/tree/." "$work/" || exit 1
+  ok=0
+  for name in '../web' 'Cart/' '.hidden'; do
+    ( cd "$work" && "$EDITOR_SH" scaffold spec "$name" tasks.md ) >/dev/null 2>&1; rc=$?; [[ $rc -eq 2 ]] || ok=1
+    ( cd "$work" && "$EDITOR_SH" scaffold feature "$name" ) >/dev/null 2>&1; rc=$?; [[ $rc -eq 2 ]] || ok=1
+    ( cd "$work" && "$GATE" implement "$name" ) >/dev/null 2>&1; rc=$?; [[ $rc -eq 1 ]] || ok=1
+    ( cd "$work" && "$SCRIPTS/feature-state.sh" "$name" ) >/dev/null 2>&1; rc=$?; [[ $rc -eq 2 ]] || ok=1
+  done
+  [[ -e "$work/web/tasks.md" ]] && ok=1
+  out="$(cd "$work" && "$GATE" implement cart 2>&1)"
+  printf '%s\n' "$out" | grep -q '^FOLDER=Cart$' || ok=1
+  prop_check name "a name that is not a path segment is refused everywhere" "$ok" "$(printf '%s' "$out" | head -3 | tr '\n' '~')"
 }
 
 check_build() {
@@ -2339,6 +2354,7 @@ start_job() {
 # ── The queue ─────────────────────────────────────────────────────
 start_job names            check_names
 start_job feature-name     check_feature_name
+start_job name-everywhere  check_name_everywhere
 start_job log              check_log
 start_job format           check_format
 start_job build            check_build
