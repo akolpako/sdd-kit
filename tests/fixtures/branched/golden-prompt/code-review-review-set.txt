@@ -38,9 +38,10 @@ a finding:
 
 (none)
 
-The build command of this project — the human's, resolved already. Tests are
-run with it and with nothing else; where it reads `(none)`, no test is run and
-the report says the tests were not run:
+The build command of this project — the human's, resolved already, one
+`<stack>: <command>` line per answer. Tests are run with it and with nothing
+else, as `.sdd/scripts/build-run.sh <stack>`; where it reads `(none)`, no test
+is run and the report says the tests were not run:
 
 root: mvn -q verify
 

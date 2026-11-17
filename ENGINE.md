@@ -261,8 +261,9 @@ flowchart LR
 - **Only the human's build command is run.** `build-command.sh` reads `SDD_BUILD_*` from
   `.sdd/sdd.conf`; detection is a proposal carried in the gate's `ASK:`, never run. Resolved once
   per command run and passed in every prompt.
-  The orchestrator runs it through `build-run.sh`, which keeps the output in `.sdd/build/` and
-  answers green or red with the tail of a red one.
+  The orchestrator and every role run it through `build-run.sh` — the prompt gives the line —
+  which keeps the output in `.sdd/build/` and answers green or red with the tail of a red one:
+  a role that builds once per attempt per task would otherwise carry every log in its context.
 - **The log (`lib/log.sh`) is written, never read** — no script, prompt or command branches on
   it. It wraps each script by re-exec; stdout, stderr and exit code stay byte-identical, and the
   goldens assert it.

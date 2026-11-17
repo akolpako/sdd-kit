@@ -17,6 +17,8 @@ Build command — the verification of this run, resolved already:
 
 mvn -q verify
 
+It is run as `.sdd/scripts/build-run.sh frontend`, and in no other way.
+
 Files of this run:
 
 _docs/Cart/review.md

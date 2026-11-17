@@ -21,6 +21,8 @@ Build command — the verification of this run, resolved already:
 
 mvn clean verify
 
+It is run as `.sdd/scripts/build-run.sh backend`, and in no other way.
+
 Files of this run:
 
 _docs/Cart/new-requirements.md

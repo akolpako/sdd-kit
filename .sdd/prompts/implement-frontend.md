@@ -13,6 +13,8 @@ Build command — the verification of this run, resolved already:
 
 {{BUILD_FRONTEND}}
 
+It is run as `.sdd/scripts/build-run.sh frontend`, and in no other way.
+
 Files of this run:
 
 {{SECTION:SPEC_FILES}}
