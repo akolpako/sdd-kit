@@ -19,5 +19,5 @@ Write `_docs/{{FOLDER}}/new-requirements.md` from `_docs/{{FOLDER}}/raw.md`.
 
 The first free number of the ungrouped sequence: {{NEXT_REQ}}.
 
-Return: the requirements you wrote, the numbers you gave them, and what `raw.md`
-left unsettled.
+Return only what `raw.md` left unsettled, one line per point — what you wrote is
+read from the file, never from your reply.

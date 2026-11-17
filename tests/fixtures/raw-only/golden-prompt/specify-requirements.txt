@@ -31,6 +31,6 @@ Write `_docs/Cart/new-requirements.md` from `_docs/Cart/raw.md`.
 
 The first free number of the ungrouped sequence: REQ-001.
 
-Return: the requirements you wrote, the numbers you gave them, and what `raw.md`
-left unsettled.
+Return only what `raw.md` left unsettled, one line per point — what you wrote is
+read from the file, never from your reply.
 ### exit=0

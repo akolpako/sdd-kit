@@ -25,5 +25,5 @@ What only the human can settle goes into its `## Open Questions`, and a line
 there already carrying an `**Answer:**` is folded in — both as the spec-modes
 protocol fixes them.
 
-Return: the `FAIL` list first, then what you fixed and what you left on the
-page, worst first.
+Return only the `FAIL` items you did not close, worst first, one line each, or
+that none is left — what you fixed is read from the file, never from your reply.

@@ -19,5 +19,6 @@ Write `_docs/{{FOLDER}}/design.md` and `_docs/{{FOLDER}}/tasks.md` in this one
 run. The breakdown covers the requirements of
 `_docs/{{FOLDER}}/new-requirements.md` and nothing beyond them.
 
-Return: the design decisions you took, the tasks you broke the work into, and
-what the requirements left unsettled.
+Return only what the requirements left unsettled, and a done task the breakdown
+made pointless, one line per point — what you wrote is read from the files,
+never from your reply.
