@@ -165,7 +165,8 @@ compile-entry-new|compile-entry;<F>;REQ-900;final;Saved carts. A shopper keeps a
 compile-entry-superseded|compile-entry;<F>;REQ-002;superseded-by:REQ-900
 compile-entry-no-text|compile-entry;<F>;REQ-900;final
 compile-entry-domained|compile-entry;<F>;REQ-ACC-900;final;Password reset. An account holder sets a new password over a mailed link.
-compile-entry-refined|compile-entry;<F>;REQ-001;final;Catalog listing. A shopper browses and filters the products on offer.
+compile-entry-refined|compile-entry;<F>;REQ-001;refine;Catalog listing. A shopper browses and filters the products on offer.
+compile-entry-foreign-final|compile-entry;<F>;REQ-001;final;Catalog listing. A shopper browses and filters the products on offer.
 section-text|section;_docs/<F>/raw.md;Problem;Shoppers lose the cart when the session drops.
 section-heading-hashes|section;_docs/<F>/raw.md;## Problem;Shoppers lose the cart when the session drops.
 section-empty|section;_docs/<F>/raw.md;Users
@@ -1755,7 +1756,7 @@ EOF
     "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
 
   # ── The promotion ───────────────────────────────────────────────
-  out="$(cd "$work" && "$EDITOR_SH" compile-entry Checkout REQ-002 final "Cart holds items. A shopper keeps up to 50 items until checkout." 2>&1)"
+  out="$(cd "$work" && "$EDITOR_SH" compile-entry Checkout REQ-002 refine "Cart holds items. A shopper keeps up to 50 items until checkout." 2>&1)"
   line="$(grep 'REQ-002\*\*' "$work/_docs/requirements.md")"
   ok=0
   printf '%s\n' "$out" | grep -q '^ACTION=refined$' || ok=1
@@ -1811,7 +1812,7 @@ EOF
   ok=0; [[ "$v" == "implemented" ]] || ok=1
   prop_check relations "refine-only, not yet promoted" "$ok" "STAGE=$v where nothing of it is in the compilation"
 
-  ( cd "$work" && "$EDITOR_SH" compile-entry Promo REQ-002 final "Cart holds items. A member keeps up to 80 items, anyone else 50." ) >/dev/null 2>&1
+  ( cd "$work" && "$EDITOR_SH" compile-entry Promo REQ-002 refine "Cart holds items. A member keeps up to 80 items, anyone else 50." ) >/dev/null 2>&1
   line="$(grep 'REQ-002\*\*' "$work/_docs/requirements.md")"
   v="$(cd "$work" && "$state" Promo | sed -n 's/^STAGE=//p')"
   out="$(cd "$work" && "$state" Checkout | sed -n 's/^STAGE=//p')"
@@ -1824,7 +1825,7 @@ EOF
   # The same call again adds no second trace, and a later supersession keeps
   # the ones that are there.
   ( cd "$work" \
-    && "$EDITOR_SH" compile-entry Promo REQ-002 final "Cart holds items. A member keeps up to 80 items, anyone else 50." \
+    && "$EDITOR_SH" compile-entry Promo REQ-002 refine "Cart holds items. A member keeps up to 80 items, anyone else 50." \
     && "$EDITOR_SH" compile-entry Checkout REQ-002 superseded-by:REQ-005 ) >/dev/null 2>&1
   line="$(grep 'REQ-002\*\*' "$work/_docs/requirements.md")"
   ok=0
@@ -2252,6 +2253,62 @@ check_stacks() {
   prop_check stacks "markers in rs, php, kts, swift" "$ok" "$(head -1 "$work/a.rs")"
 }
 
+# Two features handed one number, and a reworded entry that was retired: the
+# promotion stops instead of writing one feature's requirement over another's.
+check_collisions() {
+  local work="$TMP/collisions" out rc ok line
+  printf 'collisions\n'
+  rm -rf "$work" && mkdir -p "$work/_docs/Promo" "$work/_docs/Cart" || exit 1
+  cat > "$work/_docs/requirements.md" <<'EOR'
+<!-- Next free number: REQ-003 -->
+
+## Requirements
+
+- **REQ-001** — Catalog listing. A shopper browses. *(Source: Catalog)* ^req-001
+- **REQ-002** — Cart holds items. A shopper keeps items. *(Source: Cart, superseded by REQ-009)* ^req-002
+EOR
+  printf -- '---\nstatus: ready\n---\n\n# R\n\n## Requirements\n\n### REQ-001 — Promo codes\n- **Description:** x ^req-001\n' > "$work/_docs/Promo/new-requirements.md"
+  printf -- '---\nstatus: ready\n---\n\n# D\n\nBody.\n' > "$work/_docs/Promo/design.md"
+  printf -- '---\nstatus: ready\n---\n\n# T\n\n## Tasks\n\n- [x] **TASK-001** — P\n  - **Requires:** REQ-001\n  - **Type:** backend\n' > "$work/_docs/Promo/tasks.md"
+  printf 'raw\n' > "$work/_docs/Promo/raw.md"
+  mkdir -p "$work/_docs/architecture" && printf '# Overview\n\nText.\n' > "$work/_docs/architecture/01-system-overview.md"
+  printf '| Topic | Path |\n' > "$work/_docs/architecture.index.md"
+
+  out="$(cd "$work" && "$GATE" actualize Promo 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^GATE=stop$' || ok=1
+  printf '%s\n' "$out" | grep -q 'already holds REQ-001 as an entry of Catalog — two features were handed one number' || ok=1
+  prop_check collisions "actualize stops on a number another feature's entry holds" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  out="$(cd "$work" && "$EDITOR_SH" compile-entry Promo REQ-001 final "Promo codes. x" 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 2 && "$out" == *"is an entry of Catalog, not of Promo"* ]] || ok=1
+  grep -q 'Catalog listing. A shopper browses. \*(Source: Catalog)\*' "$work/_docs/requirements.md" || ok=1
+  prop_check collisions "final never writes over another feature's entry" "$ok" "exit $rc: $out"
+
+  out="$(cd "$work" && "$GATE" actualize Promo --verify 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 2 && "$out" == *"is an entry of Catalog, not of Promo"* ]] || ok=1
+  prop_check collisions "verify does not count another feature's entry" "$ok" "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
+  # Refining a retired entry is a stop; refining a live one keeps every mark.
+  printf -- '---\nstatus: ready\n---\n\n# R\n\n## Requirements\n\n### REQ-004 — Bigger cart\n- **Refines:** REQ-002\n- **Description:** x ^req-004\n' > "$work/_docs/Promo/new-requirements.md"
+  out="$(cd "$work" && "$GATE" actualize Promo 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -q 'REQ-002 is superseded by REQ-009 — a retired requirement is not reworded' || ok=1
+  prop_check collisions "a retired entry is not refined" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  ( cd "$work" && "$EDITOR_SH" compile-entry Promo REQ-002 refine "Cart holds items. More of them." ) >/dev/null 2>&1
+  line="$(grep 'REQ-002\*\*' "$work/_docs/requirements.md")"
+  ok=0; [[ "$line" == *'*(Source: Cart, refined by Promo, superseded by REQ-009)*'* ]] || ok=1
+  prop_check collisions "a rewording keeps the superseded mark" "$ok" "the entry reads: $line"
+
+  # Two features declaring one number, reported before either is promoted.
+  printf -- '---\nstatus: draft\n---\n\n## Requirements\n\n### REQ-004 — Cart badge\n' > "$work/_docs/Cart/new-requirements.md"
+  out="$(cd "$work" && "$SCRIPTS/next-req.sh" . 2>&1)"
+  ok=0; printf '%s\n' "$out" | awk '/^[A-Z_]+:$/ { s = $0; next } s == "COLLISIONS:" && NF' | grep -qx 'REQ-004|Cart,Promo' || ok=1
+  out="$(cd "$work" && "$GATE" actualize Promo 2>&1)"
+  printf '%s\n' "$out" | grep -q 'Declared by more than one feature: REQ-004 (Cart,Promo)' || ok=1
+  prop_check collisions "one number declared by two features is reported" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+}
+
 job_body() {
   local name="$1"; shift
   # Nothing a job runs has a question to ask: every case is scripted, and a
@@ -2297,6 +2354,7 @@ start_job blocked-set      check_blocked_set
 start_job spec-review      check_spec_review
 start_job conf-set         check_conf_set
 start_job stacks           check_stacks
+start_job collisions       check_collisions
 start_job jira-tokens      check_jira_tokens
 start_job lib-source       check_suite lib-source
 start_job confluence-fetch   check_suite confluence

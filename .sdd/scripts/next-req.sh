@@ -48,6 +48,11 @@
 #                       where the undomained sequence is written `-` and COUNT
 #                       is that domain's entries alone
 #   DUPLICATES:         every id carried by more than one entry, one per line
+#   COLLISIONS:         every id two or more features declare, one per line:
+#                       <REQ-…>|<Feature>,<Feature> — the trace of two branches
+#                       handed one number. Nothing here prevents it across
+#                       branches; it is reported so that no promotion writes
+#                       one feature's requirement over the other's
 #   NOTES:              what a reader has to know about these files
 #
 # A domain is in use when an entry, a declaration or a marker names it, so a
@@ -61,8 +66,9 @@
 # draft, active, superseded — hold their number, so all of them count. A
 # declaration is a `### REQ-### — ...` heading of `.sdd/templates/new-requirements.md`.
 #
-# DUPLICATES: is the compilation's alone: two features declaring one number is a
-# collision this script exists to prevent, not a state it reports.
+# DUPLICATES: is the compilation's alone. Two features declaring one number is
+# what NEXT exists to prevent, but two branches specified side by side are each
+# handed the same NEXT, and after the merge both declare it — COLLISIONS: says so.
 #
 # The candidate those three sources give is checked once more, against every id
 # the specs mention outside their comments — a `Requires: REQ-014` of a tasks
@@ -130,6 +136,7 @@ done < <(md_req_ids "$FILE")
 
 # Every feature is read, not just the one a caller is working on: the number
 # this prints has to be free of all of them.
+DECL_PAIRS=""
 for d in "$ROOT_DIR"/_docs/*/; do
   [[ -d "$d" ]] || continue
   f="$d/new-requirements.md"
@@ -138,8 +145,16 @@ for d in "$ROOT_DIR"/_docs/*/; do
   while IFS= read -r id; do
     [[ -n "$id" ]] || continue
     add "D $(md_req_domain "$id")|$(md_req_number "$id")|$folder"
+    DECL_PAIRS="$DECL_PAIRS$id|$folder
+"
   done < <(md_req_declared "$f")
 done
+COLLISIONS="$(printf '%s' "$DECL_PAIRS" | LC_ALL=C sort -u | awk -F'|' '
+  NF < 2 { next }
+  $1 != id { if (n > 1) print id "|" who; id = $1; who = $2; n = 1; next }
+  { who = who "," $2; n++ }
+  END { if (n > 1) print id "|" who }
+')"
 
 while IFS= read -r id; do
   [[ -n "$id" ]] || continue
@@ -343,6 +358,9 @@ EOF
 
 printf '\nDUPLICATES:\n'
 for d in ${DUPLICATES[@]+"${DUPLICATES[@]}"}; do printf '%s\n' "$d"; done
+
+printf '\nCOLLISIONS:\n'
+[[ -n "$COLLISIONS" ]] && printf '%s\n' "$COLLISIONS"
 
 printf '\nNOTES:\n'
 for n in ${NOTES[@]+"${NOTES[@]}"}; do printf '%s\n' "$n"; done

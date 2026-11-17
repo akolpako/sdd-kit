@@ -240,6 +240,23 @@ list_features() {
     | sed 's|.*/||' | sort
 }
 
+# Whether the entry <REQ> of the compilation belongs to another feature: prints
+# that feature's name, or nothing when there is no entry, no source, or the
+# source is this feature (compared as folders are, case aside).
+foreign_source() {
+  local src
+  src="$(md_req_source "$SPECS/requirements.md" "$1")"
+  [[ -n "$src" ]] || return 0
+  [[ "$(printf '%s' "$src" | tr '[:upper:]' '[:lower:]')" == "$(printf '%s' "$FOLDER" | tr '[:upper:]' '[:lower:]')" ]] && return 0
+  printf '%s' "$src"
+}
+
+# The numbers this feature declares that another feature declares too.
+own_collisions() {
+  printf '%s\n' "$REQ_COLLISIONS" | awk -F'|' -v me="$FOLDER" '
+    NF == 2 { n = split($2, w, ","); for (i = 1; i <= n; i++) if (tolower(w[i]) == tolower(me)) { printf "%s%s (%s)", sep, $1, $2; sep = ", " } }'
+}
+
 # ── The architecture baseline ─────────────────────────────────────
 # It has two shapes and a project holds one of them: a folder of sections under
 # `_docs/architecture/`, entered through the generated
@@ -506,12 +523,13 @@ verify_actualize() {
   while IFS='|' read -r d_id d_rel d_target; do
     [[ -n "$d_id" ]] || continue
     case "$d_rel" in
-      new)
-        [[ -n "$(md_req_lines "$SPECS/requirements.md" "$d_id")" ]] || \
-          fail "$d_id is declared by _docs/$FOLDER/new-requirements.md and _docs/requirements.md holds no entry for it — it was not promoted." ;;
-      supersedes)
-        [[ -n "$(md_req_lines "$SPECS/requirements.md" "$d_id")" ]] || \
+      new|supersedes)
+        if [[ -z "$(md_req_lines "$SPECS/requirements.md" "$d_id")" ]]; then
           fail "$d_id is declared by _docs/$FOLDER/new-requirements.md and _docs/requirements.md holds no entry for it — it was not promoted."
+        elif [[ -n "$(foreign_source "$d_id")" ]]; then
+          fail "$d_id in _docs/requirements.md is an entry of $(foreign_source "$d_id"), not of $FOLDER — this feature's requirement of that number was never promoted, or was written over another feature's."
+        fi
+        [[ "$d_rel" == "new" ]] && continue
         t_line="$(md_req_lines "$SPECS/requirements.md" "$d_target" | head -n 1)"
         if [[ -n "$t_line" ]] && ! sed -n "${t_line}p" "$SPECS/requirements.md" | grep -q "superseded by $d_id"; then
           fail "$d_id supersedes $d_target, and the entry of $d_target in _docs/requirements.md does not say so — it still reads as a requirement in force."
@@ -726,13 +744,14 @@ if [[ $NEED_RS -eq 1 && $RS_RC -eq 0 ]]; then
 fi
 
 # ── The next free REQ number ──────────────────────────────────────
-NEXT_REQ=""; REQ_DUPLICATES=""; REQ_DOMAINS=""
+NEXT_REQ=""; REQ_DUPLICATES=""; REQ_DOMAINS=""; REQ_COLLISIONS=""
 # Exit 3 is a printed report too: the domains, the duplicates and the notes are
 # all there, and NEXT is empty because the scan found no free number to give.
 # Reading it as a failure would drop the table that says why.
 if [[ $NEED_NR -eq 1 && ( $NR_RC -eq 0 || $NR_RC -eq 3 ) ]]; then
   NEXT_REQ="$(kv "$NR_OUT" NEXT)"
   REQ_DUPLICATES="$(section "$NR_OUT" DUPLICATES)"
+  REQ_COLLISIONS="$(section "$NR_OUT" COLLISIONS)"
   # The whole table, because the domain a feature's requirements belong to is
   # the session's decision and not this script's: NEXT_REQ answers for the
   # undomained sequence, and REQ_DOMAINS: is where the answer for `ACC` is when
@@ -888,6 +907,10 @@ check_specify() {
 
   arch_present || \
     warn "$ARCH_ENTRY is not there — the spec is written without the architecture context, and /sdd-init is what creates it."
+  local mine
+  mine="$(own_collisions)"
+  [[ -n "$mine" ]] && \
+    warn "Declared by more than one feature: $mine. Renumber the requirement here or in the other feature before either is promoted — /sdd-actualize stops on it."
 
   if [[ $NR_RC -eq 2 ]]; then
     NEXT_REQ="REQ-001"
@@ -918,6 +941,10 @@ check_review() {
     warn "_docs/requirements.md is not there — the requirements of this feature cannot be compared against the ones the project already has."
   arch_present || \
     warn "$ARCH_ENTRY is not there — the design is reviewed without the architecture context, and /sdd-init is what creates it."
+  local mine
+  mine="$(own_collisions)"
+  [[ -n "$mine" ]] && \
+    warn "Declared by more than one feature: $mine. Renumber the requirement here or in the other feature before either is promoted — /sdd-actualize stops on it."
   # The same answer /sdd-specify gets: with no compilation, numbering starts
   # where its template's counter does.
   [[ $NR_RC -eq 2 ]] && NEXT_REQ="REQ-001"
@@ -1085,20 +1112,44 @@ check_actualize() {
   # What each declared requirement is to the compilation. The relation is read
   # here, off the line the role wrote under the heading, so that the step that
   # edits requirements.md acts on a record and not on its own reading of prose.
-  local d_id d_rel d_target
+  local d_id d_rel d_target other by
   [[ "$ST_REQ" == "present" ]] && DECLARED_RECS="$(md_req_relations "$SPECS/$FOLDER/new-requirements.md")"
   while IFS='|' read -r d_id d_rel d_target; do
-    [[ -n "$d_id" && "$d_rel" != "new" ]] || continue
+    [[ -n "$d_id" ]] || continue
+    # A number this feature promotes as its own that the compilation already
+    # gives to another feature: two branches were handed one number. Writing it
+    # would reword that feature's requirement and call it this one's.
+    if [[ "$d_rel" != "refines" && "$COMPILATION" == "present" ]]; then
+      other="$(foreign_source "$d_id")"
+      [[ -n "$other" ]] && \
+        stop "$d_id is declared by _docs/$FOLDER/new-requirements.md as a requirement of its own, and _docs/requirements.md already holds $d_id as an entry of $other — two features were handed one number. Renumber it in _docs/$FOLDER/new-requirements.md (with its Requires: in tasks.md and its links in design.md), or, if it rewords that entry, give it a **Refines:** line instead."
+    fi
+    [[ "$d_rel" != "new" ]] || continue
     if [[ -z "$d_target" ]]; then
       stop "$d_id says it $d_rel a requirement and names none — the line under its heading in _docs/$FOLDER/new-requirements.md carries no REQ id. Which entry it is about is not guessed."
     elif [[ "$d_target" == "$d_id" ]]; then
       stop "$d_id says it $d_rel itself — the line under its heading in _docs/$FOLDER/new-requirements.md names its own number where an entry of _docs/requirements.md belongs."
     elif [[ "$COMPILATION" == "present" && -z "$(md_req_lines "$SPECS/requirements.md" "$d_target")" ]]; then
       stop "$d_id $d_rel $d_target, and _docs/requirements.md holds no entry $d_target — there is nothing to ${d_rel%s} there. Fix the line in _docs/$FOLDER/new-requirements.md."
+    elif [[ "$COMPILATION" == "present" ]]; then
+      # A retired entry is not one to reword, and one already replaced is not
+      # replaced a second time — except by the same requirement, which is a
+      # re-run finishing what it started.
+      by="$(sed -n "$(md_req_lines "$SPECS/requirements.md" "$d_target" | head -n 1)p" "$SPECS/requirements.md" \
+        | sed -n 's/.*superseded by \(REQ-[A-Z0-9-]*[0-9]\).*/\1/p')"
+      if [[ -n "$by" && "$d_rel" == "refines" ]]; then
+        stop "$d_id refines $d_target, and _docs/requirements.md says $d_target is superseded by $by — a retired requirement is not reworded. Refine $by instead, or make $d_id a requirement of its own."
+      elif [[ -n "$by" && "$by" != "$d_id" ]]; then
+        stop "$d_id supersedes $d_target, and _docs/requirements.md says $d_target is already superseded by $by — one requirement is replaced once. Supersede $by instead, or drop the line."
+      fi
     fi
   done <<EOF
 $DECLARED_RECS
 EOF
+  local mine
+  mine="$(own_collisions)"
+  [[ -n "$mine" ]] && \
+    stop "Declared by more than one feature: $mine. One number cannot become two entries — renumber the requirement in one of the features before either is promoted."
   [[ "$ST_REQ" == "present" && -z "$DECLARED_RECS" ]] && \
     warn "_docs/$FOLDER/new-requirements.md declares no requirement — nothing of it reaches _docs/requirements.md, and only the architecture baseline is promoted."
 

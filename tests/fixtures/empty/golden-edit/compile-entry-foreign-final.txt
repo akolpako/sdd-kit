@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=no _docs/requirements.md — /sdd-init writes it
+### tree

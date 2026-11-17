@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=REQ-001 is an entry of Catalog, not of Cart — `final` writes a feature's own entry. Two features were handed one number, or this one rewords that entry: that is `refine`
+### tree

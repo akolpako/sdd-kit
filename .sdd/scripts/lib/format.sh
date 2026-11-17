@@ -303,6 +303,21 @@ md_req_lines() {
   '
 }
 
+# The feature an entry belongs to — the first name inside its `*(Source: …)*`,
+# as written. Empty when the compilation holds no entry with that id, or the
+# entry names no source. Whose entry it is decides whether a feature promoting
+# that number writes its own entry or someone else's.
+md_req_source() {
+  md_uncomment "$1" | awk -v want="$2" "$MD_AWK_ENTRY"'
+    md_is_entry($0) && md_id($0) == want {
+      p = index($0, "(Source:"); if (p == 0) exit
+      rest = substr($0, p + 8); q = index(rest, ")"); if (q > 0) rest = substr(rest, 1, q - 1)
+      split(rest, part, ","); src = part[1]; gsub(/^[[:space:]]+|[[:space:]]+$/, "", src)
+      print src; exit
+    }
+  '
+}
+
 # What a feature declares is what holds the number: the entry in
 # requirements.md is written when the feature is actualized, and
 # until then this heading is the only record that the number is in use.

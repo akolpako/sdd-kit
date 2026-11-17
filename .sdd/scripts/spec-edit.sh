@@ -67,15 +67,17 @@
 #       Insert `TODO Code Review: <text> (<today>)` above that line, in the
 #       comment syntax of that file type and at its indentation. An extension
 #       this script has no syntax for is a stop, never a guess.
-#   compile-entry <Feature> <REQ-###> final|superseded-by:<REQ-###> [<text>]
+#   compile-entry <Feature> <REQ-###> final|refine|superseded-by:<REQ-###> [<text>]
 #       The entry of _docs/requirements.md: drop the `draft`
 #       suffix, mark it superseded, or append a new entry and move the counter
 #       past its number. The wording is the model's and arrives as <text>; an
-#       entry already on file keeps its source. A feature that rewords an entry
-#       another feature sourced — `final` with a <text> — is a refinement: the
-#       entry gains `refined by <Feature>` after its source, which is the only
-#       trace on disk that the feature was promoted at all. A number carried by
-#       two entries is a stop.
+#       entry already on file keeps its source. `final` is for the feature's own
+#       entry: on an entry another feature sourced it is a stop — two features
+#       handed one number, never a rewording guessed from the source. `refine`
+#       is the rewording, said out loud: the entry of another feature takes
+#       <text> and gains `refined by <Feature>` after its source, the only trace
+#       on disk that the feature was promoted at all. A number carried by two
+#       entries is a stop.
 #   conf-set <KEY> <value>
 #       Write `KEY=value` into .sdd/sdd.conf: the line already carrying KEY is
 #       rewritten, otherwise one is appended, and the file is created when it
@@ -565,11 +567,11 @@ compile-entry)
   # lib/format.sh is where the shape of an id is read.
   md_req_is_id "$REQ" || die2 "not a requirement number: $REQ — REQ-### or REQ-<DOMAIN>-### is the format"
   case "$MODE" in
-    final) ;;
+    final|refine) ;;
     superseded-by:*)
       md_req_is_id "${MODE#superseded-by:}" || \
         die2 "not a requirement number: ${MODE#superseded-by:} — REQ-### or REQ-<DOMAIN>-### is the format" ;;
-    *) die2 "not a mode: $MODE — final or superseded-by:REQ-###" ;;
+    *) die2 "not a mode: $MODE — final, refine or superseded-by:REQ-###" ;;
   esac
 
   FILE="$SPECS/requirements.md"
@@ -600,12 +602,18 @@ compile-entry)
     # Who has reworded the entry since stays on it through every later edit: it
     # is what lets a feature that added no entry of its own be told apart from
     # one that was never promoted.
-    refined=""
+    # So does a replacement: a later rewording of a retired entry leaves it
+    # retired, unless this call names a new replacement of its own.
+    refined=""; superseded=""
     while [[ "$parts" == *,* ]]; do
       parts="${parts#*,}"
       part="${parts%%,*}"; part="${part#"${part%%[![:space:]]*}"}"
-      case "$part" in "refined by "*) refined="$refined, $part" ;; esac
+      case "$part" in
+        "refined by "*)    refined="$refined, $part" ;;
+        "superseded by "*) superseded=", $part" ;;
+      esac
     done
+    [[ -n "$suffix" ]] || suffix="$superseded"
     body="$TEXT"
     if [[ -z "$body" ]]; then
       body="${old#*— }"; body="${body%% \*(Source:*}"
@@ -625,7 +633,15 @@ compile-entry)
     action="updated"
     lc_src="$(printf '%s' "$src" | tr '[:upper:]' '[:lower:]')"
     lc_feature="$(printf '%s' "$FEATURE" | tr '[:upper:]' '[:lower:]')"
-    if [[ "$MODE" == "final" && -n "$TEXT" && "$lc_src" != "$lc_feature" ]]; then
+    case "$MODE" in
+      final)
+        [[ "$lc_src" == "$lc_feature" ]] || \
+          die2 "$REQ is an entry of $src, not of $FEATURE — \`final\` writes a feature's own entry. Two features were handed one number, or this one rewords that entry: that is \`refine\`" ;;
+      refine)
+        [[ "$lc_src" != "$lc_feature" ]] || die2 "$REQ is $FEATURE's own entry — rewording it is \`final\`, not \`refine\`"
+        [[ -n "$TEXT" ]] || die2 "refine $REQ carries the new wording: compile-entry $FEATURE $REQ refine <text>" ;;
+    esac
+    if [[ "$MODE" == "refine" ]]; then
       case "$(printf '%s' "$refined," | tr '[:upper:]' '[:lower:]')" in
         *", refined by $lc_feature,"*) ;;
         *) refined="$refined, refined by $FEATURE" ;;
@@ -637,6 +653,7 @@ compile-entry)
     SDD_LINE="$new" awk -v n="$at" 'NR == n { print ENVIRON["SDD_LINE"]; next } { print }' "$FILE" > "$TMP/f" || exit 1
     replace_file "$FILE" "$TMP/f"
   else
+    [[ "$MODE" != "refine" ]] || die2 "$REQ has no entry in $FILE — there is nothing to refine"
     [[ -n "$TEXT" ]] || die2 "$REQ has no entry yet, so its wording has to come with it: compile-entry $FEATURE $REQ $MODE <text>"
     new="- **$REQ** — $TEXT *(Source: $FEATURE$suffix)* $ANCHOR"
     # Appended at the end of `## Requirements`, after whatever is already there.
