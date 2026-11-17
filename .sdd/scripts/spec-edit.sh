@@ -69,7 +69,8 @@
 #       this script has no syntax for is a stop, never a guess.
 #   compile-entry <Feature> <REQ-###> final|refine|superseded-by:<REQ-###> [<text>]
 #       The entry of _docs/requirements.md: drop the `draft`
-#       suffix, mark it superseded, or append a new entry and move the counter
+#       suffix of an entry from before the public release (nothing writes it
+#       now), mark it superseded, or append a new entry and move the counter
 #       past its number. The wording is the model's and arrives as <text>; an
 #       entry already on file keeps its source. `final` is for the feature's own
 #       entry: on an entry another feature sourced it is a stop — two features

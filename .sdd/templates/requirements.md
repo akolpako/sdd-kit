@@ -26,8 +26,8 @@ written by /sdd-actualize when the domain's first entry is compiled. The
 ids carrying no domain are one such sequence too — the one a project that never
 groups anything uses throughout.
 
-An entry with no status suffix is active. The two suffixes, after the source:
-- **REQ-014** — Cart discounts. A cart applies at most one promo code. *(Source: Cart, draft)*
+An entry with no status suffix is active. A retired one says what replaced it,
+after the source:
 - **REQ-012** — Guest checkout. A guest can order without an account. *(Source: Cart, superseded by REQ-031)*
 
 An entry a later feature reworded keeps its source and names that feature

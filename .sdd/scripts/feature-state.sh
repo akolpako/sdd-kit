@@ -243,6 +243,10 @@ parse_compilation() {
       status = "active"; refiner = ""
       for (i = 2; i <= n; i++) {
         f = part[i]; gsub(/^[[:space:]]+|[[:space:]]+$/, "", f)
+        # `draft` is written by no step of the engine any more: it is read for
+        # compilations from before the public release, where an entry reserved
+        # at specify time and was finalised later. Read as active, such an entry
+        # would carry a feature to actualized on wording nobody confirmed.
         if (f == "draft") status = "draft"
         else if (f ~ /^superseded by REQ-([A-Z][A-Z0-9]*-)*[0-9]+/) status = f
         else if (f ~ /^refined by /) {
