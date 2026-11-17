@@ -34,12 +34,18 @@
 # recording them as a tree would record the state the defect has nothing to do
 # with.
 #
-# Usage: run.sh [--update] [<fixture> ...]
-#   no argument   every fixture
+# Usage: run.sh [--update] [--checks=<job,...>|none] [--no-fixtures] [<fixture> ...]
+#   no argument   every check and every fixture
 #   <fixture>     the name of a directory under fixtures/
+#   --checks=     only these property checks — the names of the queue below
+#                 (`collisions`, `stacks`, `jira-publish`, …); `none` runs no
+#                 check. A name the queue does not hold is an error.
+#   --no-fixtures no fixture at all, only the checks
 #   --update      overwrite the golden files with what the scripts print now.
 #                 A golden is a decision: run this only after reading the diff
 #                 the plain run printed, never to make a red run green.
+#   A narrowed run is for the edit at hand; the whole suite still runs before
+#   a set of changes is done.
 #
 # The environment it reads:
 #   SDD_TEST_JOBS    how many checks and fixtures run at once. Default: the
@@ -201,9 +207,13 @@ not-a-key|issue.json|Cart;--out;_docs/<KEY>/raw.md|JIRA_URL=https://jira.example
 
 UPDATE=0
 SELECTED=""
+CHECKS=""
+NO_FIXTURES=0
 while (( $# > 0 )); do
   case "$1" in
     --update) UPDATE=1 ;;
+    --checks=*) CHECKS="${1#--checks=}"; [[ -n "$CHECKS" ]] || { printf 'ERROR=--checks= names nothing: a list of checks, or none\n' >&2; exit 1; } ;;
+    --no-fixtures) NO_FIXTURES=1 ;;
     -h|--help) sed -n '2,44p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     -*) printf 'ERROR=unknown option: %s\n' "$1" >&2; exit 1 ;;
     *)  SELECTED="$SELECTED $1" ;;
@@ -2340,8 +2350,14 @@ job_body() {
   printf '0\n' > "$TMP_ROOT/rc/$name"
 }
 
+KNOWN_CHECKS=","
 start_job() {
   local name="$1"
+  case "$name" in
+    fixture-*) ;;
+    *) KNOWN_CHECKS="$KNOWN_CHECKS$name,"
+       [[ -z "$CHECKS" || ",$CHECKS," == *",$name,"* ]] || return 0 ;;
+  esac
   JOB_NAMES+=("$name")
   if (( JOBS == 1 )); then
     ( job_body "$@" ) > "$TMP_ROOT/out/$name" 2>&1
@@ -2379,7 +2395,18 @@ start_job confluence-search  check_suite confluence search.sh
 start_job jira-fetch         check_suite jira
 start_job jira-publish       check_suite jira publish.sh
 
-[[ -n "$SELECTED" ]] || SELECTED="$(cd "$FIXTURES" && ls -d */ 2>/dev/null | sed 's#/$##')"
+# A check named on the command line that the queue does not hold would narrow
+# the run to nothing and pass.
+for name in $(printf '%s' "$CHECKS" | tr ',' ' '); do
+  [[ "$name" == "none" || "$KNOWN_CHECKS" == *",$name,"* ]] || {
+    printf 'ERROR=no such check: %s — one of%s\n' "$name" "$(printf '%s' "$KNOWN_CHECKS" | tr ',' ' ')" >&2; exit 1; }
+done
+
+if (( NO_FIXTURES )); then
+  [[ -z "$SELECTED" ]] || { printf 'ERROR=--no-fixtures and fixtures named:%s\n' "$SELECTED" >&2; exit 1; }
+else
+  [[ -n "$SELECTED" ]] || SELECTED="$(cd "$FIXTURES" && ls -d */ 2>/dev/null | sed 's#/$##')"
+fi
 
 for name in $SELECTED; do
   [[ -d "$FIXTURES/$name" ]] || { printf 'ERROR=no such fixture: %s\n' "$name" >&2; exit 1; }
@@ -2392,7 +2419,7 @@ wait
 
 # ── The report ────────────────────────────────────────────────────
 BAD=0
-for name in "${JOB_NAMES[@]}"; do
+for name in ${JOB_NAMES[@]+"${JOB_NAMES[@]}"}; do
   [[ -f "$TMP_ROOT/out/$name" ]] && cat "$TMP_ROOT/out/$name"
   [[ "$(cat "$TMP_ROOT/rc/$name" 2>/dev/null)" == "0" ]] || {
     printf 'ERROR=job did not finish: %s\n' "$name" >&2
@@ -2401,7 +2428,7 @@ for name in "${JOB_NAMES[@]}"; do
 done
 
 PASSED=0; FAILED=0; WRITTEN=0
-for name in "${JOB_NAMES[@]}"; do
+for name in ${JOB_NAMES[@]+"${JOB_NAMES[@]}"}; do
   [[ -f "$TMP_ROOT/res/$name" ]] || continue
   PASSED=$(( PASSED + $(grep -c '^P$' "$TMP_ROOT/res/$name" || true) ))
   FAILED=$(( FAILED + $(grep -c '^F$' "$TMP_ROOT/res/$name" || true) ))
