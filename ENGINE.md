@@ -18,7 +18,7 @@ Each path below holds exactly this, and a fact lives in one of them (see *Where 
 | `agents/*.md` | The five roles — what tells each apart (see *Agent files*). |
 | `protocols/*.md` | The procedures, each naming its addressee in its first line. |
 | `prompts/*.md` | One assignment per scope of the gate's `SPAWN:` table: this run's data, the scope, what the role returns. |
-| `scripts/*.sh` | A rule that reads project state and returns a fact; `lib/format.sh` reads the `_docs/` formats, `lib/log.sh` records each run. |
+| `scripts/*.sh` | A rule that reads project state and returns a fact; `lib/format.sh` reads the `_docs/` formats, `lib/conf.sh` reads `.sdd/sdd.conf`, `lib/log.sh` records each run. |
 | `skills/*/SKILL.md` | The craft of a discipline, as rules with links into `references/`. |
 | `templates/*.md` | The structure of every generated file. Not a channel for instructions. |
 | `rules/*.md` | Text needed from the first token (see *Adapters* for who inherits it). None shipped. |
@@ -245,7 +245,7 @@ flowchart LR
 - **The orchestrator does not read what it does not decide from.** A spawn passes spec file
   *paths*, not contents. The coverage matrix comes computed as `COVERAGE:`, its stops as
   `UNCOVERED:` and `UNDECLARED:`; the place and stack of each review finding as `FINDINGS:`.
-- **A format is read in one place** — `lib/format.sh`, sourced by readers and writers.
+- **A format is read in one place** — `lib/format.sh` for `_docs/`, `lib/conf.sh` for `.sdd/sdd.conf`, sourced by readers and writers.
 - **Nothing tool-specific**: both hosts run the same scripts. `review-set.sh` excludes `_docs/`,
   `.sdd/`, `.claude/` but not `.github/` — the `.gitignore` block already hides the engine there,
   and excluding it would drop the project's workflows.

@@ -80,35 +80,13 @@ note() { NOTES+=("$1"); }
 N_DETECTED=0
 
 # ── The config ────────────────────────────────────────────────────
-# Parsed the way `lib/log.sh` parses the same file, and for the same reason:
-# `. .sdd/sdd.conf` is one line shorter and would execute whatever the file
-# holds on every run of every script. A strict read over a fixed set of keys —
-# quotes stripped, comments and blank lines skipped, everything else ignored
-# without a word.
-conf_read() {
-  awk '
-    { sub(/\r$/, "") }
-    /^[[:space:]]*#/ { next }
-    {
-      line = $0
-      sub(/^[[:space:]]+/, "", line)
-      sub(/[[:space:]]+$/, "", line)
-      p = index(line, "=")
-      if (p < 2) next
-      key = substr(line, 1, p - 1)
-      val = substr(line, p + 1)
-      sub(/[[:space:]]+$/, "", key)
-      sub(/^[[:space:]]+/, "", val)
-      if (key !~ /^SDD_BUILD_(ROOT|BACKEND|FRONTEND)$/) next
-      # A value wrapped whole in one kind of quote loses that pair and nothing
-      # else: `-Dgroups="fast"` ends in a quote that belongs to the command.
-      q = substr(val, 1, 1)
-      if (length(val) >= 2 && (q == "\"" || q == "\047") && substr(val, length(val), 1) == q)
-        val = substr(val, 2, length(val) - 2)
-      print key "=" val
-    }
-  ' "$1" 2>/dev/null
-}
+# Read by lib/conf.sh, the one parser of this file — never sourced: it may hold
+# a token. A key set twice: the last line wins.
+if [[ ! -r "$SDD_HERE/lib/conf.sh" ]]; then
+  printf 'ERROR=missing: %s/lib/conf.sh\n' "$SDD_HERE" >&2
+  exit 1
+fi
+. "$SDD_HERE/lib/conf.sh"
 
 CONF="$ROOT_DIR/.sdd/sdd.conf"
 CFG_ROOT=""; CFG_BACKEND=""; CFG_FRONTEND=""
@@ -121,7 +99,7 @@ if [[ -r "$CONF" ]]; then
       SDD_BUILD_FRONTEND) CFG_FRONTEND="$val" ;;
     esac
   done <<EOF
-$(conf_read "$CONF")
+$(sdd_conf_read "$CONF" '^SDD_BUILD_(ROOT|BACKEND|FRONTEND)$')
 EOF
 fi
 

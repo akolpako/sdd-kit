@@ -123,6 +123,7 @@ c  .sdd/scripts/feature-state.sh = <engine>/.sdd/scripts/feature-state.sh
 c  .sdd/scripts/gate.sh = <engine>/.sdd/scripts/gate.sh
 c  .sdd/scripts/jira-import.sh = <engine>/.sdd/scripts/jira-import.sh
 d  .sdd/scripts/lib/
+c  .sdd/scripts/lib/conf.sh = <engine>/.sdd/scripts/lib/conf.sh
 c  .sdd/scripts/lib/format.sh = <engine>/.sdd/scripts/lib/format.sh
 c  .sdd/scripts/lib/log.sh = <engine>/.sdd/scripts/lib/log.sh
 c  .sdd/scripts/lib/token-counter.py = <engine>/.sdd/scripts/lib/token-counter.py
@@ -281,6 +282,7 @@ host	copilot
 <sum>	.sdd/scripts/feature-state.sh
 <sum>	.sdd/scripts/gate.sh
 <sum>	.sdd/scripts/jira-import.sh
+<sum>	.sdd/scripts/lib/conf.sh
 <sum>	.sdd/scripts/lib/format.sh
 <sum>	.sdd/scripts/lib/log.sh
 <sum>	.sdd/scripts/lib/token-counter.py

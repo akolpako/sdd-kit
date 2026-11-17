@@ -2338,10 +2338,23 @@ check_conf_set() {
   [[ "$out" == *"ACTION=unchanged"* ]] || ok=1
   prop_check conf-set "rewrites one line, appends, and leaves an answer alone" "$ok" "$out / $(tr '\n' '~' < "$work/.sdd/sdd.conf")"
 
+
   out="$(cd "$work" && "$EDITOR_SH" conf-set JIRA_TOKEN x 2>&1)"; rc=$?
   ok=0; [[ $rc -eq 2 ]] || ok=1
   grep -q '^JIRA_TOKEN=secret$' "$work/.sdd/sdd.conf" || ok=1
   prop_check conf-set "writes build keys only" "$ok" "exit $rc: $out"
+
+  # A key set twice: the reader takes the last line, so that is the one written.
+  local dup="$TMP/conf-set-dup"
+  rm -rf "$dup" && mkdir -p "$dup/.sdd" || exit 1
+  printf 'SDD_BUILD_ROOT=first\n  SDD_BUILD_ROOT = "second"\n' > "$dup/.sdd/sdd.conf"
+  out="$(cd "$dup" && "$EDITOR_SH" conf-set SDD_BUILD_ROOT second 2>&1)"
+  ok=0
+  [[ "$out" == *"ACTION=unchanged"* ]] || ok=1
+  out="$(cd "$dup" && "$EDITOR_SH" conf-set SDD_BUILD_ROOT third 2>&1)"
+  [[ "$(cat "$dup/.sdd/sdd.conf")" == $'SDD_BUILD_ROOT=first\nSDD_BUILD_ROOT=third' ]] || ok=1
+  [[ "$("$SCRIPTS/build-command.sh" "$dup" | sed -n 's/^ROOT=//p')" == 'third' ]] || ok=1
+  prop_check conf-set "a key set twice is written where the reader reads it" "$ok" "$out / $(tr '\n' '~' < "$dup/.sdd/sdd.conf")"
 }
 
 # A two-stack project asks for the build of the stacks a feature builds, and

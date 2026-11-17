@@ -191,33 +191,10 @@ if [[ "${SDD_LOG_CHILD:-}" == "1" ]]; then
 fi
 
 # ── Configuration ─────────────────────────────────────────────────
-# The known keys, as written, one KEY=value per line. A strict read over a fixed
-# set: quotes are stripped, comments and blank lines skipped, everything else
-# ignored without a word.
-sdd_log_conf_read() {
-  awk '
-    { sub(/\r$/, "") }
-    /^[[:space:]]*#/ { next }
-    {
-      line = $0
-      sub(/^[[:space:]]+/, "", line)
-      sub(/[[:space:]]+$/, "", line)
-      p = index(line, "=")
-      if (p < 2) next
-      key = substr(line, 1, p - 1)
-      val = substr(line, p + 1)
-      sub(/[[:space:]]+$/, "", key)
-      sub(/^[[:space:]]+/, "", val)
-      if (key !~ /^SDD_LOG(_DIR|_MAX|_HEAD|_TAIL)?$/) next
-      # A value wrapped whole in one kind of quote loses that pair and nothing
-      # else: `-Dgroups="fast"` ends in a quote that belongs to the command.
-      q = substr(val, 1, 1)
-      if (length(val) >= 2 && (q == "\"" || q == "\047") && substr(val, length(val), 1) == q)
-        val = substr(val, 2, length(val) - 2)
-      print key "=" val
-    }
-  ' "$1" 2>/dev/null
-}
+# Read by lib/conf.sh, next to this file. Behind a test: this module must not
+# fail a script, and without the parser the defaults and the environment are
+# what is left.
+[[ -r "${BASH_SOURCE[0]%/*}/conf.sh" ]] && . "${BASH_SOURCE[0]%/*}/conf.sh"
 
 sdd_log_num() {
   case "${1:-}" in
@@ -235,7 +212,7 @@ sdd_log_resolve() {
   # A run id already in the environment means an outer wrapper resolved
   # everything and exported it. The file is read once per run: a nested script
   # re-reading it could disagree with its own parent halfway through.
-  if [[ -z "${SDD_LOG_RUN:-}" && -r "$PWD/.sdd/sdd.conf" ]]; then
+  if [[ -z "${SDD_LOG_RUN:-}" && -r "$PWD/.sdd/sdd.conf" ]] && declare -F sdd_conf_read >/dev/null; then
     while IFS='=' read -r key val; do
       case "$key" in
         SDD_LOG)      c_log="$val" ;;
@@ -245,7 +222,7 @@ sdd_log_resolve() {
         SDD_LOG_TAIL) c_tail="$val" ;;
       esac
     done <<EOF
-$(sdd_log_conf_read "$PWD/.sdd/sdd.conf")
+$(sdd_conf_read "$PWD/.sdd/sdd.conf" '^SDD_LOG(_DIR|_MAX|_HEAD|_TAIL)?$')
 EOF
   fi
 

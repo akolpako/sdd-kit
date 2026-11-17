@@ -105,8 +105,9 @@
 #       nothing to take a diff from, and nothing is written (START=none, the
 #       reason under NOTES:). Prints START=written|kept|none, COMMIT=, FILE=.
 #   conf-set <KEY> <value>
-#       Write `KEY=value` into .sdd/sdd.conf: the line already carrying KEY is
-#       rewritten, otherwise one is appended, and the file is created when it
+#       Write `KEY=value` into .sdd/sdd.conf: the line already carrying KEY —
+#       the last one, which is the one build-command.sh reads — is rewritten,
+#       otherwise one is appended, and the file is created when it
 #       is not there. Only SDD_BUILD_ROOT, SDD_BUILD_BACKEND, SDD_BUILD_FRONTEND
 #       — the human's answers about the build. Every other line stays byte for
 #       byte, and none of it is printed: the file may hold a JIRA_TOKEN, and
@@ -811,21 +812,15 @@ conf-set)
   CONF=".sdd/sdd.conf"
   mkdir -p .sdd || exit 1
   [[ -f "$CONF" ]] || : > "$CONF" || exit 1
-  # The line that counts is the one build-command.sh reads: the first
-  # uncommented KEY=, leading blanks allowed. Its value is compared as that
-  # reader would see it, so an answer already there is not written twice.
-  at="$(awk -v k="$KEY" '
-    /^[[:space:]]*#/ { next }
-    { l = $0; sub(/^[[:space:]]+/, "", l) }
-    index(l, k "=") == 1 || l ~ ("^" k "[[:space:]]+=") { print NR; exit }
-  ' "$CONF")"
+  # The line that counts is the one build-command.sh reads, found by the same
+  # parser: the last line carrying KEY. Its value is compared as that reader
+  # sees it, so an answer already there is not written twice.
+  [[ -r "$SCRIPT_DIR/lib/conf.sh" ]] || { printf 'ERROR=missing: %s/lib/conf.sh\n' "$SCRIPT_DIR" >&2; exit 1; }
+  . "$SCRIPT_DIR/lib/conf.sh"
+  found="$(sdd_conf_read "$CONF" "^$KEY\$" n | tail -n 1)"
+  at="${found%%|*}"; current="${found#*|$KEY=}"
   action="added"
-  if [[ -n "$at" ]]; then
-    current="$(awk -v n="$at" 'NR == n {
-        l = $0; sub(/\r$/, "", l); sub(/^[^=]*=[[:space:]]*/, "", l); sub(/[[:space:]]+$/, "", l)
-        q = substr(l, 1, 1)
-        if (length(l) >= 2 && (q == "\"" || q == "\047") && substr(l, length(l), 1) == q) l = substr(l, 2, length(l) - 2)
-        print l; exit }' "$CONF")"
+  if [[ -n "$found" ]]; then
     if [[ "$current" == "$VALUE" ]]; then
       action="unchanged"
     else
