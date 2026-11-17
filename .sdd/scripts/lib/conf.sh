@@ -45,3 +45,18 @@ sdd_conf_read() {
   ' "$1" 2>/dev/null
   return 0
 }
+
+#   sdd_feedback_on [<file>]
+#       true when the engine's feedback log is on: SDD_FEEDBACK=1 in the
+#       environment, or else the last SDD_FEEDBACK= of the file (default
+#       `.sdd/sdd.conf`). Off by default, and independent of SDD_LOG. The human
+#       writes the key by hand; `conf-set` does not take it.
+sdd_feedback_on() {
+  local v="${SDD_FEEDBACK:-}" line
+  if [[ -z "$v" ]]; then
+    while IFS= read -r line; do v="${line#*=}"; done <<EOF_CONF
+$(sdd_conf_read "${1:-$PWD/.sdd/sdd.conf}" '^SDD_FEEDBACK$')
+EOF_CONF
+  fi
+  [[ "$v" == "1" ]]
+}

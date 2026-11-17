@@ -271,6 +271,13 @@ flowchart LR
   The orchestrator and every role run it through `build-run.sh` — the prompt gives the line —
   which keeps the output in `.sdd/build/` and answers green or red with the tail of a red one:
   a role that builds once per attempt per task would otherwise carry every log in its context.
+- **The feedback log** (`feedback.sh` → `.sdd/log/feedback.log`) is the same contract: written,
+  never read. With `SDD_FEEDBACK=1` in `.sdd/sdd.conf` (by hand; `conf-set` does not take it) the
+  gate prints `FEEDBACK=on` and every prompt closes with the call for its role: a closed list of
+  kinds — `script`, `conflict`, `missing`, `unused`, `skill` — each record naming an engine file.
+  The role writes it itself, never through its reply. Off, no prompt or output changes, and the
+  script drains its stdin and exits 0. `feedback-collect.sh` in this clone reads the logs of
+  `installed-repos.txt`; it is not installed.
 - **The log (`lib/log.sh`) is written, never read** — no script, prompt or command branches on
   it. It wraps each script by re-exec; stdout, stderr and exit code stay byte-identical, and the
   goldens assert it.

@@ -130,6 +130,7 @@ d  .sdd/scripts/
 c  .sdd/scripts/build-command.sh = <engine>/.sdd/scripts/build-command.sh
 c  .sdd/scripts/build-run.sh = <engine>/.sdd/scripts/build-run.sh
 c  .sdd/scripts/feature-state.sh = <engine>/.sdd/scripts/feature-state.sh
+c  .sdd/scripts/feedback.sh = <engine>/.sdd/scripts/feedback.sh
 c  .sdd/scripts/gate.sh = <engine>/.sdd/scripts/gate.sh
 c  .sdd/scripts/jira-import.sh = <engine>/.sdd/scripts/jira-import.sh
 d  .sdd/scripts/lib/
@@ -291,6 +292,7 @@ host	copilot
 <sum>	.sdd/scripts/build-command.sh
 <sum>	.sdd/scripts/build-run.sh
 <sum>	.sdd/scripts/feature-state.sh
+<sum>	.sdd/scripts/feedback.sh
 <sum>	.sdd/scripts/gate.sh
 <sum>	.sdd/scripts/jira-import.sh
 <sum>	.sdd/scripts/lib/conf.sh

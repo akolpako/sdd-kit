@@ -34,6 +34,9 @@
 #   FOLDER=<name>          the folder it resolved to on disk — every path and
 #                          every later step follows this, not the argument
 #   STAGE=<stage>
+#   FEEDBACK=on            only when SDD_FEEDBACK=1 is in .sdd/sdd.conf: the
+#                          orchestrator writes its own remarks on the engine
+#                          with feedback.sh. Not printed otherwise
 #   SPAWN:        one assignment per line, `<role>|<protocol,...>|<scope>`. The
 #                 command relays a record as printed — it adds no protocol and
 #                 drops none. Which role follows which protocols is decided here
@@ -240,6 +243,7 @@ if [[ ! -r "$SCRIPT_DIR/lib/format.sh" ]]; then
   exit 1
 fi
 . "$SCRIPT_DIR/lib/format.sh"
+[[ -r "$SCRIPT_DIR/lib/conf.sh" ]] && . "$SCRIPT_DIR/lib/conf.sh"
 
 # A name that is not a path segment would send every write of the run outside
 # _docs/<name>/. /sdd-next-story judges the name as a stop of its own, with the
@@ -1366,6 +1370,9 @@ if [[ "$CMD" != "init" ]]; then
   printf 'FOLDER=%s\n' "$FOLDER"
   printf 'STAGE=%s\n' "$STAGE"
 fi
+# The orchestrator never reads .sdd/sdd.conf, so it learns here that the
+# feedback log is on. Printed only then: off, no output changes.
+[[ $VERIFY -eq 0 ]] && declare -F sdd_feedback_on >/dev/null && sdd_feedback_on "$ROOT_DIR/.sdd/sdd.conf" && printf 'FEEDBACK=on\n'
 
 case "$CMD" in
   init)

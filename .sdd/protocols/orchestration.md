@@ -50,6 +50,8 @@ SDD_TEXT
 
 Inside double quotes on a command line a backtick runs a command and a `$` expands, so the file gets something nobody wrote. `spawn-prompt.sh` takes such values the same way, as `KEY:` blocks after a `-` (its header comment shows the shape).
 
+**`FEEDBACK=on` from the gate means the project keeps a log of what gets in the way of the engine.** What got in the way of this command — a script that failed or printed what it could not have, two engine files asking for different things, something this file left out, something it had read that was not needed — is written there, one record per fact, naming the engine file: `.sdd/scripts/feedback.sh <script|conflict|missing|unused|skill> --by=orchestrator --command=<command> --feature=<FeatureName> -`, the remark on stdin. A record changes nothing in the run, and with nothing to say nothing is written. Without the key, no record is written at all. The roles write their own; their remarks never pass through here.
+
 **`.sdd/sdd.conf` is never read or edited by hand.** It may hold a token. The build answers go in through `.sdd/scripts/spec-edit.sh conf-set`, and every value a step needs comes out of a script.
 
 **Before any overwrite, `.sdd/scripts/spec-edit.sh backup <FeatureName>`.** A non-zero exit is a stop: nothing is overwritten without its copy, and no role is spawned to write it.

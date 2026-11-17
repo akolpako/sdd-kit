@@ -49,6 +49,10 @@
 # says what they are relative to. One that cannot resolve a path widens its
 # search until it finds something, and widening ends at `/`.
 #
+# With SDD_FEEDBACK=1 in `.sdd/sdd.conf`, every prompt closes with a paragraph
+# on the feedback log and the `feedback.sh` call for this role, command and
+# feature (see feedback.sh). Without it, nothing is added.
+#
 # Templates: `.sdd/prompts/<command>-<scope>.md`, addressed to the role.
 #   {{KEY}}            inline, replaced by the value; a multi-line value here
 #                      is an error, not a squashed line. An empty value reads
@@ -69,6 +73,7 @@ SDD_HERE="${0%/*}"; [[ "$SDD_HERE" == "$0" ]] && SDD_HERE="."
 [[ -r "$SDD_HERE/lib/log.sh" ]] && . "$SDD_HERE/lib/log.sh"
 
 SCRIPT_DIR="$(cd "$SDD_HERE" && pwd)"
+[[ -r "$SDD_HERE/lib/conf.sh" ]] && . "$SDD_HERE/lib/conf.sh"
 GATE="$SCRIPT_DIR/gate.sh"
 PROMPTS="$SCRIPT_DIR/../prompts"
 
@@ -322,6 +327,33 @@ while IFS= read -r line || [[ -n "$line" ]]; do
     *) printf '%s\n' "$line" >> "$RENDERED" ;;
   esac
 done < "$TEMPLATE"
+
+# The feedback log, when the project turned it on (SDD_FEEDBACK=1): one closing
+# paragraph, the same in every scope, with the call already filled in — the
+# role picks the kind and writes the words. Off, the prompt carries no word of
+# it, and no golden changes.
+if declare -F sdd_feedback_on >/dev/null && sdd_feedback_on; then
+  cat >> "$RENDERED" <<EOF_TAIL
+
+## Feedback on the engine
+
+This project keeps a log of what gets in the way of the engine's assignments.
+When something in this one did, write one record per fact, naming the engine
+file it is about — a script, a protocol, this assignment, a skill:
+
+.sdd/scripts/feedback.sh <kind> --by=$ROLE --command=$CMD --feature=${FEATURE:--} - <<'SDD_TEXT'
+<what happened, and the file it is about>
+SDD_TEXT
+
+<kind> is one of: \`script\` — a script failed or printed what it could not
+have; \`conflict\` — two engine files ask for different things, both named;
+\`missing\` — the assignment lacked something: what you looked up, and where you
+found it; \`unused\` — it had you read or load something you did not need;
+\`skill\` — a skill's rule is wrong for this project, or its script failed.
+A record changes nothing in your work: a script that failed is still reported
+in your reply. Nothing to say — write nothing.
+EOF_TAIL
+fi
 
 # Half an assignment is worse than none: nothing is printed unless all of it is.
 if [[ $FAIL -ne 0 ]]; then

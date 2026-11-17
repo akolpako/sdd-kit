@@ -2302,6 +2302,50 @@ check_start() {
   prop_check start "a starting commit a reset dropped falls back with a warning" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
 }
 
+# The feedback log: off by default and silent, on only with SDD_FEEDBACK=1 —
+# then the gate says so, every prompt closes with the call for its role, and a
+# record lands in .sdd/log/feedback.log. It is written and never read, so these
+# cases are what notice it broken.
+check_feedback() {
+  local work="$TMP/feedback" out rc ok
+
+  printf 'feedback\n'
+  rm -rf "$work" && cp -R "$FIXTURES/two-stacks/tree" "$work" && rm -rf "$work/.sdd" && mkdir -p "$work/.sdd" || exit 1
+  printf 'SDD_BUILD_BACKEND=mvn verify\nSDD_BUILD_FRONTEND=npm test\n' > "$work/.sdd/sdd.conf"
+
+  out="$(cd "$work" && printf 'x\n' | "$SCRIPTS/feedback.sh" script --by=r --command=implement - 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 0 && "$out" == "FEEDBACK=off" && ! -e "$work/.sdd/log/feedback.log" ]] || ok=1
+  (cd "$work" && "$GATE" implement Cart 2>&1) | grep -q '^FEEDBACK=' && ok=1
+  (cd "$work" && "$SCRIPTS/spawn-prompt.sh" implement Cart backend HELD=none --print 2>&1) | grep -q 'feedback.sh' && ok=1
+  prop_check feedback "off: nothing written, no key, no word in a prompt" "$ok" "exit $rc: $out"
+
+  printf 'SDD_FEEDBACK=1\n' >> "$work/.sdd/sdd.conf"
+  out="$(cd "$work" && "$GATE" implement Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -qx 'FEEDBACK=on' || ok=1
+  out="$(cd "$work" && "$SCRIPTS/spawn-prompt.sh" implement Cart backend HELD=none --print 2>&1)"
+  printf '%s\n' "$out" | grep -qF ".sdd/scripts/feedback.sh <kind> --by=backend-developer --command=implement --feature=Cart - <<'SDD_TEXT'" || ok=1
+  prop_check feedback "on: the gate says so, the prompt carries the filled-in call" "$ok" "$(printf '%s' "$out" | tail -n 15 | tr '\n' '~')"
+
+  out="$(cd "$work" && env -u SDD_LOG_DIR SDD_LOG=0 "$SCRIPTS/feedback.sh" missing --by=backend-developer --command=implement --feature=Cart - <<'SDD_TEXT' 2>&1
+the prompt named no `code-style.md` $HOME
+SDD_TEXT
+)"; rc=$?
+  ok=0
+  [[ $rc -eq 0 && "$out" == "FEEDBACK=written" ]] || ok=1
+  grep -q '^## .* | missing | backend-developer | implement | Cart$' "$work/.sdd/log/feedback.log" || ok=1
+  grep -qF 'the prompt named no `code-style.md` $HOME' "$work/.sdd/log/feedback.log" || ok=1
+  prop_check feedback "a record is written as given, SDD_LOG=0 notwithstanding" "$ok" "exit $rc: $out"
+
+  out="$(cd "$work" && printf 'x\n' | "$SCRIPTS/feedback.sh" opinion --by=r --command=implement - 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 2 ]] || ok=1
+  out="$(cd "$work" && printf '  \n' | "$SCRIPTS/feedback.sh" script --by=r --command=implement - 2>&1)"; rc=$?
+  [[ $rc -eq 2 ]] || ok=1
+  prop_check feedback "a kind off the list and an empty remark are refused" "$ok" "exit $rc: $out"
+}
+
 # The two stops of /sdd-spec-review that used to be judged by eye: the coverage
 # matrix, and whether a file with a question still on it may be called ready.
 check_spec_review() {
@@ -2819,6 +2863,7 @@ start_job raw              check_raw
 start_job blocked-set      check_blocked_set
 start_job start            check_start
 start_job spec-review      check_spec_review
+start_job feedback         check_feedback
 start_job conf-set         check_conf_set
 start_job backup           check_backup
 start_job stacks           check_stacks
