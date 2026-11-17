@@ -122,15 +122,15 @@ specify-requirements|specify|requirements|KEPT=none
 specify-design-tasks|specify|design+tasks|KEPT=new-requirements.md
 review-requirements|review|requirements|
 review-design-tasks|review|design+tasks|
-implement-backend|implement|backend|
-implement-frontend|implement|frontend|
+implement-backend|implement|backend|HELD=none
+implement-frontend|implement|frontend|HELD=TASK-009
 code-review-review-set|code-review|review-set|
 code-fix-backend|code-fix|findings-backend|TRIAGE=Critical and Major fixed, the rest gets a marker.;FINDINGS=F-01\nF-02
 code-fix-frontend|code-fix|findings-frontend|TRIAGE=Fix everything.;FINDINGS=F-03
 actualize-baseline|actualize|baseline-from-feature|
 refused-no-template|implement|no-such-scope|
 refused-no-value|code-fix|findings-backend|TRIAGE=Fix everything.
-refused-multiline-inline|implement|backend|FEATURE=Cart\nBasket
+refused-multiline-inline|implement|backend|HELD=none;FEATURE=Cart\nBasket
 refused-alien-base|code-review|review-set|BASE=no-such-ref'
 
 # One line per postcondition check: <case>|<command>|<option;option>. The last

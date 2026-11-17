@@ -23,6 +23,10 @@ The open tasks of this feature:
 
 {{SECTION:TODO}}
 
+Blocked tasks the human holds back from this run — not retried:
+
+{{HELD}}
+
 Your type is `backend`, and every task of it above is yours in this one run.
 Your `tasks.md` is `_docs/{{FOLDER}}/tasks.md` — run the task loop over it.
 

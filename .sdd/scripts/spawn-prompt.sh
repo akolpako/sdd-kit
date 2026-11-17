@@ -20,8 +20,8 @@
 # reading what a role would get.
 #   init            takes no feature name: spawn-prompt.sh init <scope> [KEY=value ...]
 #   <scope>         the third field of the gate's SPAWN: record
-#   KEY=value       a value the gate cannot know: KEPT=, TRIAGE=, FINDINGS=,
-#                   BASE=. Nothing may be empty — pass `none` where there is
+#   KEY=value       a value the gate cannot know: KEPT=, HELD=, TRIAGE=,
+#                   FINDINGS=, BASE=. Nothing may be empty — pass `none` where there is
 #                   nothing, so a forgotten argument stays distinguishable from
 #                   an answer of "none". BASE= is the one that is not rendered
 #                   from the argument: it is handed to the gate as its base-ref

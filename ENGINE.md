@@ -153,7 +153,8 @@ page too (`## Open Questions`).
 
 Behaviour worth knowing:
 
-- A task whose build keeps failing is marked `BLOCKED`; the loop moves on.
+- A task whose build keeps failing is marked `BLOCKED`; the loop moves on. A re-run retries it
+  only when the human names it — the gate asks, and the rest are held back.
 - A task of a stack no developer covers stops `/sdd-implement`.
 - Before an overwrite, the feature's folder and the project's files of `_docs/` are copied to
   `_docs/.backup/<timestamp>/`; the last `SDD_BACKUP_KEEP` (20) are kept, and `.gitignore` covers

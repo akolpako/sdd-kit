@@ -38,6 +38,10 @@ TASK-002|open|backend|Cart REST endpoints|
 TASK-003|open|frontend|Cart page|
 TASK-004|open|frontend|Cart total display|
 
+Blocked tasks the human holds back from this run — not retried:
+
+none
+
 Your type is `backend`, and every task of it above is yours in this one run.
 Your `tasks.md` is `_docs/Cart/tasks.md` — run the task loop over it.
 

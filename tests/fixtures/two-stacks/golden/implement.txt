@@ -5,6 +5,7 @@ STAGE=reviewed
 TASKS_DONE=0
 TASKS_TOTAL=4
 ROLE_ORDER=backend,frontend
+OPEN_STACKS=backend,frontend
 BUILD_BACKEND=mvn clean verify
 BUILD_FRONTEND=cd web && npm run build && npm test
 BASELINE=
@@ -12,6 +13,8 @@ BASELINE=
 SPAWN:
 backend-developer|.sdd/protocols/developer.md,.sdd/protocols/task-loop.md|backend
 frontend-developer|.sdd/protocols/developer.md,.sdd/protocols/task-loop.md|frontend
+
+RETRY:
 
 STOP:
 

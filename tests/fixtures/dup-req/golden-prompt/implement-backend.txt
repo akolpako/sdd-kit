@@ -37,6 +37,10 @@ TASK-001|open|backend|Cart table and entity|
 TASK-002|open|backend|Add and remove items|
 TASK-003|open|backend|Cart totals|
 
+Blocked tasks the human holds back from this run — not retried:
+
+none
+
 Your type is `backend`, and every task of it above is yours in this one run.
 Your `tasks.md` is `_docs/Cart/tasks.md` — run the task loop over it.
 

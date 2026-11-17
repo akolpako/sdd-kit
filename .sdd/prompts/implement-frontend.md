@@ -23,12 +23,16 @@ The open tasks of this feature:
 
 {{SECTION:TODO}}
 
+Blocked tasks the human holds back from this run — not retried:
+
+{{HELD}}
+
 Your type is `frontend`, and every task of it above is yours in this one run.
 Your `tasks.md` is `_docs/{{FOLDER}}/tasks.md` — run the task loop over it.
 
 A record marked `blocked` failed in an earlier run and is retried like any open
-one. A task that consumes backend work which did not land is blocked the same
-way — never stub the backend to get around it.
+one, unless it is held back above. A task that consumes backend work which did
+not land is blocked the same way — never stub the backend to get around it.
 
 Return, with the skills you loaded named on the first line: the tasks you
 closed, the tasks you blocked with their reports, and the result of the build

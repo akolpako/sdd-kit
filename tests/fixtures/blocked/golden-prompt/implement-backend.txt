@@ -36,6 +36,10 @@ The open tasks of this feature:
 TASK-002|blocked|backend|Add and remove items|the stock service has no endpoint for reservations.
 TASK-003|open|backend|Cart totals|
 
+Blocked tasks the human holds back from this run — not retried:
+
+none
+
 Your type is `backend`, and every task of it above is yours in this one run.
 Your `tasks.md` is `_docs/Cart/tasks.md` — run the task loop over it.
 

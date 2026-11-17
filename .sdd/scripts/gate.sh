@@ -78,8 +78,11 @@
 #   specify      STATUS_*, NEXT_REQ=REQ-###, MODE=draft, REQ_DOMAINS:
 #   review       the same, plus COVERAGE:, UNCOVERED:, UNDECLARED: (from
 #                feature-state.sh — the stops of the coverage matrix)
-#   implement    TASKS_DONE, TASKS_TOTAL, ROLE_ORDER, BUILD_BACKEND,
-#                BUILD_FRONTEND, BASELINE
+#   implement    TASKS_DONE, TASKS_TOTAL, ROLE_ORDER, OPEN_STACKS (the stacks
+#                with an open task, blocked ones aside), BUILD_BACKEND,
+#                BUILD_FRONTEND, BASELINE, and RETRY: — `<TASK>|<type>` per
+#                blocked task, the ones the ASK: asks to retry by name; its
+#                answer is a list of them, or all, or none, never a yes
 #   code-review  BASE, ROOT, DIFF, REVIEW_PATH, REVIEW_PREVIOUS
 #   code-fix     REVIEW_PATH, REVIEW_DATE, REVIEW_ROOT, REVIEW_VERDICT,
 #                ROOT, BUILD_BACKEND, BUILD_FRONTEND, and FINDINGS:
@@ -1117,8 +1120,27 @@ check_implement() {
   # command is SDD_BUILD_ROOT like any other. A project that named none is the
   # ASK above, so there is nothing left to ask about here.
 
-  [[ "$T_BLOCKED" != "0" ]] && \
-    warn "$T_BLOCKED task(s) carry BLOCKED: from an earlier run. They are unchecked, so this run retries them with fresh attempts — their TODO: records carry the reason they failed last time."
+  # A blocked task is retried only when the human names it: one blocked on a
+  # question or on the environment would spend three builds on the same cause.
+  # The answer lives in the chat between this gate and the spawn, as KEPT=
+  # does under /sdd-specify, and is asked again on the next run.
+  RETRY_RECS="$(printf '%s\n' "$TASK_RECS" | awk -F'|' '$2 == "blocked" { print $1 "|" $3 }')"
+  OPEN_STACKS="$(printf '%s\n' "$TASK_RECS" | awk -F'|' '
+    $2 == "open" { want[$3] = 1 }
+    END {
+      if ("backend" in want) { printf "backend"; sep = "," }
+      if ("frontend" in want) printf "%sfrontend", sep
+    }')"
+  if [[ -n "$RETRY_RECS" ]]; then
+    local list n
+    list="$(printf '%s\n' "$TASK_RECS" | awk -F'|' '
+      $2 == "blocked" {
+        r = $6; for (i = 7; i <= NF; i++) r = r "|" $i
+        printf "%s%s (%s) — %s", sep, $1, $3, r; sep = "; "
+      }')"
+    n="$(printf '%s\n' "$RETRY_RECS" | awk 'END { print NR }')"
+    ask "$n task(s) carry BLOCKED: from an earlier run. Which of them does this run retry with fresh attempts — name them, or all, or none? One not named stays blocked as it stands, and so does a task that cannot start without it; one retried on a reason nothing has changed spends its attempts on the same failure. The tasks: $list"
+  fi
 }
 
 check_code_review() {
@@ -1303,6 +1325,7 @@ EOF
 
 PROJECT=""; EXISTING=""; FEATURES=""
 TODO_RECS=""; ROLE_ORDER=""; BLOCKED_RECS=""; DECLARED_RECS=""; FINDING_RECS=""
+RETRY_RECS=""; OPEN_STACKS=""
 
 # Two shapes of the same baseline on disk at once is the one state no reader
 # resolves, and it holds for every command — so it is raised here rather than
@@ -1360,6 +1383,7 @@ case "$CMD" in
     printf 'TASKS_DONE=%s\n' "$T_DONE"
     printf 'TASKS_TOTAL=%s\n' "$T_TOTAL"
     printf 'ROLE_ORDER=%s\n' "$ROLE_ORDER"
+    printf 'OPEN_STACKS=%s\n' "$OPEN_STACKS"
     printf 'BUILD_BACKEND=%s\n' "$BUILD_BACKEND"
     printf 'BUILD_FRONTEND=%s\n' "$BUILD_FRONTEND"
     printf 'BASELINE=%s\n' "$BASELINE"
@@ -1504,6 +1528,13 @@ case "$CMD" in
     fi
     ;;
   implement)
+    # The tasks the retry ASK: is about, <TASK>|<type>: the answer to it is a
+    # list of these, never a yes, and the command drops the record of a stack
+    # whose every task is held back and none of OPEN_STACKS.
+    if [[ $SPAWNING -eq 1 ]]; then
+      printf '\nRETRY:\n'
+      [[ -n "$RETRY_RECS" ]] && printf '%s\n' "$RETRY_RECS"
+    fi
     # The task list feeds the prompt and nothing else: what a role left undone
     # is read back by --verify --scope=, not by the orchestrator from TODO:.
     if [[ $PROMPT_ONLY -eq 1 ]]; then

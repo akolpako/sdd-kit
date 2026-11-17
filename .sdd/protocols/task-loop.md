@@ -6,7 +6,7 @@ The assignment carries the path of `tasks.md`, the task type you own, and the re
 
 You own the loop and the marks in `tasks.md` — nobody else writes a mark.
 
-For each task **of your type** that is not marked `[x]`, in list order:
+For each task **of your type** that is not marked `[x]` and not held back by the assignment, in list order:
 
 1. Implement it following the design spec.
 2. Write tests, per your stack's testing rules. Every condition of satisfaction of the requirements in the task's `Requires:` line is covered — **covered** meaning at least one test fails if that condition breaks, `Error:` and `Edge:` conditions included. A line percentage is not coverage.
@@ -18,7 +18,7 @@ For each task **of your type** that is not marked `[x]`, in list order:
    - [ ] **TASK-007** — <title> — BLOCKED: <one-line reason>
    ```
 
-Tasks of any other type are not yours — leave them and their marks untouched.
+Tasks of any other type are not yours — leave them and their marks untouched. **A task the assignment holds back** is left the same way: its line, its mark and its reason stay as they are, and so does a task already blocked with `requires TASK-NNN (blocked)` on it. An open task that cannot start without a held one is cascaded as below.
 
 After a blocked task, continue with the next task of your type that does not build on it. Tasks are listed in dependency order, and `Requires:` links requirements, not tasks — so cascade a block only to a task that cannot start without the blocked one, in the same format with the reason `requires TASK-NNN (blocked)`. A task that consumes a blocked task of another type is cascaded the same way.
 
@@ -30,5 +30,5 @@ The verification run is green, or every remaining failure traces to a task marke
 
 **Self-Check additions:**
 
-- [ ] Every task of my type is either `[x]` or `BLOCKED` with a reason
+- [ ] Every task of my type is either `[x]` or `BLOCKED` with a reason — a held-back one left exactly as it was
 - [ ] The remaining red, if any, belongs to `BLOCKED` tasks and is in the Blocker Report

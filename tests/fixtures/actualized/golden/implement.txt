@@ -5,6 +5,7 @@ STAGE=actualized
 TASKS_DONE=4
 TASKS_TOTAL=4
 ROLE_ORDER=
+OPEN_STACKS=
 BUILD_BACKEND=mvn -q verify
 BUILD_FRONTEND=mvn -q verify
 BASELINE=mvn -q verify
