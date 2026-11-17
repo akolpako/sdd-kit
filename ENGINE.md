@@ -106,7 +106,7 @@ is `orchestration.md`.
 | `/sdd-specify` | requirements-engineer · requirements<br>architect · design+tasks | spec-modes, requirements-writing, docs-format<br>spec-modes, architecture-design, task-breakdown, docs-format | `backup`, then `scaffold spec` over the files this run writes |
 | `/sdd-spec-review` | same two roles and scopes | as for specify, plus spec-checklist | `backup`, then `status … draft` on every `ready` file (before spawn); `status` markers after the verdict; answers onto their lines of `## Open Questions` via `answer` |
 | `/sdd-implement` | backend-developer · backend<br>frontend-developer · frontend | developer, task-loop | nothing |
-| `/sdd-code-review` | code-reviewer · review-set | code-review, docs-format | `backup`, `scaffold review` with the header (before spawn); the markers `section` after. The findings, coverage and verdict are the role's |
+| `/sdd-code-review` | code-reviewer · review-set | code-review, docs-format | `backup`, `scaffold review` with the header and the marker sweep (before spawn). The findings, coverage and verdict are the role's |
 | `/sdd-code-fix` | backend/frontend-developer · findings-backend/-frontend | developer | `marker` (`TODO Code Review:`) before the spawn, bottom-up; `verdict-stale` |
 | `/sdd-actualize` | architect · baseline-from-feature | project-baseline, docs-format | `backup`; after the spawn `arch-index`, then `compile-entry` into `requirements.md` per `DECLARED:` record — the last write |
 | `/sdd-status` | — | — | nothing — the report goes to chat |

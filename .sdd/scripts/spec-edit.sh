@@ -59,7 +59,10 @@
 #       is this script's: `reviewed` is today, `base` and `root` are the two
 #       arguments — what the gate resolved the review set against. An empty
 #       one, or `none`, is written as the absence it is. `verdict` is left for
-#       whoever reaches one.
+#       whoever reaches one. The last section, `## Older TODO Code Review
+#       markers`, is the sweep of the tree — every `TODO Code Review:` marker
+#       outside _docs/, with its file and line; MARKERS= is how many, or
+#       `failed` with the reason under NOTES:, never a count of zero.
 #   marker <file> <line> <text>
 #       Insert `TODO Code Review: <text> (<today>)` above that line, in the
 #       comment syntax of that file type and at its indentation. An extension
@@ -218,6 +221,25 @@ arch_index() {
   done
   [[ $ARCH_N -gt 0 ]] || return 2
   replace_file "$SPECS/architecture.index.md" "$TMP/idx"
+}
+
+# The body of `## <heading>` in <file>, replaced by the text of <bodyfile>, the
+# whole file printed. The heading is the one a reader sees: a `## ...` line
+# inside a comment is the template showing a format. Returns 1 when the file has
+# no such section.
+replace_section() {
+  local file="$1" heading="$2" bodyfile="$3" start end
+  start="$(md_uncomment "$file" | awk -v want="## $heading" '$0 == want { print NR; exit }')"
+  [[ -n "$start" ]] || return 1
+  end="$(md_uncomment "$file" | awk -v s="$start" '
+    NR > s && /^## / { print NR; found = 1; exit }
+    END { if (!found) print NR + 1 }
+  ')"
+  awk -v s="$start" -v e="$end" -v bodyfile="$bodyfile" '
+    NR == s { print; print ""; while ((getline l < bodyfile) > 0) print l; print ""; next }
+    NR > s && NR < e { next }
+    { print }
+  ' "$file"
 }
 
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/sdd-edit.XXXXXX")" || exit 1
@@ -468,8 +490,32 @@ scaffold)
     md_field_set "$TMP/f" reviewed "$TODAY" > "$TMP/g" || die2 "template $src carries no \`reviewed\` property"
     md_field_set "$TMP/g" base "$R_BASE"    > "$TMP/f" || die2 "template $src carries no \`base\` property"
     md_field_set "$TMP/f" root "$R_ROOT"    > "$TMP/g" || die2 "template $src carries no \`root\` property"
-    replace_file "$dst" "$TMP/g"
-    printf 'SCAFFOLD=review\nFOLDER=%s\nREVIEW=%s\nREVIEWED=%s\nBASE=%s\nROOT=%s\n' "$FOLDER" "$dst" "$TODAY" "$R_BASE" "$R_ROOT"
+
+    # The markers already in the tree — what earlier reviews deferred with the
+    # human's agreement. The review is read-only on the code, so they are the
+    # same before the role runs as after it. A sweep that failed is said to
+    # have failed: a tree reported as holding no marker would be a claim
+    # nobody checked.
+    sweep_notes=""
+    sweep="$(git grep -n --untracked -I 'TODO Code Review:' -- . ':(exclude)_docs/' 2>"$TMP/sweep.err")"; rc=$?
+    case $rc in
+      0) MARKERS="$(printf '%s\n' "$sweep" | grep -c .)"
+         printf '%s\n' "$sweep" | awk '{
+           p = index($0, ":"); file = substr($0, 1, p - 1); rest = substr($0, p + 1)
+           q = index(rest, ":"); line = substr(rest, 1, q - 1); text = substr(rest, q + 1)
+           sub(/^.*TODO Code Review:[[:space:]]*/, "", text); sub(/[[:space:]]*(-->|\*\/)?[[:space:]]*$/, "", text)
+           printf "- `%s:%s` — %s\n", file, line, text }' > "$TMP/markers" ;;
+      1) MARKERS=0
+         printf 'No `TODO Code Review:` marker in the tree.\n' > "$TMP/markers" ;;
+      *) MARKERS="failed"
+         sweep_notes="$(head -n 1 "$TMP/sweep.err")"
+         printf 'The sweep did not complete, so whether the tree holds markers is unknown: %s\n' "${sweep_notes:-git grep exited $rc}" > "$TMP/markers" ;;
+    esac
+    replace_section "$TMP/g" "Older TODO Code Review markers" "$TMP/markers" > "$TMP/f" \
+      || die2 "template $src has no \`## Older TODO Code Review markers\` section"
+    replace_file "$dst" "$TMP/f"
+    printf 'SCAFFOLD=review\nFOLDER=%s\nREVIEW=%s\nREVIEWED=%s\nBASE=%s\nROOT=%s\nMARKERS=%s\n' "$FOLDER" "$dst" "$TODAY" "$R_BASE" "$R_ROOT" "$MARKERS"
+    [[ "$MARKERS" == "failed" ]] && printf '\nNOTES:\nThe TODO Code Review sweep did not complete: %s\n' "${sweep_notes:-git grep exited $rc}"
     ;;
 
   *) die2 "not a scaffold: ${KIND:-<empty>} — init, feature, spec or review" ;;
@@ -680,26 +726,14 @@ section)
   HEADING="$(printf '%s' "$HEADING" | sed 's/^#*[[:space:]]*//; s/[[:space:]]*$//')"
   [[ -n "$FILE" && -n "$HEADING" ]] || die2 "section <file> <heading> [<text>]"
   [[ -f "$FILE" ]] || die2 "no such file: $FILE"
-  # The heading is the one a reader sees: a `## ...` line inside a comment is
-  # the template showing a format, not a section of this file.
-  START="$(md_uncomment "$FILE" | awk -v want="## $HEADING" '$0 == want { print NR; exit }')"
-  [[ -n "$START" ]] || die2 "$FILE has no section \`## $HEADING\`"
+  printf '%s\n' "$TEXT" > "$TMP/body"
+  replace_section "$FILE" "$HEADING" "$TMP/body" > "$TMP/f" || die2 "$FILE has no section \`## $HEADING\`"
 
   if [[ -z "$TEXT" ]]; then
     printf 'SECTION=%s\nCHANGED=no\nFILE=%s\n\nNOTES:\nNo text was given, so the section keeps what the template put there.\n' "$HEADING" "$FILE"
     exit 0
   fi
 
-  END_LINE="$(md_uncomment "$FILE" | awk -v s="$START" '
-    NR > s && /^## / { print NR; found = 1; exit }
-    END { if (!found) print NR + 1 }
-  ')"
-  printf '%s\n' "$TEXT" > "$TMP/body"
-  awk -v s="$START" -v e="$END_LINE" -v bodyfile="$TMP/body" '
-    NR == s { print; print ""; while ((getline l < bodyfile) > 0) print l; print ""; next }
-    NR > s && NR < e { next }
-    { print }
-  ' "$FILE" > "$TMP/f" || exit 1
   replace_file "$FILE" "$TMP/f"
   printf 'SECTION=%s\nCHANGED=yes\nFILE=%s\n' "$HEADING" "$FILE"
   ;;

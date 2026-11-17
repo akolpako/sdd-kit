@@ -2004,6 +2004,19 @@ EOF
   printf '%s\n' "$out" | grep -q '^GATE=ask$' || ok=1
   printf '%s\n' "$out" | awk '/^[A-Z_]+:$/ { inside = ($0 == "ASK:"); next } inside' | grep -q "says 'stale" || ok=1
   prop_check blocked-set "a stale report is asked about before promotion" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  # The marker sweep scaffold review writes into the report's last section.
+  ( cd "$proj" && git init -q . \
+      && printf 'class A {\n  // TODO Code Review: the total ignores the discount (2026-11-01)\n}\n' > A.java \
+      && printf '<!-- TODO Code Review: label missing (2026-11-02) -->\n' > a.html \
+      && printf -- '- TODO Code Review: not code (2026-11-03)\n' > _docs/note.md ) >/dev/null 2>&1
+  out="$(cd "$proj" && "$EDITOR_SH" scaffold review Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^MARKERS=2$' || ok=1
+  grep -qxF -- '- `A.java:2` — the total ignores the discount (2026-11-01)' "$proj/_docs/Cart/review.md" || ok=1
+  grep -qxF -- '- `a.html:1` — label missing (2026-11-02)' "$proj/_docs/Cart/review.md" || ok=1
+  grep -q 'not code' "$proj/_docs/Cart/review.md" && ok=1
+  prop_check blocked-set "the report lists the markers in the tree, _docs/ aside" "$ok" "$out — $(sed -n '/^## Older/,$p' "$proj/_docs/Cart/review.md" | tr '\n' '~')"
 }
 
 # The two stops of /sdd-spec-review that used to be judged by eye: the coverage
