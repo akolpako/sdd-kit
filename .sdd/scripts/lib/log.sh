@@ -173,30 +173,12 @@ sdd_log_record() {
   return 0
 }
 
-sdd_log_write_note() {
-  local event="$1"
-  shift
-  [[ -n "${SDD_LOG_DIR:-}" ]] || return 0
-  mkdir -p "$SDD_LOG_DIR" 2>/dev/null || return 0
-  {
-    printf '== %s run=%s note=%s %s\n' \
-      "$(sdd_log_stamp)" "${SDD_LOG_RUN:-}" "$event" "$SDD_LOG_NAME"
-    printf '%s\n' "$*" | sed 's/^/| /'
-  } 2>/dev/null >>"$SDD_LOG_DIR/sdd.log"
-  return 0
-}
-
-# What a script has to say that its raw output does not carry. Defined as a
-# no-op when logging is off, so a caller never branches on whether it is on.
-sdd_log_note() { :; }
-
 # ── The child ─────────────────────────────────────────────────────
 # The re-exec of the wrapper below, and only it. The flag is dropped from the
 # environment on the way in: the scripts this one runs are not this run, and
 # each of them wraps and logs itself.
 if [[ "${SDD_LOG_CHILD:-}" == "1" ]]; then
   unset SDD_LOG_CHILD
-  sdd_log_note() { sdd_log_write_note "$@"; }
   return 0
 fi
 
