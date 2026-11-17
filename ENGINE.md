@@ -177,7 +177,7 @@ lives here only — a copy in `AGENTS.md` would tell every role that commands an
 
 | | Command | Agent | Protocol |
 |---|---|---|---|
-| **May name** | commands, protocols, scripts, templates, roles, `_docs/` paths | its skills, frameworks, tools of its trade | to the agent: protocols, scripts, templates, `_docs/` paths, formats. To the command (`orchestration.md` only): commands, protocols, scripts |
+| **May name** | commands, `orchestration.md` (no other protocol — it would be read), scripts, templates, roles, `_docs/` paths | its skills, frameworks, tools of its trade | to the agent: protocols, scripts, templates, `_docs/` paths, formats. To the command (`orchestration.md` only): commands, protocols, scripts |
 | **May not** | hold a role's procedure; name a tool | name a command, protocol, script, template, `_docs/` path, SDD, or an engine format (`REQ-###`, `TASK-###`, `A-##`, `status:`, `## Out of Scope`) | name an agent |
 
 Under Copilot a command is *packaged* as a skill (`.github/skills/sdd-X/SKILL.md`) because the

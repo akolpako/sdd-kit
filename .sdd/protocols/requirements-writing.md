@@ -44,7 +44,7 @@ With the domain settled, the next free number comes from one read-only call:
 
 Never a number counted off the list by eye, and never a number reused: a reused one silently rewrites the history of a requirement. An empty `NEXT` — the script's answer when the numbers it would hand out are already written into the specs, listed in its `TAKEN=` — is not one to guess under: stop and report it, with what the script said.
 
-Declaring `### REQ-### — <short title>` in `new-requirements.md` is the whole of taking a number. `requirements.md` is not written here — that file is written by `/sdd-actualize` alone, once the feature is finished, and until then the declaration is what holds the number. A domain's counter is written there too, by the same command, including the first one of a domain this feature starts.
+Declaring `### REQ-### — <short title>` in `new-requirements.md` is the whole of taking a number. `requirements.md` is not written here — it is written outside any assignment, once the feature is finished, and until then the declaration is what holds the number. A domain's counter is written there at the same time, including the first one of a domain this feature starts.
 
 A `NEXT` that arrived is a number to use, whatever the compilation on disk looks like.
 

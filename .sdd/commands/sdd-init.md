@@ -23,7 +23,7 @@ Writes the project-level spec files. No arguments. Safe to re-run: a file that a
 
 1. **Gate:** run `.sdd/scripts/gate.sh init`. `GATE=ok` goes on.
 
-2. **Scaffold:** run `.sdd/scripts/spec-edit.sh scaffold init`. Both branches, and before anything is spawned. `COPIED:` and `UNTOUCHED:` are the files waiting to be written into; `SKIPPED:` already holds answers of its own. `MODE=` says which shape the architecture baseline is in: `split`, a folder of sections under `_docs/architecture/` entered through `_docs/architecture.index.md`, or `mono`, the single `_docs/architecture.md` — the shapes are described in `.sdd/protocols/project-baseline.md`. A project that wants the single file on a fresh setup gets it from `scaffold init --mono`.
+2. **Scaffold:** run `.sdd/scripts/spec-edit.sh scaffold init`. Both branches, and before anything is spawned. `COPIED:` and `UNTOUCHED:` are the files waiting to be written into; `SKIPPED:` already holds answers of its own. `MODE=` says which shape the architecture baseline is in: `split`, a folder of sections under `_docs/architecture/` entered through `_docs/architecture.index.md`, or `mono`, the single `_docs/architecture.md`. A project that wants the single file on a fresh setup gets it from `scaffold init --mono`.
 
 3. **Greenfield** — `PROJECT=greenfield`, the orchestrator's own. Relay the scaffold's sections, report that no codebase was found, and ask the human to fill in the architecture baseline and the code style.
 
