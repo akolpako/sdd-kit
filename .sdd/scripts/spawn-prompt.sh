@@ -350,7 +350,9 @@ have; \`conflict\` — two engine files ask for different things, both named;
 \`missing\` — the assignment lacked something: what you looked up, and where you
 found it; \`unused\` — it had you read or load something you did not need;
 \`skill\` — a skill's rule is wrong for this project, or its script failed.
-A record changes nothing in your work: a script that failed is still reported
+Write it when it happens, not at the end; a problem you worked around is
+still one — a script that exited non-zero, a rule you had to guess at. A
+record changes nothing in your work: a script that failed is still reported
 in your reply. Nothing to say — write nothing.
 EOF_TAIL
 fi
