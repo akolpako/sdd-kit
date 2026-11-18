@@ -29,6 +29,10 @@ Entries of the compilation this feature sourced:
 REQ-002|active
 REQ-003|active
 
+The domains in use, one record per sequence — `-` is the ungrouped one:
+
+-|NEXT=REQ-004|COUNTER=REQ-004|HIGHEST=REQ-003|DECLARED=REQ-003|DECLARED_IN=Cart|COUNT=3
+
 The first free number of the ungrouped sequence: REQ-004.
 
 Run your checklist passes over `_docs/Cart/new-requirements.md` and return

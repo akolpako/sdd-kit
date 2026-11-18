@@ -25,7 +25,7 @@ An id is `REQ-###`, or `REQ-<DOMAIN>-###` when the project groups its requiremen
 
 ### The domain
 
-The domains in use are the `DOMAINS:` records of `.sdd/scripts/next-req.sh`, one per sequence, `-` standing for the ungrouped one. Read them before deciding:
+The domains in use arrive with the assignment, one record per sequence, `-` standing for the ungrouped one — the `DOMAINS:` of `.sdd/scripts/next-req.sh`, not to be asked for again. Read them before deciding:
 
 - **The project groups nothing** — every record is `-`. Then this feature adds no domain: its requirements are ungrouped, like everything already in the file. Starting a group is a decision about the whole compilation, not about one feature.
 - **One existing domain covers what this feature is about** — that is the domain, and no question is asked. A domain groups requirements by what they are about, never by which feature happened to write them: a feature touching accounts writes into `ACC` beside the accounts requirements that are already there.

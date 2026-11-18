@@ -18,6 +18,10 @@ Entries of the compilation this feature sourced:
 
 {{SECTION:COMPILATION_ENTRIES}}
 
+The domains in use, one record per sequence — `-` is the ungrouped one:
+
+{{SECTION:REQ_DOMAINS}}
+
 The first free number of the ungrouped sequence: {{NEXT_REQ}}.
 
 Fold every line of `## Open Questions` in

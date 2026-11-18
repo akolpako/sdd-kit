@@ -1,0 +1,95 @@
+== 2026-11-17T13:23:40+0100 run=20261117-132340-55101 exit=1 dur=0.067s gate.sh implement Permissions\ Size\ User\ \ \ \ \ Date\ Modified\ Name
+cwd=/Users/akolpako/Work/sdd-kit/tests/fixtures/in-flight/tree
+stderr:
+| ERROR=not a feature name: 'Permissions Size User     Date Modified Name' — it holds '         '. A feature is a folder directly under _docs/
+== 2026-11-17T13:24:07+0100 run=20261117-132401-58394 exit=0 dur=4.941s feature-state.sh Cart .
+cwd=/Users/akolpako/Work/sdd-kit/tests/fixtures/in-flight/tree
+stdout:
+| MODE=feature
+| FEATURE=Cart
+| FOLDER=Cart
+| RAW=present
+| REQUIREMENTS=present
+| DESIGN=present
+| TASKS=present
+| MISSING_SPECS=
+| STATUS_REQUIREMENTS=ready
+| STATUS_DESIGN=ready
+| STATUS_TASKS=ready
+| TASKS_TOTAL=4
+| TASKS_DONE=4
+| TASKS_BLOCKED=0
+| TASK_TYPES=backend
+| UNKNOWN_TYPES=
+| REVIEW=present
+| REVIEW_DATE=2026-01-15
+| REVIEW_BASE=main
+| REVIEW_ROOT=deadbeef
+| REVIEW_VERDICT=APPROVED
+| COMPILATION=present
+| COMPILATION_ACTIVE=2
+| COMPILATION_DRAFT=0
+| COMPILATION_SUPERSEDED=0
+| COMPILATION_REFINED=0
+| STAGE=actualized
+| NEXT=
+| 
+| TASKS:
+| TASK-001|done|backend|REQ-002|Cart table and entity|
+| TASK-002|done|backend|REQ-002|Add and remove items|
+| TASK-003|done|backend|REQ-003|Cart totals|
+| TASK-004|done|backend|REQ-002,REQ-003|Cart REST endpoints|
+| 
+| COMPILATION_ENTRIES:
+| REQ-002|active
+| REQ-003|active
+| 
+| COVERAGE:
+| REQ-002|Cart holds items|TASK-001,TASK-002,TASK-004
+| REQ-003|Cart totals|TASK-003,TASK-004
+| 
+| UNCOVERED:
+| 
+| UNDECLARED:
+| 
+| ANOMALIES:
+| 
+| NOTES:
+== 2026-11-17T13:24:12+0100 run=20261117-132401-58394 exit=0 dur=0.709s build-command.sh .
+cwd=/Users/akolpako/Work/sdd-kit/tests/fixtures/in-flight/tree
+stdout:
+| SOURCE=config
+| ROOT=mvn -q verify
+| BACKEND=mvn -q verify
+| FRONTEND=mvn -q verify
+| 
+| DETECTED:
+| .|pom.xml|mvn clean verify|backend
+| 
+| NOTES:
+== 2026-11-17T13:24:16+0100 run=20261117-132401-58394 exit=0 dur=14.036s gate.sh implement Cart
+cwd=/Users/akolpako/Work/sdd-kit/tests/fixtures/in-flight/tree
+stdout:
+| GATE=done
+| FEATURE=Cart
+| FOLDER=Cart
+| STAGE=actualized
+| TASKS_DONE=4
+| TASKS_TOTAL=4
+| TASKS_BLOCKED=0
+| ROLE_ORDER=
+| BUILD_ROOT=mvn -q verify
+| BUILD_BACKEND=mvn -q verify
+| BUILD_FRONTEND=mvn -q verify
+| BASELINE=mvn -q verify
+| BUILD_FILES=1
+| 
+| STOP:
+| 
+| ASK:
+| 
+| WARN:
+| 
+| ANOMALIES:
+| 
+| NOTES:

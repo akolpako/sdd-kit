@@ -29,6 +29,10 @@ none
 
 Write `_docs/Cart/new-requirements.md` from `_docs/Cart/raw.md`.
 
+The domains in use, one record per sequence — `-` is the ungrouped one:
+
+(none)
+
 The first free number of the ungrouped sequence: REQ-001.
 
 Return only what `raw.md` left unsettled, one line per point — what you wrote is

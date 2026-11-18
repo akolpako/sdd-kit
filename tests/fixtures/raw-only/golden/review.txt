@@ -8,8 +8,6 @@ STATUS_TASKS=absent
 NEXT_REQ=REQ-001
 MODE=review
 
-REQ_DOMAINS:
-
 STOP:
 _docs/Cart/new-requirements.md is missing — there is nothing to review. /sdd-specify Cart writes it.
 _docs/Cart/design.md is missing — there is nothing to review. /sdd-specify Cart writes it.

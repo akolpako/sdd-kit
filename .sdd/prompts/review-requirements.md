@@ -15,6 +15,10 @@ Entries of the compilation this feature sourced:
 
 {{SECTION:COMPILATION_ENTRIES}}
 
+The domains in use, one record per sequence — `-` is the ungrouped one:
+
+{{SECTION:REQ_DOMAINS}}
+
 The first free number of the ungrouped sequence: {{NEXT_REQ}}.
 
 Run your checklist passes over `_docs/{{FOLDER}}/new-requirements.md` and return

@@ -29,6 +29,10 @@ none
 
 Write `_docs/Wishlist/new-requirements.md` from `_docs/Wishlist/raw.md`.
 
+The domains in use, one record per sequence — `-` is the ungrouped one:
+
+-|NEXT=REQ-006|COUNTER=REQ-004|HIGHEST=REQ-003|DECLARED=REQ-005|DECLARED_IN=Wishlist|COUNT=3
+
 The first free number of the ungrouped sequence: REQ-006.
 
 Return only what `raw.md` left unsettled, one line per point — what you wrote is

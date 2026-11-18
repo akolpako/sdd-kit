@@ -12,9 +12,6 @@ SPAWN:
 requirements-engineer|.sdd/protocols/spec-modes.md,.sdd/protocols/spec-checklist.md,.sdd/protocols/requirements-writing.md,.sdd/protocols/docs-format.md|requirements
 architect|.sdd/protocols/spec-modes.md,.sdd/protocols/spec-checklist.md,.sdd/protocols/architecture-design.md,.sdd/protocols/task-breakdown.md,.sdd/protocols/docs-format.md|design+tasks
 
-REQ_DOMAINS:
--|NEXT=REQ-004|COUNTER=REQ-004|HIGHEST=REQ-003|DECLARED=REQ-003|DECLARED_IN=Cart|COUNT=3
-
 COVERAGE:
 REQ-002|Cart holds items|TASK-001,TASK-002
 REQ-003|Cart totals|TASK-003

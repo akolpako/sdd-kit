@@ -54,6 +54,8 @@
 #
 # Under --prompt-data, and only there:
 #   SPEC_FILES:   the paths of this run, one per line — every command
+#   REQ_DOMAINS:  specify, review — next-req.sh's DOMAINS:, for the
+#                 requirements prompt
 #   REQUIREMENTS_FILES:   specify, review — the paths of the requirements scope,
 #                 which reads neither design.md nor tasks.md
 #   SPEC_REFERENCE:       code-fix — the spec, opened only for a finding that
@@ -78,7 +80,7 @@
 #                (on brownfield, an ASK: per stack with no build command)
 #   new          nothing: the name, the folders and raw.md are judged here,
 #                and what is wrong with them is a STOP:, ASK: or WARN: line
-#   specify      STATUS_*, NEXT_REQ=REQ-###, MODE=draft, REQ_DOMAINS:
+#   specify      STATUS_*, NEXT_REQ=REQ-###, MODE=draft
 #   review       the same, plus COVERAGE:, UNCOVERED:, UNDECLARED: (from
 #                feature-state.sh — the stops of the coverage matrix). The
 #                scope of each SPAWN: record is read off its file: one whose
@@ -1527,13 +1529,17 @@ if [[ $SPAWNING -eq 1 ]]; then
 fi
 
 case "$CMD" in
-  specify)
-    printf '\nREQ_DOMAINS:\n'
-    [[ -n "$REQ_DOMAINS" ]] && printf '%s\n' "$REQ_DOMAINS"
+  specify|review)
+    # The domains feed the requirements prompt, where the role decides its
+    # sequence from them; no command decides from them.
+    if [[ $PROMPT_ONLY -eq 1 ]]; then
+      printf '\nREQ_DOMAINS:\n'
+      [[ -n "$REQ_DOMAINS" ]] && printf '%s\n' "$REQ_DOMAINS"
+    fi
     ;;
+esac
+case "$CMD" in
   review)
-    printf '\nREQ_DOMAINS:\n'
-    [[ -n "$REQ_DOMAINS" ]] && printf '%s\n' "$REQ_DOMAINS"
     # The coverage matrix, computed: the orchestrator prints COVERAGE: as it
     # stands and asks about UNCOVERED: and UNDECLARED:, reading neither the
     # task list nor the requirement headings for it.

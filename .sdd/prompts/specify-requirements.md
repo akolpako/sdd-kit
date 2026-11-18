@@ -17,6 +17,10 @@ Kept by the human from an earlier run — input to read, never rewritten:
 
 Write `_docs/{{FOLDER}}/new-requirements.md` from `_docs/{{FOLDER}}/raw.md`.
 
+The domains in use, one record per sequence — `-` is the ungrouped one:
+
+{{SECTION:REQ_DOMAINS}}
+
 The first free number of the ungrouped sequence: {{NEXT_REQ}}.
 
 Return only what `raw.md` left unsettled, one line per point — what you wrote is
