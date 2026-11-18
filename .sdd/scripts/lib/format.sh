@@ -377,9 +377,12 @@ md_req_lines() {
 # A feature name is a path segment and nothing more: a separator, `.`/`..` or a
 # leading dot would put the files a command writes somewhere other than
 # _docs/<name>/. A trailing slash is refused rather than trimmed — the name is
-# used on disk exactly as given.
+# used on disk exactly as given. `architecture` is the baseline's folder, in any
+# case: on a case-insensitive filesystem `Architecture` opens the same one.
 md_name_problem() {
-  local bad
+  local bad lower
+  lower="$(printf '%s' "$1" | LC_ALL=C tr 'A-Z' 'a-z')"
+  [[ "$lower" == "architecture" ]] && { printf "it is the architecture baseline's folder"; return 0; }
   case "$1" in
     "")       printf 'it is empty'; return 0 ;;
     */*|*\\*) printf 'it carries a path separator'; return 0 ;;
@@ -391,12 +394,15 @@ md_name_problem() {
 }
 
 # The feature folders under <specs>, in the shell's sorted order: a glob rather
-# than find | sed | sort — dot-folders and links left out, no program started.
+# than find | sed | sort — dot-folders and links left out, no program started,
+# and `architecture/`, the baseline's sections, which no command takes as a
+# feature.
 md_features() {
   local d
   for d in "$1"/*/; do
     d="${d%/}"
     [[ -d "$d" && ! -L "$d" ]] || continue
+    [[ "${d##*/}" == "architecture" ]] && continue
     printf '%s\n' "${d##*/}"
   done
   return 0

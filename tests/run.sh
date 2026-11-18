@@ -2795,6 +2795,15 @@ check_no_requirements() {
   [[ "$out" != *"holds no entry sourced by this feature"* ]] || ok=1
   prop_check no-requirements "no mark: implemented, and no complaint about entries it never declared" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
 
+  # The baseline's folder is not a feature: not listed, and not a name.
+  out="$(cd "$work" && "$state" 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -qx 'COUNT=1' || ok=1
+  printf '%s\n' "$out" | grep -q '^architecture|' && ok=1
+  prop_check no-requirements "_docs/architecture/ is not listed as a feature" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+  out="$(cd "$work" && "$state" Architecture 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 2 && "$out" == *"architecture baseline's folder"* ]] || ok=1
+  prop_check no-requirements "architecture, in any case, is refused as a feature name" "$ok" "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
   out="$(cd "$work" && "$GATE" actualize Tidy --verify 2>&1)"; rc=$?
   ok=0; [[ $rc -eq 2 && "$out" == *"carries no 'actualized:' property"* ]] || ok=1
   prop_check no-requirements "verify fails while the mark is missing" "$ok" "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
