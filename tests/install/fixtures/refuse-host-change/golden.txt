@@ -196,6 +196,8 @@ The `jira` and `confluence` skills' scripts take their tokens from the files pas
 
 Whatever communication style the session is set to, anything written to `_docs/**` is normal prose.
 
+**A file under `_docs/` is changed by editing the file itself** or by a script the assignment names — never by a program of your own run in a shell (`python3`, `sed -i`, a redirect): in a session nobody watches, such a call waits for a permission nobody grants.
+
 ## Instructions conflicts
 
 **Precedence on conflict:** `_docs/code-style.md` (for code) or the architecture baseline — `_docs/architecture.index.md` and the sections it points at, or `_docs/architecture.md` — (for architecture) wins over instructions.
