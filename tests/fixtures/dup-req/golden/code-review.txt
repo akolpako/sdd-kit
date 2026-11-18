@@ -4,7 +4,6 @@ FOLDER=Cart
 STAGE=specified
 BASE=
 ROOT=
-DIFF=
 REVIEW_PATH=_docs/Cart/review.md
 REVIEW_PREVIOUS=
 

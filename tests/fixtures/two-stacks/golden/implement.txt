@@ -6,8 +6,6 @@ TASKS_DONE=0
 TASKS_TOTAL=4
 ROLE_ORDER=backend,frontend
 OPEN_STACKS=backend,frontend
-BUILD_BACKEND=mvn clean verify
-BUILD_FRONTEND=cd web && npm run build && npm test
 BASELINE=
 
 SPAWN:

@@ -1,6 +1,5 @@
 GATE=ok
 PROJECT=brownfield
-EXISTING=requirements.md
 BUILD_ROOT=mvn clean verify
 BUILD_BACKEND=mvn clean verify
 BUILD_FRONTEND=mvn clean verify

@@ -7,8 +7,6 @@ REVIEW_DATE=
 REVIEW_ROOT=
 REVIEW_VERDICT=absent
 ROOT=
-BUILD_BACKEND=
-BUILD_FRONTEND=
 
 STOP:
 _docs/Cart/review.md is missing — there is no report to act on. /sdd-code-review Cart writes one.

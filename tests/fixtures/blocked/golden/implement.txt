@@ -6,8 +6,6 @@ TASKS_DONE=1
 TASKS_TOTAL=3
 ROLE_ORDER=backend
 OPEN_STACKS=backend
-BUILD_BACKEND=mvn clean verify
-BUILD_FRONTEND=mvn clean verify
 BASELINE=mvn clean verify
 
 SPAWN:

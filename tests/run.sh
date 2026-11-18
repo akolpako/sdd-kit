@@ -1521,7 +1521,6 @@ EOF
   out="$(cd "$work/wall" && "$GATE" specify Cart 2>&1)"; rc=$?
   ok=0
   [[ "$rc" == "0" ]] && printf '%s\n' "$out" | grep -q '^GATE=stop$' || ok=1
-  printf '%s\n' "$out" | grep -q '^NEXT_REQ=$' || ok=1
   printf '%s\n' "$out" | grep -q 'No requirement number is free: REQ-004 REQ-005 REQ-006 REQ-007 REQ-008' || ok=1
   printf '%s\n' "$out" | grep -q '^-|NEXT=|' || ok=1
   prop_check taken "the gate stops with no number to issue" "$ok" \
@@ -2593,7 +2592,9 @@ check_stacks() {
   rm -f "$work/pom.xml"; rm -rf "$work/web"; printf '{}\n' > "$work/package.json"
   ( cd "$work" && sed -i.bak 's/- \[x\] \*\*TASK-001/- [ ] **TASK-001/; s/Type:\*\* frontend/Type:** backend/' _docs/Cart/tasks.md \
       && rm -f _docs/Cart/tasks.md.bak && printf 'SDD_BUILD_ROOT=npm test\n' > .sdd/sdd.conf )
-  out="$(cd "$work" && "$GATE" implement Cart 2>&1)"
+  # The command a role builds with is prompt data, so it is read where the
+  # renderer reads it.
+  out="$(cd "$work" && "$GATE" implement Cart --prompt-data 2>&1)"
   ok=0
   printf '%s\n' "$out" | grep -q '^GATE=ok$' || ok=1
   printf '%s\n' "$out" | grep -q '^BUILD_BACKEND=npm test$' || ok=1

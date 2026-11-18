@@ -1,6 +1,5 @@
 GATE=ok
 PROJECT=brownfield
-EXISTING=code-style.md,requirements.md,architecture.index.md
 BUILD_ROOT=
 BUILD_BACKEND=mvn clean verify
 BUILD_FRONTEND=cd web && npm run build && npm test

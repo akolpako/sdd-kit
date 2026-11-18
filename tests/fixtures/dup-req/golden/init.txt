@@ -1,6 +1,5 @@
 GATE=ok
 PROJECT=greenfield
-EXISTING=requirements.md
 BUILD_ROOT=
 BUILD_BACKEND=
 BUILD_FRONTEND=

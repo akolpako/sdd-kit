@@ -1,6 +1,5 @@
 GATE=ok
 PROJECT=greenfield
-EXISTING=code-style.md,requirements.md,architecture.md
 BUILD_ROOT=make verify
 BUILD_BACKEND=make verify
 BUILD_FRONTEND=make verify

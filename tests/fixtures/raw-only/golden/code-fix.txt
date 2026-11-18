@@ -7,8 +7,6 @@ REVIEW_DATE=
 REVIEW_ROOT=
 REVIEW_VERDICT=absent
 ROOT=
-BUILD_BACKEND=
-BUILD_FRONTEND=
 
 STOP:
 _docs/Cart/new-requirements.md is missing — a fix is written against the spec, and it is not on disk. /sdd-specify Cart writes it.

@@ -7,8 +7,6 @@ REVIEW_DATE=
 REVIEW_ROOT=
 REVIEW_VERDICT=
 ROOT=
-BUILD_BACKEND=
-BUILD_FRONTEND=
 
 STOP:
 The project has no _docs/ yet — there is no report to act on. Run /sdd-init, then /sdd-next-story Cart.

@@ -6,8 +6,6 @@ TASKS_DONE=0
 TASKS_TOTAL=2
 ROLE_ORDER=backend
 OPEN_STACKS=backend
-BUILD_BACKEND=mvn -q verify
-BUILD_FRONTEND=mvn -q verify
 BASELINE=mvn -q verify
 
 SPAWN:

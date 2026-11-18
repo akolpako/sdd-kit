@@ -1,6 +1,5 @@
 GATE=ok
 PROJECT=brownfield
-EXISTING=code-style.md,requirements.md,architecture.index.md
 BUILD_ROOT=mvn -q verify
 BUILD_BACKEND=mvn -q verify
 BUILD_FRONTEND=mvn -q verify

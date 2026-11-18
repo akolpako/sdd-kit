@@ -6,8 +6,6 @@ TASKS_DONE=0
 TASKS_TOTAL=4
 ROLE_ORDER=backend
 OPEN_STACKS=backend
-BUILD_BACKEND=make verify
-BUILD_FRONTEND=make verify
 BASELINE=make verify
 
 SPAWN:

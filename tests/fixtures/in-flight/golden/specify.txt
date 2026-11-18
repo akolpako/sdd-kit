@@ -5,8 +5,6 @@ STAGE=specified
 STATUS_REQUIREMENTS=draft
 STATUS_DESIGN=draft
 STATUS_TASKS=draft
-NEXT_REQ=REQ-006
-MODE=draft
 
 SPAWN:
 requirements-engineer|.sdd/protocols/spec-modes.md,.sdd/protocols/requirements-writing.md,.sdd/protocols/docs-format.md|requirements

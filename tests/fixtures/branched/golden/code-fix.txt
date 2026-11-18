@@ -7,8 +7,6 @@ REVIEW_DATE=2026-01-15
 REVIEW_ROOT=deadbeef
 REVIEW_VERDICT=BLOCKED
 ROOT=<sha>
-BUILD_BACKEND=mvn -q verify
-BUILD_FRONTEND=mvn -q verify
 
 SPAWN:
 backend-developer|.sdd/protocols/developer.md|findings-backend

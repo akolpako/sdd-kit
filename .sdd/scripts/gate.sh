@@ -71,29 +71,34 @@
 #                 build command, one `<stack>: <command>` line per answer, so the
 #                 reviewer runs the tests with it and with nothing of its own
 #   TODO:                 implement
+#   the keys marked "prompt data" in the list below — values a template
+#                 renders and the command decides nothing from. Init's
+#                 BUILD_* are not among them: its closing report names them
 #
 # A key the command does not decide from is not printed. At GATE=stop and
 # GATE=done no record section is — no role is spawned from them. Per command,
 # on top of the common part:
-#   init         PROJECT=greenfield|brownfield, EXISTING=<file,...>,
-#                BUILD_ROOT, BUILD_BACKEND, BUILD_FRONTEND
+#   init         PROJECT=greenfield|brownfield, EXISTING=<file,...> (prompt
+#                data), BUILD_ROOT, BUILD_BACKEND, BUILD_FRONTEND
 #                (on brownfield, an ASK: per stack with no build command)
 #   new          nothing: the name, the folders and raw.md are judged here,
 #                and what is wrong with them is a STOP:, ASK: or WARN: line
-#   specify      STATUS_*, NEXT_REQ=REQ-###, MODE=draft
+#   specify      STATUS_*, and as prompt data NEXT_REQ=REQ-###, MODE=draft
 #   review       the same, plus COVERAGE:, UNCOVERED:, UNDECLARED: (from
 #                feature-state.sh — the stops of the coverage matrix). The
 #                scope of each SPAWN: record is read off its file: one whose
 #                `## Open Questions` holds an answered line is a fold
 #                (fold-requirements, fold-design+tasks), without the checklist
 #   implement    TASKS_DONE, TASKS_TOTAL, ROLE_ORDER, OPEN_STACKS (the stacks
-#                with an open task, blocked ones aside), BUILD_BACKEND,
-#                BUILD_FRONTEND, BASELINE, and RETRY: — `<TASK>|<type>` per
-#                blocked task, the ones the ASK: asks to retry by name; its
-#                answer is a list of them, or all, or none, never a yes
-#   code-review  BASE, ROOT, DIFF, REVIEW_PATH, REVIEW_PREVIOUS
+#                with an open task, blocked ones aside), BUILD_BACKEND and
+#                BUILD_FRONTEND (prompt data), BASELINE, and RETRY:
+#                — `<TASK>|<type>` per blocked task, the ones the ASK: asks
+#                to retry by name; its answer is a list of them, or all, or
+#                none, never a yes
+#   code-review  BASE, ROOT, DIFF (prompt data), REVIEW_PATH, REVIEW_PREVIOUS
 #   code-fix     REVIEW_PATH, REVIEW_DATE, REVIEW_ROOT, REVIEW_VERDICT,
-#                ROOT, BUILD_BACKEND, BUILD_FRONTEND, and FINDINGS:
+#                ROOT, BUILD_BACKEND and BUILD_FRONTEND (prompt data), and
+#                FINDINGS:
 #                — one record per finding of the report, in its order,
 #                `F-##|severity|category|file|line|stack`. The line is the first
 #                of a range; `-` is a part the finding does not give. The stack
@@ -1397,10 +1402,18 @@ fi
 # feedback log is on. Printed only then: off, no output changes.
 [[ $VERIFY -eq 0 ]] && declare -F sdd_feedback_on >/dev/null && sdd_feedback_on "$ROOT_DIR/.sdd/sdd.conf" && printf 'FEEDBACK=on\n'
 
+# The build commands go into a developer's prompt; under implement and code-fix
+# the orchestrator decides nothing from them — what it asks about them is an ASK:.
+prompt_builds() {
+  [[ $PROMPT_DATA -eq 1 ]] || return 0
+  printf 'BUILD_BACKEND=%s\n' "$BUILD_BACKEND"
+  printf 'BUILD_FRONTEND=%s\n' "$BUILD_FRONTEND"
+}
+
 case "$CMD" in
   init)
     printf 'PROJECT=%s\n' "$PROJECT"
-    printf 'EXISTING=%s\n' "$EXISTING"
+    [[ $PROMPT_DATA -eq 1 ]] && printf 'EXISTING=%s\n' "$EXISTING"
     printf 'BUILD_ROOT=%s\n' "$BUILD_ROOT"
     printf 'BUILD_BACKEND=%s\n' "$BUILD_BACKEND"
     printf 'BUILD_FRONTEND=%s\n' "$BUILD_FRONTEND"
@@ -1409,22 +1422,23 @@ case "$CMD" in
     printf 'STATUS_REQUIREMENTS=%s\n' "$S_REQ"
     printf 'STATUS_DESIGN=%s\n' "$S_DES"
     printf 'STATUS_TASKS=%s\n' "$S_TSK"
-    printf 'NEXT_REQ=%s\n' "$NEXT_REQ"
-    if [[ "$CMD" == "specify" ]]; then printf 'MODE=draft\n'; else printf 'MODE=review\n'; fi
+    if [[ $PROMPT_DATA -eq 1 ]]; then
+      printf 'NEXT_REQ=%s\n' "$NEXT_REQ"
+      if [[ "$CMD" == "specify" ]]; then printf 'MODE=draft\n'; else printf 'MODE=review\n'; fi
+    fi
     ;;
   implement)
     printf 'TASKS_DONE=%s\n' "$T_DONE"
     printf 'TASKS_TOTAL=%s\n' "$T_TOTAL"
     printf 'ROLE_ORDER=%s\n' "$ROLE_ORDER"
     printf 'OPEN_STACKS=%s\n' "$OPEN_STACKS"
-    printf 'BUILD_BACKEND=%s\n' "$BUILD_BACKEND"
-    printf 'BUILD_FRONTEND=%s\n' "$BUILD_FRONTEND"
+    prompt_builds
     printf 'BASELINE=%s\n' "$BASELINE"
     ;;
   code-review)
     printf 'BASE=%s\n' "$RS_BASE"
     printf 'ROOT=%s\n' "$RS_ROOT"
-    printf 'DIFF=%s\n' "$RS_DIFF"
+    [[ $PROMPT_DATA -eq 1 ]] && printf 'DIFF=%s\n' "$RS_DIFF"
     # The renderer's alone, like the sections: it is the prompt's way to one file.
     [[ ( "$GATE" == "ok" || "$GATE" == "ask" ) && $PROMPT_DATA -eq 1 ]] && printf 'DIFF_FILE=%s\n' "$RS_DIFF_FILE"
     printf 'REVIEW_PATH=_docs/%s/review.md\n' "$FOLDER"
@@ -1438,8 +1452,7 @@ case "$CMD" in
     printf 'REVIEW_ROOT=%s\n' "$R_ROOT"
     printf 'REVIEW_VERDICT=%s\n' "$R_VERDICT"
     printf 'ROOT=%s\n' "$RS_ROOT"
-    printf 'BUILD_BACKEND=%s\n' "$BUILD_BACKEND"
-    printf 'BUILD_FRONTEND=%s\n' "$BUILD_FRONTEND"
+    prompt_builds
     ;;
 esac
 
