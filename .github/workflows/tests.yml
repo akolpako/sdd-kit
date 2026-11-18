@@ -1,0 +1,47 @@
+# The engine's regression suites on both systems it is installed on. bash is
+# whatever the runner has on PATH: the 3.2 that macOS ships is not a target
+# (the human's decision), so the macOS job takes Homebrew's bash.
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Errors only: the warning level reports far more than it finds.
+      - name: shellcheck
+        run: |
+          git ls-files -z | while IFS= read -r -d '' f; do
+            [[ -f "$f" ]] || continue
+            case "$f" in
+              *.sh) printf '%s\0' "$f" ;;
+              *) head -1 "$f" | grep -q '^#!.*bash' && printf '%s\0' "$f" ;;
+            esac
+          done | xargs -0 shellcheck -S error
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      # maven-lib-source builds its Maven repository out of javac and jar.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: bash from Homebrew
+        if: runner.os == 'macOS'
+        run: |
+          brew install bash
+          echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
+      - name: tests/run.sh
+        run: tests/run.sh
+      - name: tests/install/run.sh
+        run: tests/install/run.sh
