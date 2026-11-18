@@ -2737,6 +2737,19 @@ F-05|Major|Performance|api/src/Repo.java|7|backend'
   ok=0; [[ "$(printf '%s\n' "$out" | sed -n '/^FINDINGS:$/,/^$/p' | sed '1d;/^$/d')" == "$exp" ]] || ok=1
   prop_check findings "two stacks: each finding goes to the build file above it" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
 
+  # No build file above it: the type of the tasks that name the file decides,
+  # and tasks of both types naming it leave the choice to the human.
+  printf -- '---\nstatus: ready\n---\n\n# T\n\n## Tasks\n\n- [x] **TASK-001** — a\n  - **Type:** backend\n- [x] **TASK-002** — b\n  - **Type:** frontend\n  - **Description:** Update `README.md`.\n' \
+    > "$work/_docs/Cart/tasks.md"
+  out="$(cd "$work" && "$GATE" code-fix Cart 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -qx 'F-03|Suggestion|Quality|README.md|-|frontend' || ok=1
+  prop_check findings "no build file: the tasks that name the file give the stack" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+  printf -- '---\nstatus: ready\n---\n\n# T\n\n## Tasks\n\n- [x] **TASK-001** — a\n  - **Type:** backend\n  - **Description:** Link `README.md`.\n- [x] **TASK-002** — b\n  - **Type:** frontend\n  - **Description:** Update `README.md`.\n' \
+    > "$work/_docs/Cart/tasks.md"
+  out="$(cd "$work" && "$GATE" code-fix Cart 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -qx 'F-03|Suggestion|Quality|README.md|-|-' || ok=1
+  prop_check findings "tasks of both types name the file: the human names the role" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
   # One stack in the breakdown: every finding is that stack's, placed or not.
   sed -i.bak '/TASK-002/,$d' "$work/_docs/Cart/tasks.md" && rm -f "$work/_docs/Cart/tasks.md.bak"
   out="$(cd "$work" && "$GATE" code-fix Cart 2>&1)"

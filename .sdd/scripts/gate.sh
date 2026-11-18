@@ -98,8 +98,9 @@
 #                `F-##|severity|category|file|line|stack`. The line is the first
 #                of a range; `-` is a part the finding does not give. The stack
 #                is the feature's when its breakdown carries one, else the one
-#                of the build file nearest above the file; `-` when that does
-#                not settle it — the human names the role
+#                of the build file nearest above the file, else the type of
+#                the tasks that name the file; `-` when that does not settle
+#                it — the human names the role
 #   actualize    REQ_DOMAINS:, COMPILATION_ENTRIES:, and DECLARED: — one record per
 #                requirement the feature declares, `<REQ-…>|new|`,
 #                `<REQ-…>|refines|<REQ-…>` or `<REQ-…>|supersedes|<REQ-…>`:
@@ -1232,7 +1233,11 @@ check_code_fix() {
 # build file whose directory holds the finding's file most closely — a
 # `web/package.json` claims `web/...` over a root `pom.xml` — and `-` where no
 # build file claims it, or two of different stacks claim it equally: which role
-# fixes that finding is the human's call, never this gate's guess.
+# fixes that finding is the human's call, never this gate's guess. A file no
+# build file settles — a stack detection does not know, a Python backend beside
+# a package.json — goes to the type of the tasks that name it: the breakdown
+# said which role writes that file, and a finding on it is that role's to fix.
+# Tasks of two types naming it leave `-`.
 code_fix_findings() {
   local only="$1" rec file stack best len d_dir d_file d_cmd d_stack n
   [[ "$only" == "backend" || "$only" == "frontend" ]] || only=""
@@ -1254,11 +1259,27 @@ code_fix_findings() {
       done <<EOF
 $BUILD_DETECTED
 EOF
+      [[ "$stack" == "-" ]] && stack="$(task_stack_of "$SPECS/$FOLDER/tasks.md" "$file")"
     fi
     printf '%s|%s\n' "$rec" "${stack:--}"
   done <<EOF
 $(md_findings "$SPECS/$FOLDER/review.md")
 EOF
+}
+
+# The one type of the tasks whose block names <file>, or nothing when none does
+# or two types do. A block is a task line and the lines under it, up to the next
+# task or heading.
+task_stack_of() {
+  [[ -r "$1" ]] || return 0
+  SDD_FILE="$2" awk '
+    function close_task() { if (named && (type == "backend" || type == "frontend")) seen[type] = 1 }
+    /^- \[[ xX~!-]\] \*\*TASK-/ { close_task(); in_task = 1; named = 0; type = "" }
+    /^#/ { close_task(); in_task = 0; named = 0; type = "" }
+    in_task && /\*\*Type:\*\*/ { t = $0; sub(/.*\*\*Type:\*\*[ \t]*/, "", t); sub(/[ \t].*/, "", t); type = t }
+    in_task && index($0, ENVIRON["SDD_FILE"]) { named = 1 }
+    END { close_task(); n = 0; for (t in seen) { n++; one = t } if (n == 1) print one }
+  ' "$1"
 }
 
 check_actualize() {
