@@ -29,6 +29,7 @@ What goes on the page as a question:
 - **A recommended answer and the one line of reasoning behind it**, so agreeing costs one word.
 - **Dependency order.** The question whose answer changes the others comes first. Put every question on the page at once; one that another answer makes irrelevant is dropped by the pass that folds that answer in.
 - A question is never answered by guessing: what you decided meanwhile is the `A-##` the line names, and it stays an assumption until the answer arrives.
+- **No question, no line.** A file with nothing to ask keeps the heading and nothing under it. "None", "None beyond those in …" or a pointer to another file is a line, every line there is read as an open question, and the file cannot be set `ready` while it stands.
 
 `**Answer:**` on the line is the whole discriminator. A line carrying it is settled: fold it into the requirement or design it belongs to, retire the `A-##` it names, and delete the line. A line without it is still open and stays exactly as it is — its wording is the role's, and a question reworded on the way through is a question that silently changed.
 
