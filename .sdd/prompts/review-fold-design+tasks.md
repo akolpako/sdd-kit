@@ -21,7 +21,12 @@ Entries of the compilation this feature sourced:
 Fold every line of `## Open Questions` in `_docs/{{FOLDER}}/design.md` that
 carries an `**Answer:**` into the part of the design it belongs to, as the
 spec-modes protocol fixes it: the answer written in, the `A-##` it names
-retired, the line deleted. A line without an answer stays exactly as it is.
+confirmed — kept under its number as `(confirmed <YYYY-MM-DD>)`, its text
+rewritten to the answer where the two differ — the line deleted. A line without an answer stays exactly as it is.
+A line naming requirements that changed in `new-requirements.md` after this
+design was reviewed is folded by reading those requirements as they stand now:
+the design and the tasks that build them brought in line, the tasks of a
+requirement moved to `## Out of Scope` dropped.
 
 Then re-check only what the answers touched — the sections of the design they
 changed, and the tasks of `_docs/{{FOLDER}}/tasks.md` that build them, brought

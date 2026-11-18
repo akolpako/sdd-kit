@@ -35,18 +35,19 @@ Turns a `draft` spec into a `ready` one through the checklist and an interview. 
 
 3. **Interview and re-spawn,** one file at a time — requirements, then design. One round over one file:
    - **Read `## Open Questions`** out of that file, with its line numbers. Nothing there, and nothing raised by the round before it, means the file is done — spawn the next record (step 2), or after the last one go on to step 4.
+   - **For the design, the matrix first:** run steps 5 and 6 before its first question, so the coverage answers and the answers to `design.md`'s own lines are one round and each file gets one fold for them.
    - **Ask the human** one line of that section at a time, the role's own recommendation first among the options.
    - **Write each answer back** as it arrives: `.sdd/scripts/spec-edit.sh answer <file> <line> -`, the answer on stdin. The script appends `**Answer:**` and the text to that line and to nothing else — the wording of the question is the role's — and adds no line, so the numbers read above hold for every answer of the round.
-   - **Run the gate again and spawn this file's record as it prints it now** — `.sdd/scripts/gate.sh review <FeatureName>`, then `.sdd/scripts/spawn-prompt.sh review <FeatureName> <its scope>`; the `requirements-engineer` record is `new-requirements.md`'s, the `architect` record `design.md`'s. A file whose `## Open Questions` holds an answered line comes back as a fold (`fold-requirements`, `fold-design+tasks`): the answers written in and what they touched re-checked, without the checklist. Nothing here picks the assignment — the gate reads it off the page.
+   - **Run the gate again and spawn every record it prints as a fold, in the order printed** — requirements before design, so a `CHANGED:` line reaches `design.md` (step 6) before the design's fold is spawned — `.sdd/scripts/gate.sh review <FeatureName>`, then `.sdd/scripts/spawn-prompt.sh review <FeatureName> <its scope>` per record; the `requirements-engineer` record is `new-requirements.md`'s, the `architect` record `design.md`'s. A file whose `## Open Questions` holds an answered line comes back as a fold (`fold-requirements`, `fold-design+tasks`): the answers written in and what they touched re-checked, without the checklist. Nothing here picks the assignment — the gate reads it off the page.
    - Then round two, from the top.
 
-   **At most three rounds per file per session.** What is still open at that ceiling is not asked a fourth time: it stays on the page, and the verdict of step 7 accounts for it. The count belongs to this run and the page carries no counter, so a review re-run after an interruption counts from zero.
+   **At most two rounds per file per session.** A round is one fold, spawned after answers were written into the file; the first spawn of a file — its full review — is not a round. What is still open at that ceiling is not asked a third time: it stays on the page, and the verdict of step 7 accounts for it. The count belongs to this run and the page carries no counter, so a review re-run after an interruption counts from zero.
 
 4. **Conflicts are settled inside the loop of step 3, not after it.** Finding them is the roles': a new requirement that overlaps or contradicts an entry of `_docs/requirements.md`, and a design decision that contradicts the architecture baseline, each arrive as a line of `## Open Questions` like any other question.
    - For a requirement the question is always the same one — is it a **refinement** of the existing entry or its **replacement** — and the answer is written back onto its line by the same `spec-edit.sh answer` call. The role then records it as the `Refines:` / `Supersedes:` line under the requirement's heading; that line is what `/sdd-actualize` applies to the compilation. Nothing is written into `new-requirements.md` by hand here.
    - No conflict is left unresolved: a conflict line still unanswered when the rounds are spent is a critical gap, and the verdict of step 7 is `NOT READY`.
 
-5. **Re-run the gate:** the roles have been rewriting `tasks.md` since step 1, so the matrix of step 6 comes from this run, never from the first one.
+5. **Re-run the gate** after every spawn of the design — its full review and each fold — before its questions are asked (step 3): the roles have been rewriting `tasks.md` since step 1, so the matrix of step 6 comes from this run, never from an earlier one.
 
 6. **Print the coverage matrix** — the orchestrator's own, to the chat, never into a file: the gate's `COVERAGE:` records of step 5, `<REQ>|<title>|<tasks>`, one row each, as they stand:
 
@@ -59,9 +60,11 @@ Turns a `draft` spec into a `ready` one through the checklist and an interview. 
 
    Both replies are answers like any other, except that no role asked them: each becomes a line of its own in the `## Open Questions` of the file whose role applies it — `.sdd/scripts/spec-edit.sh answer <file> new -`, with `<the requirement or task> — <what is wrong> **Answer:** <the human's words>` on stdin — and the round that follows applies it.
    - **Missing task** — into `design.md`, where the next round adds the task.
-   - **Not in this feature after all** — into `new-requirements.md`, where the next round moves the requirement to `## Out of Scope`. Its number goes with it and is not reused.
+   - **Not in this feature after all** — into `new-requirements.md`, where the next round moves the requirement to `## Out of Scope`. Its number goes with it and is not reused. Its tasks are dropped by the design's fold that follows, as the rule below writes it.
 
-   An answer written here sends the run back to step 3 for one more round, inside the same three-round ceiling, and the matrix is printed again off a fresh step 5. A round that changed `new-requirements.md` is followed by one more spawn of the design scope: the breakdown was written against the text that changed.
+   An answer written here belongs to the round of step 3 it was asked in, beside the answers to `design.md`'s own lines — never a round of its own — and counts against the same two-round ceiling of the file it was written into. The matrix is printed again off a fresh step 5 after the design's fold; a matrix with nothing under `UNCOVERED:` or `UNDECLARED:` and no open line left to ask closes the loop.
+
+   **Requirements that change after the design was reviewed reach the design as a fold, not a second full review.** The full review of the design — the checklist — runs once per session, on its first spawn. A `fold-requirements` that returns after it with a `CHANGED:` line naming anything but `none` is followed by one line into `design.md`, written before the design's record is spawned again: `.sdd/scripts/spec-edit.sh answer design.md new -`, with `<the requirements of CHANGED:, as the role listed them> — changed in new-requirements.md after this design was reviewed **Answer:** bring the design and its tasks in line with them as they stand now` on stdin. The gate then reads an answered line in `design.md` and prints `fold-design+tasks`. A `CHANGED:` line before the design's first spawn is not written anywhere: that spawn reads the requirements as they stand.
 
 7. **Close with a verdict** — exactly one of three, printed to the chat and never into a spec file, before any `status` marker is set:
 

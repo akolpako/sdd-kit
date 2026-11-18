@@ -44,6 +44,18 @@ both, and neither when the requirement is simply new:
 place under its own number.
 -->
 
+## Risks
+
+<!-- The risk pass of `.sdd/protocols/spec-checklist.md`, one line per axis and
+all five present — what the feature risks for the business and its users:
+
+- Breaking changes: <the risk and its consequence> | no risk: <reason>
+- External dependencies: …
+- Data integrity: …
+- Security: …
+- Performance: …
+-->
+
 ## Assumptions
 
 <!-- Everything decided without confirmation, one line each — format in

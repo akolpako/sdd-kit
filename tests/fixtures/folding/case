@@ -1,0 +1,7 @@
+# A design reviewed in this session whose requirements changed after it: the
+# orchestrator wrote the requirements the fold of new-requirements.md reported
+# into design.md as an answered line, and that line is what makes the design's
+# next spawn a fold rather than a second full review. new-requirements.md holds
+# an answered line of its own, one that corrects the assumption it names, so
+# both folds are rendered here and nowhere else.
+FEATURE=Cart

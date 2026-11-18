@@ -1,0 +1,21 @@
+GATE=stop
+FEATURE=Cart
+FOLDER=Cart
+STAGE=specified
+
+REQ_DOMAINS:
+-|NEXT=REQ-004|COUNTER=REQ-004|HIGHEST=REQ-003|DECLARED=REQ-003|DECLARED_IN=Cart|COUNT=3
+
+STOP:
+_docs/architecture.index.md is not there — there is nothing to promote a decision into. /sdd-init owns creating it.
+
+ASK:
+Not reviewed: new-requirements.md (draft), design.md (draft), tasks.md (draft). /sdd-spec-review Cart is what promotes a spec to ready. Promoting anyway writes requirements nobody approved into _docs/requirements.md as final — it needs the human to say so in as many words, and the final report then says the baseline was written from an unreviewed spec.
+Not implemented: 0 of 3 task(s) are [x], 0 blocked. /sdd-implement Cart is what finishes them. Promoting anyway records requirements the code does not meet as what the project does — it needs the human to say so in as many words, and the final report names the tasks left open.
+
+WARN:
+
+ANOMALIES:
+
+NOTES:
+### exit=0

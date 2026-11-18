@@ -1,0 +1,3 @@
+### exit=2
+### stderr
+ERROR=this run has no assignment for frontend: the gate printed no SPAWN: record with that scope

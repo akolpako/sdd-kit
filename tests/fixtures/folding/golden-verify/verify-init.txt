@@ -1,0 +1,6 @@
+VERIFY=fail
+
+FAIL:
+_docs/code-style.md is not on disk — the setup did not create it.
+_docs/architecture.index.md is not on disk — the setup created no architecture baseline.
+### exit=2

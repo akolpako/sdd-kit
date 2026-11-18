@@ -1,0 +1,4 @@
+### exit=2
+### stderr
+ERROR=## Open Questions is not empty in: _docs/Cart/new-requirements.md (1 line(s)), _docs/Cart/design.md (1 line(s)) — a file with a question still on it stays draft. Pass --accept-open only when the human has read those lines and agreed to ready them as they are
+### tree

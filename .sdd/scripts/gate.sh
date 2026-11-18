@@ -53,7 +53,9 @@
 #                 came from
 #
 # Under --prompt-data, and only there:
-#   SPEC_FILES:   the paths of this run, one per line — every command
+#   SPEC_FILES:   the paths of this run, one per line — every command; under
+#                 review, _docs/requirements.md only when COMPILATION_ENTRIES:
+#                 holds an entry
 #   REQ_DOMAINS:  specify, review — next-req.sh's DOMAINS:, for the
 #                 requirements prompt; also printed beside a GATE=stop
 #   REQUIREMENTS_FILES:   specify, review — the paths of the requirements scope,
@@ -1478,7 +1480,13 @@ if [[ $PROMPT_ONLY -eq 1 ]]; then
       printf '_docs/%s/new-requirements.md\n' "$FOLDER"
       printf '_docs/%s/design.md\n' "$FOLDER"
       printf '_docs/%s/tasks.md\n' "$FOLDER"
-      printf '%s\n_docs/requirements.md\n' "$ARCH_ENTRY"
+      printf '%s\n' "$ARCH_ENTRY"
+      # The design and the breakdown are written from new-requirements.md, which
+      # carries its own links into the compilation: the compilation itself is a
+      # file of the design's review only when this feature sourced entries of
+      # it, the ones COMPILATION_ENTRIES: lists. Read for nothing, it stays in
+      # the role's context for every call that follows.
+      [[ "$CMD" != "review" || -n "$COMP_RECS" ]] && printf '_docs/requirements.md\n'
       # The requirements are written before the design and the breakdown, and
       # checked without them: those two files are a template or another
       # role's work there, and nothing in them is read.
@@ -1529,8 +1537,9 @@ if [[ $SPAWNING -eq 1 ]]; then
       # Per file, off the disk: a file whose `## Open Questions` holds an
       # answered line gets the fold — the answers written in, what they touch
       # re-checked — without the checklist; any other gets the full review.
-      # The design re-spawned after the requirements changed has no answered
-      # line of its own, so it is reviewed in full against the new text.
+      # Requirements that change after the design was reviewed reach it as an
+      # answered line the orchestrator writes into design.md, so the design
+      # gets the fold: the full review runs once per session.
       if [[ "$(md_answered "$SPECS/$FOLDER/new-requirements.md")" != "0" ]]; then
         printf 'requirements-engineer|%s/spec-modes.md,%s/requirements-writing.md,%s/docs-format.md|fold-requirements\n' "$P" "$P" "$P"
       else
