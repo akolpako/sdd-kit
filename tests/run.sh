@@ -2160,6 +2160,18 @@ check_raw() {
   ok=0; [[ $rc -eq 0 ]] || ok=1
   prop_check raw "scaffold feature copies over the template" "$ok" "exit $rc: $out"
 
+  # The questions of /sdd-next-story come from the template's hints, printed
+  # here, one line per section, so the command never opens the template.
+  out="$(cd "$work" && "$EDITOR_SH" scaffold feature Cart --hints 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 0 ]] || ok=1
+  printf '%s\n' "$out" | grep -q '^HINTS:$' || ok=1
+  printf '%s\n' "$out" | grep -q '^Problem|What hurts today\. .*"add a cancel button"\.$' || ok=1
+  [[ "$(printf '%s\n' "$out" | grep -c '^[A-Z][a-z ]*|')" == "6" ]] || ok=1
+  printf '%s\n' "$out" | grep -q -- '<!--\|-->' && ok=1
+  out2="$(cd "$work" && "$EDITOR_SH" scaffold feature Cart 2>&1)"
+  printf '%s\n' "$out2" | grep -q '^HINTS:' && ok=1
+  prop_check raw "scaffold feature --hints prints one hint per section" "$ok" "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
   out="$(cd "$work" && "$GATE" specify Cart 2>&1)"
   ok=0
   printf '%s\n' "$out" | grep -q '^GATE=stop$' || ok=1

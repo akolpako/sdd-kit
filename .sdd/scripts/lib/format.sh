@@ -679,6 +679,27 @@ md_untouched() {
   [[ "$(md_awk "$1" "$MD_AWK_SKELETON")" == "$(md_awk "$2" "$MD_AWK_SKELETON")" ]]
 }
 
+# The hint of each `## ` section: the comment right under the heading, joined
+# into one line. Prints `<heading>|<hint>` per section that has one, in file
+# order. Read off a template, where the hint is what a section asks for — the
+# wording a command phrases its question from, without opening the file.
+md_hints() {
+  [[ -f "$1" ]] || return 0
+  awk '
+    /^## / { h = substr($0, 4); sub(/[[:space:]]+$/, "", h); under = 1; next }
+    under && !c && /^[[:space:]]*<!--/ { c = 1; t = ""; sub(/^[[:space:]]*<!--/, "") }
+    c {
+      line = $0; end = 0
+      if (index(line, "-->")) { sub(/-->.*/, "", line); end = 1 }
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+      if (line != "") t = (t == "" ? line : t " " line)
+      if (end) { print h "|" t; c = 0; under = 0 }
+      next
+    }
+    under && NF { under = 0 }
+  ' "$1"
+}
+
 # The lines of `## Open Questions` that carry an answer — `**Answer:**` on the
 # line is the whole discriminator, as the spec-modes protocol fixes it. Prints
 # their count, 0 for none or for a file that is not there. The template's

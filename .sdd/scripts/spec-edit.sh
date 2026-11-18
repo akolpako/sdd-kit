@@ -48,10 +48,12 @@
 #       section a project deleted or added is in the index without anyone
 #       editing it. A project holding a single _docs/architecture.md has no
 #       folder to index and this op does not apply to it.
-#   scaffold feature <Feature>
+#   scaffold feature <Feature> [--hints]
 #       The feature folder and raw.md from the template, the title carrying the
 #       feature name. An existing raw.md with content in it is never
-#       overwritten.
+#       overwritten. --hints adds a HINTS: section, `<heading>|<hint>` per
+#       section of the template — what each one asks for, so a description
+#       filled in with the human is asked about without opening the template.
 #   scaffold spec <Feature> <file ...>
 #       The spec files this run writes — new-requirements.md, design.md, tasks.md —
 #       from their templates, the title carrying the feature name. Only the
@@ -810,8 +812,13 @@ scaffold)
     ;;
 
   feature)
-    FEATURE="${1:-}"
-    [[ -n "$FEATURE" ]] || die2 "no feature name: scaffold feature <Feature>"
+    FEATURE="${1:-}"; HINTS=0
+    case "${2:-}" in
+      "") ;;
+      --hints) HINTS=1 ;;
+      *) die2 "not an option of scaffold feature: $2 — --hints" ;;
+    esac
+    [[ -n "$FEATURE" ]] || die2 "no feature name: scaffold feature <Feature> [--hints]"
     problem="$(md_name_problem "$FEATURE")"
     [[ -z "$problem" ]] || die2 "not a feature name: '$FEATURE' — $problem"
     src="$TEMPLATE_DIR/raw.md"
@@ -830,6 +837,7 @@ scaffold)
     sed "s|<FeatureName>|$FEATURE|g" "$src" > "$TMP/f" || exit 1
     replace_file "$dst" "$TMP/f"
     printf 'SCAFFOLD=feature\nFOLDER=%s\nRAW=%s\n' "$FOLDER" "$dst"
+    [[ $HINTS -eq 1 ]] && printf '\nHINTS:\n%s\n' "$(md_hints "$src")"
     ;;
 
   spec)
