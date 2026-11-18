@@ -10,7 +10,7 @@ _docs/Cart/tasks.md
 diff -ru -x .git <tmp>/actualized/_docs/Cart/design.md <tmp>/edit/_docs/Cart/design.md
 --- <tmp>/actualized/_docs/Cart/design.md
 +++ <tmp>/edit/_docs/Cart/design.md
-@@ -1,7 +1,93 @@
+@@ -1,7 +1,106 @@
 +---
 +type: design
 +feature: Cart
@@ -97,6 +97,19 @@ diff -ru -x .git <tmp>/actualized/_docs/Cart/design.md <tmp>/edit/_docs/Cart/des
 +<!-- Only the ones this feature changes or is bound by: latency budget,
 +throughput, data volume, availability. Each with the number that decides it. -->
 +
++## Risks
++
++<!-- The risk pass of `.sdd/protocols/spec-checklist.md`, one line per axis and
++all five present, in architectural terms. A risk whose measure is written in a
++section above names that section rather than repeating it:
++
++- Breaking changes: <the risk and its consequence> | no risk: <reason>
++- External dependencies: …
++- Data integrity: …
++- Security: … (see Security Considerations)
++- Performance: … (see Non-Functional Requirements)
++-->
++
 +## Assumptions
 +
 +<!-- Everything decided without confirmation, one line each — format in
@@ -109,7 +122,7 @@ diff -ru -x .git <tmp>/actualized/_docs/Cart/design.md <tmp>/edit/_docs/Cart/des
 diff -ru -x .git <tmp>/actualized/_docs/Cart/new-requirements.md <tmp>/edit/_docs/Cart/new-requirements.md
 --- <tmp>/actualized/_docs/Cart/new-requirements.md
 +++ <tmp>/edit/_docs/Cart/new-requirements.md
-@@ -1,15 +1,57 @@
+@@ -1,15 +1,69 @@
 +---
 +type: requirements
 +feature: Cart
@@ -156,6 +169,18 @@ diff -ru -x .git <tmp>/actualized/_docs/Cart/new-requirements.md <tmp>/edit/_doc
 +`Refines` — the existing entry keeps its number and takes this wording.
 +`Supersedes` — the existing entry is retired and this requirement stands in its
 +place under its own number.
++-->
++
++## Risks
++
++<!-- The risk pass of `.sdd/protocols/spec-checklist.md`, one line per axis and
++all five present — what the feature risks for the business and its users:
++
++- Breaking changes: <the risk and its consequence> | no risk: <reason>
++- External dependencies: …
++- Data integrity: …
++- Security: …
++- Performance: …
 +-->
 +
 +## Assumptions

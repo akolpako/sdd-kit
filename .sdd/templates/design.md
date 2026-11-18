@@ -82,6 +82,19 @@ architecture baseline's security section. -->
 <!-- Only the ones this feature changes or is bound by: latency budget,
 throughput, data volume, availability. Each with the number that decides it. -->
 
+## Risks
+
+<!-- The risk pass of `.sdd/protocols/spec-checklist.md`, one line per axis and
+all five present, in architectural terms. A risk whose measure is written in a
+section above names that section rather than repeating it:
+
+- Breaking changes: <the risk and its consequence> | no risk: <reason>
+- External dependencies: …
+- Data integrity: …
+- Security: … (see Security Considerations)
+- Performance: … (see Non-Functional Requirements)
+-->
+
 ## Assumptions
 
 <!-- Everything decided without confirmation, one line each — format in

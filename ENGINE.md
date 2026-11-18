@@ -146,9 +146,12 @@ The difference between rounds is on disk, and the gate reads it there: a file wh
 `## Open Questions` holds an answered line gets the fold — write the answers in, re-check only
 what they touched, no checklist — and any other the full review: run the checklist, settle what
 you can, ask the rest. So `READY` means the checklist came back clean or everything it raised was
-answered and folded in, not that every pass ran clean on the final text. The design re-spawned
-after the requirements changed has no answered line, so it is reviewed in full. At most three
-rounds per spec file per session, of either kind; an interrupted review starts the count again.
+answered and folded in, not that every pass ran clean on the final text. Requirements that change
+after the design was reviewed reach it as an answered line the orchestrator writes into
+`design.md`, so the design gets a fold too: the full review runs once per file per session. At most two
+rounds per spec file per session — a round is one fold after answers, the first full review is not one;
+the coverage answers go into the design's round rather than one of their own, and an interrupted review
+starts the count again.
 
 **State is a file in the working tree, never the chat.** Commands never chain (`/sdd-code-review`
 writes `review.md`, `/sdd-code-fix` reads it); such a file names its writer and scope in its

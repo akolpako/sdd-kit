@@ -14,8 +14,8 @@ How a set of requirements becomes the architecture an implementer works from. **
 
 ## 2. Assumptions and Risks
 
-- Every unverified architectural decision is an `A-##` assumption on the page, retired as the answer arrives.
-- A risk is written into the section that owns it — `## Security Considerations`, `## Non-Functional Requirements`, or `## Business Logic`; one no section owns becomes an `A-##` assumption or an `## Open Questions` line.
+- Every unverified architectural decision is an `A-##` assumption on the page; when the answer arrives it is confirmed — kept under its number as `(confirmed <YYYY-MM-DD>)`, its text rewritten to the answer where the two differ.
+- The risk pass is answered in `## Risks`, one line per axis. Where a risk's measure belongs to another section — `## Security Considerations`, `## Non-Functional Requirements`, `## Business Logic` — the measure is written there and the line in `## Risks` names that section; a risk nobody has decided on yet becomes an `A-##` assumption or an `## Open Questions` line.
 
 ## 3. The Design Document
 

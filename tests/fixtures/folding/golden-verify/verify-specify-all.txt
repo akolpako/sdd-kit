@@ -1,0 +1,4 @@
+VERIFY=ok
+
+FAIL:
+### exit=0

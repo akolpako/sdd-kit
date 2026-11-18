@@ -8,7 +8,7 @@ _docs/Cart/design.md
 diff -ru -x .git <tmp>/draft-specs/_docs/Cart/design.md <tmp>/edit/_docs/Cart/design.md
 --- <tmp>/draft-specs/_docs/Cart/design.md
 +++ <tmp>/edit/_docs/Cart/design.md
-@@ -1,7 +1,93 @@
+@@ -1,7 +1,106 @@
 +---
 +type: design
 +feature: Cart
@@ -94,6 +94,19 @@ diff -ru -x .git <tmp>/draft-specs/_docs/Cart/design.md <tmp>/edit/_docs/Cart/de
 +
 +<!-- Only the ones this feature changes or is bound by: latency budget,
 +throughput, data volume, availability. Each with the number that decides it. -->
++
++## Risks
++
++<!-- The risk pass of `.sdd/protocols/spec-checklist.md`, one line per axis and
++all five present, in architectural terms. A risk whose measure is written in a
++section above names that section rather than repeating it:
++
++- Breaking changes: <the risk and its consequence> | no risk: <reason>
++- External dependencies: …
++- Data integrity: …
++- Security: … (see Security Considerations)
++- Performance: … (see Non-Functional Requirements)
++-->
 +
 +## Assumptions
 +

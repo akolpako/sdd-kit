@@ -1,0 +1,5 @@
+VERIFY=fail
+
+FAIL:
+_docs/Cart/review.md is not on disk — the report was not written.
+### exit=2

@@ -1,0 +1,40 @@
+The rules every role works under: `.sdd/AGENTS.md`. Read them first, unless your
+instructions already carry them.
+
+Working directory: <tmp>/folding
+Every `.sdd/...` and `_docs/...` path below and in the protocols it names is
+relative to it.
+
+# Assignment: the design and the task breakdown of Cart
+
+Follow these protocols, in this order:
+
+.sdd/protocols/spec-modes.md
+.sdd/protocols/architecture-design.md
+.sdd/protocols/task-breakdown.md
+.sdd/protocols/docs-format.md
+
+MODE=draft
+FEATURE=Cart
+
+Files of this run:
+
+_docs/Cart/raw.md
+_docs/Cart/new-requirements.md
+_docs/Cart/design.md
+_docs/Cart/tasks.md
+_docs/architecture.index.md
+_docs/requirements.md
+
+Kept by the human from an earlier run — input to read, never rewritten:
+
+new-requirements.md
+
+Write `_docs/Cart/design.md` and `_docs/Cart/tasks.md` in this one
+run. The breakdown covers the requirements of
+`_docs/Cart/new-requirements.md` and nothing beyond them.
+
+Return only what the requirements left unsettled, and a done task the breakdown
+made pointless, one line per point — what you wrote is read from the files,
+never from your reply.
+### exit=0

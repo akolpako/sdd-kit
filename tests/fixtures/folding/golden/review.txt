@@ -1,0 +1,31 @@
+GATE=ok
+FEATURE=Cart
+FOLDER=Cart
+STAGE=specified
+STATUS_REQUIREMENTS=draft
+STATUS_DESIGN=draft
+STATUS_TASKS=draft
+
+SPAWN:
+requirements-engineer|.sdd/protocols/spec-modes.md,.sdd/protocols/requirements-writing.md,.sdd/protocols/docs-format.md|fold-requirements
+architect|.sdd/protocols/spec-modes.md,.sdd/protocols/architecture-design.md,.sdd/protocols/task-breakdown.md,.sdd/protocols/docs-format.md|fold-design+tasks
+
+COVERAGE:
+REQ-002|Cart holds items|TASK-001,TASK-002
+REQ-003|Cart totals|TASK-003
+
+UNCOVERED:
+
+UNDECLARED:
+
+STOP:
+
+ASK:
+
+WARN:
+_docs/architecture.index.md is not there — the design is reviewed without the architecture context, and /sdd-init is what creates it.
+
+ANOMALIES:
+
+NOTES:
+### exit=0

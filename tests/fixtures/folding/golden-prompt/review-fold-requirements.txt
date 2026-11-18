@@ -1,0 +1,59 @@
+The rules every role works under: `.sdd/AGENTS.md`. Read them first, unless your
+instructions already carry them.
+
+Working directory: <tmp>/folding
+Every `.sdd/...` and `_docs/...` path below and in the protocols it names is
+relative to it.
+
+# Assignment: fold the answers into the requirements of Cart
+
+Follow these protocols, in this order:
+
+.sdd/protocols/spec-modes.md
+.sdd/protocols/requirements-writing.md
+.sdd/protocols/docs-format.md
+
+Load only the installed skills that what the answers touch calls for, as your
+`## Skills` section matches them — not every one that matches the feature.
+
+MODE=review
+FEATURE=Cart
+
+Files of this run:
+
+_docs/Cart/raw.md
+_docs/Cart/new-requirements.md
+_docs/architecture.index.md
+_docs/requirements.md
+
+Entries of the compilation this feature sourced:
+
+REQ-002|draft
+REQ-003|draft
+
+The domains in use, one record per sequence — `-` is the ungrouped one:
+
+-|NEXT=REQ-004|COUNTER=REQ-004|HIGHEST=REQ-003|DECLARED=REQ-003|DECLARED_IN=Cart|COUNT=3
+
+The first free number of the ungrouped sequence: REQ-004.
+
+Fold every line of `## Open Questions` in
+`_docs/Cart/new-requirements.md` that carries an `**Answer:**` into the
+requirement it belongs to, as the spec-modes protocol fixes it: the answer
+written in, the `A-##` it names confirmed — kept under its number as
+`(confirmed <YYYY-MM-DD>)`, its text rewritten to the answer where the two
+differ — the line deleted. A line without an answer stays exactly as it is.
+
+Then re-check only what the answers touched — the requirements they changed,
+added or moved — by the rules that write them. The rest of the file is not
+re-checked in this run: it was checked before these questions were asked. An
+answer that raises a new question puts it on the page, as a line of
+`## Open Questions`, like any other.
+
+Return only what the answers left unsettled, one line per point, or that none
+is, and last a line `CHANGED: <REQ-###, …>` — every requirement this fold
+changed, added or moved to `## Out of Scope`, a moved one followed by
+`(moved out of scope)` — or `CHANGED: none`. That list is what the design is
+brought in line with; what you folded in is read from the file, never from your
+reply.
+### exit=0

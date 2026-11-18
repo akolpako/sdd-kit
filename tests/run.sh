@@ -122,6 +122,8 @@ specify-requirements|specify|requirements|KEPT=none
 specify-design-tasks|specify|design+tasks|KEPT=new-requirements.md
 review-requirements|review|requirements|
 review-design-tasks|review|design+tasks|
+review-fold-requirements|review|fold-requirements|
+review-fold-design-tasks|review|fold-design+tasks|
 implement-backend|implement|backend|HELD=none
 implement-frontend|implement|frontend|HELD=TASK-009
 code-review-review-set|code-review|review-set|
