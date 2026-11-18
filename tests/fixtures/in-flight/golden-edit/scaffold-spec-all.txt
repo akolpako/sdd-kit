@@ -117,47 +117,47 @@ diff -ru -x .git <tmp>/in-flight/_docs/Wishlist/new-requirements.md <tmp>/edit/_
  
 -### REQ-004 — Wishlist holds items
 +<!-- Each requirement follows this structure:
- 
--A shopper keeps items on a list without buying them.
++
 +### REQ-### — <short title>
 +- **Description:** <what is required, from the business/user perspective> ^req-###
 +- **Conditions of satisfaction:**
 +  - <happy path: given <state>, when <action>, then <observable outcome>>
 +  - Error: when <invalid input or failure>, then <error response>
 +  - Edge: when <boundary case>, then <expected behaviour>
- 
--- Error: an item already on the list is not added twice.
++
 +A requirement that rewords or replaces an entry `_docs/requirements.md` already
 +holds says so in one line directly under its heading — one of the two, never
 +both, and neither when the requirement is simply new:
- 
--### REQ-005 — Move to cart
++
 +### REQ-### — <short title>
 +- **Refines:** [REQ-NNN](../requirements.md#^req-nnn)
 +- **Description:** …
- 
--- **Refines:** [REQ-002](../requirements.md#^req-002)
++
 +### REQ-### — <short title>
 +- **Supersedes:** [REQ-NNN](../requirements.md#^req-nnn)
 +- **Description:** …
  
--A shopper moves an item from the list into the cart.
+-A shopper keeps items on a list without buying them.
 +`Refines` — the existing entry keeps its number and takes this wording.
 +`Supersedes` — the existing entry is retired and this requirement stands in its
 +place under its own number.
 +-->
  
--- Error: an item that is out of stock stays on the list.
+-- Error: an item already on the list is not added twice.
 +## Assumptions
-+
+ 
+-### REQ-005 — Move to cart
 +<!-- Everything decided without confirmation, one line each — format in
 +`.sdd/protocols/spec-modes.md`. -->
-+
+ 
+-- **Refines:** [REQ-002](../requirements.md#^req-002)
 +## Open Questions
-+
+ 
+-A shopper moves an item from the list into the cart.
 +<!-- Points only the human can settle, one line each — see
 +`.sdd/protocols/spec-modes.md`. -->
-+
+ 
+-- Error: an item that is out of stock stays on the list.
 +## Out of Scope
 diff -ru -x .git <tmp>/in-flight/_docs/Wishlist/tasks.md <tmp>/edit/_docs/Wishlist/tasks.md
 --- <tmp>/in-flight/_docs/Wishlist/tasks.md
@@ -182,11 +182,7 @@ diff -ru -x .git <tmp>/in-flight/_docs/Wishlist/tasks.md <tmp>/edit/_docs/Wishli
 -  - **Type:** backend
 -  - **Description:** The wishlist table, its entity, and the repository over it.
 +<!-- Each task follows this structure:
- 
--- [ ] **TASK-002** — Move an item into the cart
--  - **Requires:** REQ-005
--  - **Type:** backend
--  - **Description:** The service method behind the endpoint.
++
 +- [ ] **TASK-001** — <short title>
 +  - **Requires:** [REQ-001](new-requirements.md#^req-001), [REQ-003](new-requirements.md#^req-003)
 +  - **Type:** backend | frontend
@@ -198,6 +194,10 @@ diff -ru -x .git <tmp>/in-flight/_docs/Wishlist/tasks.md <tmp>/edit/_docs/Wishli
 +
 +A done task is `- [x]`. A blocked task stays unchecked, keeps its ID and its
 +title, and carries the reason at the end of the line:
-+
+ 
+-- [ ] **TASK-002** — Move an item into the cart
+-  - **Requires:** REQ-005
+-  - **Type:** backend
+-  - **Description:** The service method behind the endpoint.
 +- [ ] **TASK-007** — <short title> — BLOCKED: <one-line reason>
 +-->

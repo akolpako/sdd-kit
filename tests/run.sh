@@ -325,6 +325,31 @@ normalize() {
       -e 's/^\(+++ .*\)	.*/\1/'
 }
 
+# What a run changed in a tree. The list of files is diff's, the content of a
+# changed file is git's: Apple's diff and GNU diff cut the same change into
+# different hunks, so a golden written on one system failed on the other, and
+# git computes it the same everywhere. The header line and the hunk heading are
+# kept to the form diff prints — git adds the nearest heading of the file after
+# `@@`, an `index` line of blob ids, and its own prefixes to the two paths.
+tree_diff() {
+  local line a b
+  diff -rq -x .git "$1" "$2" 2>&1 | while IFS= read -r line; do
+    if [[ "$line" =~ ^Files\ (.+)\ and\ (.+)\ differ$ ]]; then
+      a="${BASH_REMATCH[1]}"; b="${BASH_REMATCH[2]}"
+      printf 'diff -ru -x .git %s %s\n' "$a" "$b"
+      git diff --no-index --no-color --no-ext-diff -U3 -- "$a" "$b" \
+        | A="$a" B="$b" awk '
+            /^diff --git / || /^index / { next }
+            /^--- / && !h { print "--- " ENVIRON["A"]; next }
+            /^\+\+\+ / && !h { print "+++ " ENVIRON["B"]; h = 1; next }
+            /^@@ / { sub(/ @@.*/, " @@") }
+            { print }'
+    else
+      printf '%s\n' "$line"
+    fi
+  done
+}
+
 # What a run left behind, as the golden files record it: the output, the exit
 # code, then whatever went to stderr.
 record() {
@@ -448,7 +473,7 @@ run_edit_case() {
 
   record "$out" "$rc" "$err" "$actual"
   printf '### tree\n' >> "$actual"
-  diff -ru -x .git "$project" "$work" 2>&1 | normalize >> "$actual"
+  tree_diff "$project" "$work" | normalize >> "$actual"
   compare "$fixture" "edit $name" "$FIXTURES/$fixture/golden-edit/$name.txt" "$actual"
 }
 
@@ -880,8 +905,15 @@ check_name_everywhere() {
     ( cd "$work" && "$SCRIPTS/feature-state.sh" "$name" ) >/dev/null 2>&1; rc=$?; [[ $rc -eq 2 ]] || ok=1
   done
   [[ -e "$work/web/tasks.md" ]] && ok=1
+  # Another spelling of a folder's name opens it only where the filesystem
+  # ignores case. Elsewhere it is another feature, and there is none by it.
   out="$(cd "$work" && "$GATE" implement cart 2>&1)"
-  printf '%s\n' "$out" | grep -q '^FOLDER=Cart$' || ok=1
+  if [[ -d "$work/_docs/cart" ]]; then
+    printf '%s\n' "$out" | grep -q '^FOLDER=Cart$' || ok=1
+  else
+    printf '%s\n' "$out" | grep -q '^GATE=stop$' || ok=1
+    printf '%s\n' "$out" | grep -q '^FOLDER=cart$' || ok=1
+  fi
   prop_check name "a name that is not a path segment is refused everywhere" "$ok" "$(printf '%s' "$out" | head -3 | tr '\n' '~')"
 }
 
