@@ -26,7 +26,7 @@ Acts on the report `/sdd-code-review <FeatureName>` wrote. It applies findings, 
 1. **Gate:** run `.sdd/scripts/gate.sh code-fix <FeatureName>`.
    - `ok` fixes.
    - `ask` is always the same question: this project has not said how a stack of it is verified. No yes answers it — put the line to the human, write the answer with `.sdd/scripts/spec-edit.sh conf-set <KEY> -` (the command on stdin), and go on only then.
-   - `ROOT` differing from `REVIEW_ROOT` says the code has moved since the review, and a finding may be about a line that is no longer there.
+   - `ROOT` differing from `REVIEW_ROOT` says the review was taken over a different range of commits — a rebase, another base — and a finding may be about a line that is no longer there. The same `ROOT` does not say the code is unchanged: the range runs to the working tree, so a commit or an edit since the review leaves it where it was.
 
 2. **Triage — the orchestrator's own.** The `FINDINGS:` records — `F-##|severity|category|file|line|stack` — are the work of this run; `REVIEW_PATH` is read for what each one says and recommends.
    - Open with `REVIEW_VERDICT` and `REVIEW_DATE`, then the findings, worst first.
