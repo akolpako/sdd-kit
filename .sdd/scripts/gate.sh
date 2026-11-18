@@ -55,7 +55,7 @@
 # Under --prompt-data, and only there:
 #   SPEC_FILES:   the paths of this run, one per line — every command
 #   REQ_DOMAINS:  specify, review — next-req.sh's DOMAINS:, for the
-#                 requirements prompt
+#                 requirements prompt; also printed beside a GATE=stop
 #   REQUIREMENTS_FILES:   specify, review — the paths of the requirements scope,
 #                 which reads neither design.md nor tasks.md
 #   SPEC_REFERENCE:       code-fix — the spec, opened only for a finding that
@@ -1531,8 +1531,9 @@ fi
 case "$CMD" in
   specify|review)
     # The domains feed the requirements prompt, where the role decides its
-    # sequence from them; no command decides from them.
-    if [[ $PROMPT_ONLY -eq 1 ]]; then
+    # sequence from them. The command sees them only beside a stop, where a
+    # sequence with no free number is what the human repairs.
+    if [[ $PROMPT_ONLY -eq 1 || "$GATE" == "stop" ]]; then
       printf '\nREQ_DOMAINS:\n'
       [[ -n "$REQ_DOMAINS" ]] && printf '%s\n' "$REQ_DOMAINS"
     fi
