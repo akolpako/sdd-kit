@@ -1,4 +1,6 @@
 VERIFY=ok
 
 FAIL:
+
+ACCEPTED:
 ### exit=0

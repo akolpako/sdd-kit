@@ -13,6 +13,7 @@ d  .github/agents/
 d  .github/skills/
 d  .github/skills/angular-practices/
 d  .github/skills/confluence/
+d  .github/skills/confluence/references/
 d  .github/skills/confluence/scripts/
 d  .github/skills/java-core/
 d  .github/skills/java-jpa/
@@ -20,6 +21,7 @@ d  .github/skills/java-junit/
 d  .github/skills/java-junit/references/
 d  .github/skills/java-springboot/
 d  .github/skills/jira/
+d  .github/skills/jira/references/
 d  .github/skills/jira/scripts/
 d  .github/skills/maven-lib-source/
 d  .github/skills/maven-lib-source/scripts/

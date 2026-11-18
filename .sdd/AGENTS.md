@@ -6,7 +6,7 @@ This project uses Spec-Driven Development.
 
 ## The assignment
 
-**The prompt carries everything the role needs**: the protocols it is to follow, the paths it may read and write, and whatever was already resolved — the build command, a starting number, the records of the work. A role looks nothing up that the prompt did not name, and reads nothing in a folder the prompt did not name.
+**The prompt carries everything the role needs** — or the file it points at, read whole before anything else: the protocols it is to follow, the paths it may read and write, and whatever was already resolved — the build command, a starting number, the records of the work. A role looks nothing up that the prompt did not name, and reads nothing in a folder the prompt did not name.
 
 What a role changed is read from the working tree, never from its prose.
 
@@ -23,6 +23,8 @@ The `jira` and `confluence` skills' scripts take their tokens from the files pas
 **Publishing is the human's call.** `jira-publish.sh` and `confluence-publish.sh` run with `--yes` only after the human has seen the dry run and said yes in the session; a role never passes `--yes`.
 
 Whatever communication style the session is set to, anything written to `_docs/**` is normal prose.
+
+**A file under `_docs/` is changed by editing the file itself** or by a script the assignment names — never by a program of your own run in a shell (`python3`, `sed -i`, a redirect): in a session nobody watches, such a call waits for a permission nobody grants.
 
 ## Instructions conflicts
 

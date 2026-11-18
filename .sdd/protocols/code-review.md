@@ -8,10 +8,10 @@ How a change set is reviewed against its specification on this project. **Which*
 
 - Load every installed skill whose description matches what the diff touches. Report a finding only when the code violates the source that wins the precedence order.
 - Read `new-requirements.md`, `design.md`, `tasks.md` from the feature's `_docs/` folder, and `code-style.md` and the architecture baseline from `_docs/`. The baseline is entered through the file the assignment names — `_docs/architecture.index.md`, whose table says which section file holds which topic, or `_docs/architecture.md`; read the sections this review touches, not all of them. It is the architectural yardstick the design does not repeat; a deviation from it is a finding.
-- Use the review set handed over with the assignment — `BASE`, `ROOT`, the `DIFF` command, and the untracked files — never a detection of your own. Only if it was not handed over, run `.sdd/scripts/review-set.sh` and say in the report that the base was self-detected.
-- Run the `DIFF` command and read its output; a large one is sliced through a pipe and re-run for a second look. Write no scratch file, and least of all outside the project.
+- Use the review set handed over with the assignment — `BASE`, `ROOT`, the `DIFF` command, the files of the diff with their line counts, the lock files left out, the untracked files, and the files that were dirty before the feature started — never a detection of your own.
+- Classify the set (§2) from the line counts before reading any diff. Then read it file by file — `DIFF_FILE` with the path after it — in the order the passes need them, leaving out what §2 excludes; the whole `DIFF` is for a set small enough to read at once. Write no scratch file, and least of all outside the project.
 - Read every untracked file in full — a new file appears in no diff.
-- Stop and report if a spec file is missing or the review set is empty.
+- A spec file the assignment names that you cannot read is reported, never assumed away.
 
 ## 2. Classify the Review Set
 
@@ -20,8 +20,8 @@ Before a single pass of §3, decide which of these the review set is. The class 
 | Review set | What the review does |
 |------------|----------------------|
 | **Empty or trivial** — whitespace, reformatting, comment reflow, version bumps with no behaviour behind them | Report "no substantive changes" and stop; never invent findings to fill a report. |
-| **Large** — more than ~6000 changed lines | Business logic and security first, the rest as far as it goes. Say that the review was truncated by priority, and name what was left unreviewed. |
-| **Binary or generated files** — lock files, build output, minified bundles, generated clients, snapshots | Excluded from the passes; list them so nobody assumes they were read. Review the generator's input instead when it is in the set. |
+| **Large** — more than ~6000 changed lines, added and deleted counted from the list of files | Business logic and security first, the rest as far as it goes. Say that the review was truncated by priority, and name what was left unreviewed. |
+| **Binary or generated files** — lock files, build output, minified bundles, generated clients, snapshots | Excluded from the passes, and their diff is not read — told by the list of files, not after reading. List them, the lock files the assignment left out included, so nobody assumes they were read. Review the generator's input instead when it is in the set. |
 | **Deletions only** | What the deletion left behind: callers of the removed code, dead code it orphaned, tests still asserting behaviour that no longer exists, config and docs still naming it. |
 | **Tests only** | The assertions themselves: do they assert the behaviour or only run it, are they isolated, are they deterministic. A test that passes for a reason the requirement does not name is a finding. |
 | **Configuration only** | Secrets, parity between environments, feature-flag defaults, and the path where the new setting is absent. |
@@ -41,11 +41,13 @@ Six passes over the diff, in this order:
 5. **Testing.**
 6. **Style** — `code-style.md`.
 
-Running the project's own tests is part of the testing pass — often the only way to tell a test that asserts an outcome from one that merely runs the code. Do not start the application: a server left running outlives the review and belongs to nobody.
+Running the project's own tests is part of the testing pass — often the only way to tell a test that asserts an outcome from one that merely runs the code. They are run with the build command the assignment names and with no command of your own, through `.sdd/scripts/build-run.sh <stack>` with the stack word of its line — never typed out. It answers `BUILD=green` or `red` and keeps the build's output in the file its `LOG=` names; on red it prints the last lines, and the file is read further only when they do not show the cause. An assignment that names none gets no test run, and the report says the tests were not run. Do not start the application: a server left running outlives the review and belongs to nobody.
 
 ## 4. Issue Reporting
 
 Severity — Critical, Major, Minor, Suggestion — decides the sort order, the reporting cap, and the verdict of §6.
+
+A `TODO Code Review:` comment in the code is a finding an earlier review deferred, with the human's agreement. It is not reported again — not as a finding, not under another severity — and its absence of a fix is not a defect of this change set.
 
 Report each issue with its **severity**, **category** (Security / Performance / Quality / Spec Deviation / Style), **location** (file and line), **description**, and **recommendation**.
 
@@ -72,8 +74,8 @@ The report closes with one verdict and one line naming what decided it. It follo
 | Verdict | When |
 |---------|------|
 | **APPROVED** | No Critical and no Major findings |
-| **APPROVED WITH MINOR ISSUES** | No Critical findings; the Major ones are listed and named in the verdict line |
-| **BLOCKED** | Any Critical finding, or a red build or red tests, or a secret in the code |
+| **APPROVED WITH MINOR ISSUES** | No Critical findings and at least one Major; every Major is named in the verdict line. The name is the format's: Major findings are what this verdict is for |
+| **BLOCKED** | Any Critical finding, or tests the review ran that came back red, or a secret in the code |
 
 - The verdict describes the review set as it stands: `BLOCKED` says the code is not mergeable as it is.
 - A truncated review (§2) says so in the verdict.
@@ -90,5 +92,3 @@ The report closes with one verdict and one line naming what decided it. It follo
 The other properties of the frontmatter and the last section, `## Older TODO Code Review markers`, are filled in outside this assignment: leave them exactly as they stand.
 
 Then return a summary, not the report again: the verdict and the line that decided it, the number of findings per severity, the `N more findings` line when there is one, and the gaps.
-
-An assignment that names no file for the report gets it returned in one piece instead: the class of the review set, the issue list within its cap, the coverage rows, and the verdict.

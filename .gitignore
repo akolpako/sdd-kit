@@ -3,6 +3,8 @@ settings.local.json
 .DS_Store
 installed-repos.txt
 .sdd/log/
+.sdd/build/
+.sdd/run/
 .sdd/sdd.conf
 .venv/
 /.claude/skills/

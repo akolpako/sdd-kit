@@ -14,7 +14,6 @@ Creates the entry point of a feature: `_docs/<FeatureName>/raw.md`. The descript
 - **Reads:**
   - `.sdd/protocols/orchestration.md`
   - the output of `.sdd/scripts/gate.sh new`
-  - `.sdd/templates/raw.md`, for the wording of the questions
 - **Writes,** and nothing else:
   - `_docs/<FeatureName>/raw.md`
   - `_docs/<FeatureName>/attachments/`, on the Jira branch — what the issue description points at
@@ -53,7 +52,7 @@ Every step is the orchestrator's own.
    - anything in the script's `NOTES:` — an attachment that could not be fetched, an empty description, an attachment left in Jira
    - then: read `raw.md`, fill in `## Known constraints` and `## Out of scope`, and run `/sdd-specify ABC-12345`
 
-A redirect, a rejected token or a missing issue is the human's call, not something to retry differently (`.sdd/AGENTS.md`): report the script's `ERROR=` and `hint:` lines as they are.
+A redirect, a rejected token or a missing issue is the human's call, not something to retry differently — a script that fails is reported, never worked around: report the script's `ERROR=` and `hint:` lines as they are.
 
 ## Process — a feature filled in by hand
 
@@ -61,11 +60,11 @@ Every step is the orchestrator's own.
 
 1. **Gate:** run `.sdd/scripts/gate.sh new <FeatureName>`. The name, the existing folders and `raw.md` are all judged there. `GATE=ok` creates.
 
-2. **Create `raw.md`:** run `.sdd/scripts/spec-edit.sh scaffold feature <FeatureName>`. It prints `RAW=` — the file every step below writes into.
+2. **Create `raw.md`:** run `.sdd/scripts/spec-edit.sh scaffold feature <FeatureName> --hints`. It prints `RAW=` — the file every step below writes into — and `HINTS:`, one `<heading>|<hint>` line per section: what each section asks for.
 
 3. **Offer to fill it in:** ask the human whether to fill the description in now or to edit the file themselves — two options to choose between.
-   - Filling it in now: ask about `## Problem`, `## Users`, `## What the feature does`, `## Out of scope` — in that order, phrasing each question from that section's hint comment in the template. These four have nothing to choose between: each is asked as plain prose.
-   - Each answer is written as it arrives: run `.sdd/scripts/spec-edit.sh section <RAW> <heading> <the human's words>` — their own words, unedited, never paraphrased into requirement language.
+   - Filling it in now: ask about `## Problem`, `## Users`, `## What the feature does`, `## Out of scope` — in that order, phrasing each question from that section's `HINTS:` line. These four have nothing to choose between: each is asked as plain prose.
+   - Each answer is written as it arrives: run `.sdd/scripts/spec-edit.sh section <RAW> <heading> -` with the human's words on stdin — their own words, unedited, never paraphrased into requirement language.
    - `## Known constraints` and `## Open questions` are not asked about.
    - A skipped answer is the same call with no text: the section keeps its hint.
 

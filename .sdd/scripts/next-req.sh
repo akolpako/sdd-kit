@@ -48,6 +48,11 @@
 #                       where the undomained sequence is written `-` and COUNT
 #                       is that domain's entries alone
 #   DUPLICATES:         every id carried by more than one entry, one per line
+#   COLLISIONS:         every id two or more features declare, one per line:
+#                       <REQ-…>|<Feature>,<Feature> — the trace of two branches
+#                       handed one number. Nothing here prevents it across
+#                       branches; it is reported so that no promotion writes
+#                       one feature's requirement over the other's
 #   NOTES:              what a reader has to know about these files
 #
 # A domain is in use when an entry, a declaration or a marker names it, so a
@@ -61,8 +66,9 @@
 # draft, active, superseded — hold their number, so all of them count. A
 # declaration is a `### REQ-### — ...` heading of `.sdd/templates/new-requirements.md`.
 #
-# DUPLICATES: is the compilation's alone: two features declaring one number is a
-# collision this script exists to prevent, not a state it reports.
+# DUPLICATES: is the compilation's alone. Two features declaring one number is
+# what NEXT exists to prevent, but two branches specified side by side are each
+# handed the same NEXT, and after the merge both declare it — COLLISIONS: says so.
 #
 # The candidate those three sources give is checked once more, against every id
 # the specs mention outside their comments — a `Requires: REQ-014` of a tasks
@@ -78,9 +84,10 @@
 #             and the ids are in TAKEN.
 
 set -uo pipefail
-[[ -r "$(dirname "$0")/lib/log.sh" ]] && . "$(dirname "$0")/lib/log.sh"
+SDD_HERE="${0%/*}"; [[ "$SDD_HERE" == "$0" ]] && SDD_HERE="."
+[[ -r "$SDD_HERE/lib/log.sh" ]] && . "$SDD_HERE/lib/log.sh"
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$SDD_HERE" && pwd)"
 if [[ ! -r "$SCRIPT_DIR/lib/format.sh" ]]; then
   printf 'ERROR=missing: %s/lib/format.sh\n' "$SCRIPT_DIR" >&2
   exit 1
@@ -97,7 +104,8 @@ fi
 # this does not accept is a name no entry could carry, and answering with a
 # number under it would reserve nothing.
 DOMAIN="${2:-}"
-if [[ -n "$DOMAIN" ]] && ! printf '%s' "$DOMAIN" | grep -Eq '^[A-Z][A-Z0-9]*(-[A-Z][A-Z0-9]*)*$'; then
+DOMAIN_RE='^[A-Z][A-Z0-9]*(-[A-Z][A-Z0-9]*)*$'
+if [[ -n "$DOMAIN" && ! "$DOMAIN" =~ $DOMAIN_RE ]]; then
   printf 'ERROR=not a domain: %s — uppercase, starting with a letter, as in ACC\n' "$DOMAIN" >&2
   exit 1
 fi
@@ -130,6 +138,7 @@ done < <(md_req_ids "$FILE")
 
 # Every feature is read, not just the one a caller is working on: the number
 # this prints has to be free of all of them.
+DECL_PAIRS=""
 for d in "$ROOT_DIR"/_docs/*/; do
   [[ -d "$d" ]] || continue
   f="$d/new-requirements.md"
@@ -138,8 +147,16 @@ for d in "$ROOT_DIR"/_docs/*/; do
   while IFS= read -r id; do
     [[ -n "$id" ]] || continue
     add "D $(md_req_domain "$id")|$(md_req_number "$id")|$folder"
+    DECL_PAIRS="$DECL_PAIRS$id|$folder
+"
   done < <(md_req_declared "$f")
 done
+COLLISIONS="$(printf '%s' "$DECL_PAIRS" | LC_ALL=C sort -u | awk -F'|' '
+  NF < 2 { next }
+  $1 != id { if (n > 1) print id "|" who; id = $1; who = $2; n = 1; next }
+  { who = who "," $2; n++ }
+  END { if (n > 1) print id "|" who }
+')"
 
 while IFS= read -r id; do
   [[ -n "$id" ]] || continue
@@ -230,13 +247,21 @@ id_of() { [[ -z "$2" ]] && return 0; md_req_id "$(dom_of "$1")" "$2"; }
 # is the number being handed out rather than a use of it.
 SCAN_LIMIT=5
 
+# One awk over every file rather than two programs per file: the scanner resets
+# its comment state at each file's first line.
 mentioned_ids() {
-  local f
+  local f files=()
   [[ -d "$ROOT_DIR/_docs" ]] || return 0
   while IFS= read -r f; do
-    [[ -r "$f" ]] || continue
-    md_uncomment "$f" | grep -oE "$MD_REQ_RE"
-  done < <(find "$ROOT_DIR/_docs" -type f -name '*.md' 2>/dev/null | sort) | sort -u
+    [[ -r "$f" ]] && files+=("$f")
+  done < <(find "$ROOT_DIR/_docs" -type f -name '*.md' 2>/dev/null | sort)
+  (( ${#files[@]} > 0 )) || return 0
+  awk "$MD_AWK_STRIP"'
+    { s = $0
+      while (match(s, /REQ-([A-Z][A-Z0-9]*-)*[0-9]+/)) {
+        print substr(s, RSTART, RLENGTH); s = substr(s, RSTART + RLENGTH)
+      }
+    }' "${files[@]}" | sort -u
 }
 
 MENTIONED="$(mentioned_ids)"
@@ -252,7 +277,7 @@ while IFS='|' read -r key n src counter highest decl declin cnt; do
   tries=0; taken=""
   while (( tries < SCAN_LIMIT )); do
     id="$(md_req_id "$dom" "$n")"
-    printf '%s\n' "$MENTIONED" | grep -qx "$id" || break
+    [[ $'\n'"$MENTIONED"$'\n' == *$'\n'"$id"$'\n'* ]] || break
     taken="${taken:+$taken }$id"
     n=$(( n + 1 )); tries=$(( tries + 1 ))
   done
@@ -343,6 +368,9 @@ EOF
 
 printf '\nDUPLICATES:\n'
 for d in ${DUPLICATES[@]+"${DUPLICATES[@]}"}; do printf '%s\n' "$d"; done
+
+printf '\nCOLLISIONS:\n'
+[[ -n "$COLLISIONS" ]] && printf '%s\n' "$COLLISIONS"
 
 printf '\nNOTES:\n'
 for n in ${NOTES[@]+"${NOTES[@]}"}; do printf '%s\n' "$n"; done

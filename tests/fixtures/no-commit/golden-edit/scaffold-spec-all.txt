@@ -10,7 +10,7 @@ _docs/Cart/tasks.md
 diff -ru -x .git <tmp>/no-commit/_docs/Cart/design.md <tmp>/edit/_docs/Cart/design.md
 --- <tmp>/no-commit/_docs/Cart/design.md
 +++ <tmp>/edit/_docs/Cart/design.md
-@@ -1,7 +1,107 @@
+@@ -1,7 +1,93 @@
 +---
 +type: design
 +feature: Cart
@@ -25,20 +25,6 @@ diff -ru -x .git <tmp>/no-commit/_docs/Cart/design.md <tmp>/edit/_docs/Cart/desi
 +<!-- The `status` property above is `draft` or `ready` — the only record on
 +disk of whether the spec was reviewed. -->
  
-+<!-- A section this feature does not touch is deleted, not filled with an
-+example or a placeholder. A section the feature is bound by but does not
-+change is one line pointing at the architecture baseline — the section file, or
-+the `## ` section, that holds it — never a retelling of it. -->
-+
-+<!-- Budget — the size of this file follows the size of the feature, counted
-+in the tasks of `tasks.md`:
-+  * 5 tasks or fewer — about 150 lines, one diagram;
-+  * 6 to 15 tasks — about 300 lines;
-+  * more — no ceiling, but every diagram earns its place.
-+A diagram, a section, or an assumption written only to fill the template is
-+waste: the file is read again by every role that implements or reviews the
-+feature. -->
-+
  ## Overview
  
 -A cart service over a cart table, reached through one REST controller.
@@ -123,7 +109,7 @@ diff -ru -x .git <tmp>/no-commit/_docs/Cart/design.md <tmp>/edit/_docs/Cart/desi
 diff -ru -x .git <tmp>/no-commit/_docs/Cart/new-requirements.md <tmp>/edit/_docs/Cart/new-requirements.md
 --- <tmp>/no-commit/_docs/Cart/new-requirements.md
 +++ <tmp>/edit/_docs/Cart/new-requirements.md
-@@ -1,15 +1,68 @@
+@@ -1,15 +1,57 @@
 +---
 +type: requirements
 +feature: Cart
@@ -137,66 +123,55 @@ diff -ru -x .git <tmp>/no-commit/_docs/Cart/new-requirements.md <tmp>/edit/_docs
 -> Status: ready
 +<!-- The `status` property above is `draft` or `ready` — the only record on
 +disk of whether the spec was reviewed. -->
- 
++
 +## Overview
 +
 +<!-- What this feature is for, in two or three sentences: the need it answers
 +and whose it is. Detail belongs in the requirements below, not here. -->
-+
+ 
  ## Requirements
  
 -### REQ-002 — Cart holds items
 +<!-- Each requirement follows this structure:
- 
--A shopper keeps picked items until checkout.
++
 +### REQ-### — <short title>
 +- **Description:** <what is required, from the business/user perspective> ^req-###
 +- **Conditions of satisfaction:**
 +  - <happy path: given <state>, when <action>, then <observable outcome>>
 +  - Error: when <invalid input or failure>, then <error response>
 +  - Edge: when <boundary case>, then <expected behaviour>
- 
--- Error: an item that is out of stock is refused.
++
 +A requirement that rewords or replaces an entry `_docs/requirements.md` already
 +holds says so in one line directly under its heading — one of the two, never
 +both, and neither when the requirement is simply new:
- 
--### REQ-003 — Cart totals
++
 +### REQ-### — <short title>
 +- **Refines:** [REQ-NNN](../requirements.md#^req-nnn)
 +- **Description:** …
- 
--A cart shows the sum of its items.
++
 +### REQ-### — <short title>
 +- **Supersedes:** [REQ-NNN](../requirements.md#^req-nnn)
 +- **Description:** …
 +
 +`Refines` — the existing entry keeps its number and takes this wording.
 +`Supersedes` — the existing entry is retired and this requirement stands in its
-+place under its own number. The line is read by the engine: it is what
-+/sdd-actualize acts on.
-+
-+Requirements describe *what* and *why*, never *how*.
-+One behaviour per condition — "and" inside a condition means it should be split.
-+At least two conditions per requirement, one of them an `Error:` condition.
-+
-+The `^req-###` at the end of the description line is the requirement's anchor,
-+the id in lower case — `REQ-ACC-003` gives `^req-acc-003`. It is what
-+`design.md` and `tasks.md` link to, so it is written even where nothing points
-+at it yet. A term this feature defines is marked ==like this== where it is
-+defined, once, and used plainly everywhere after.
++place under its own number.
 +-->
 +
 +## Assumptions
-+
+ 
+-A shopper keeps picked items until checkout.
 +<!-- Everything decided without confirmation, one line each — format in
 +`.sdd/protocols/spec-modes.md`. -->
-+
+ 
+-- Error: an item that is out of stock is refused.
 +## Open Questions
-+
+ 
+-### REQ-003 — Cart totals
 +<!-- Points only the human can settle, one line each — see
 +`.sdd/protocols/spec-modes.md`. -->
-+
+ 
+-A cart shows the sum of its items.
 +## Out of Scope
 diff -ru -x .git <tmp>/no-commit/_docs/Cart/tasks.md <tmp>/edit/_docs/Cart/tasks.md
 --- <tmp>/no-commit/_docs/Cart/tasks.md
@@ -228,29 +203,32 @@ diff -ru -x .git <tmp>/no-commit/_docs/Cart/tasks.md <tmp>/edit/_docs/Cart/tasks
 -  - **Requires:** REQ-002
 -  - **Type:** backend
 -  - **Description:** The cart table, its entity, and the repository over it.
-+<!-- Each task follows this structure:
- 
+-
 -- [x] **TASK-002** — Add and remove items
 -  - **Requires:** REQ-002
 -  - **Type:** backend
 -  - **Description:** The service methods behind the two endpoints.
-+- [ ] **TASK-001** — <short title>
-+  - **Requires:** [REQ-001](new-requirements.md#^req-001), [REQ-003](new-requirements.md#^req-003)
-+  - **Type:** backend | frontend
-+  - **Description:** <what to implement, technical details, acceptance criteria>
- 
+-
 -- [ ] **TASK-003** — Cart totals
 -  - **Requires:** REQ-003
 -  - **Type:** backend
 -  - **Description:** The sum of the items, refreshed on every change.
-+The order of the list is the order of execution. A requirement is written as a
-+link to its anchor in `new-requirements.md` — the id itself stays in the link
-+text, so a reader with no vault open still reads `REQ-001`.
- 
+-
 -- [ ] **TASK-004** — Cart REST endpoints
 -  - **Requires:** REQ-002, REQ-003
 -  - **Type:** backend
 -  - **Description:** The controller over the service methods.
++<!-- Each task follows this structure:
++
++- [ ] **TASK-001** — <short title>
++  - **Requires:** [REQ-001](new-requirements.md#^req-001), [REQ-003](new-requirements.md#^req-003)
++  - **Type:** backend | frontend
++  - **Description:** <what to implement, technical details, acceptance criteria>
++
++The order of the list is the order of execution. A requirement is written as a
++link to its anchor in `new-requirements.md` — the id itself stays in the link
++text, so a reader with no vault open still reads `REQ-001`.
++
 +A done task is `- [x]`. A blocked task stays unchecked, keeps its ID and its
 +title, and carries the reason at the end of the line:
 +

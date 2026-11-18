@@ -23,7 +23,10 @@
 #                                  a blank one is skipped by both
 #   md_field_set <file> <key> <v>  the file with that line rewritten, to stdout,
 #                                  in the form the line already had
-#   md_req_is_id <text>            true when it is a requirement id
+#   md_field_put <file> <key> <v> <anchor>
+#                                  the same, inserting the field under the
+#                                  <anchor> field's line when it is not there
+#   md_req_is_id <text>           true when it is a requirement id
 #   md_req_domain <REQ-…>          its domain, empty for an undomained id
 #   md_req_number <REQ-…>          its number, as written
 #   md_req_id <domain> <n>         the id those two make, zero-padded to three
@@ -35,6 +38,10 @@
 #   md_req_relations <file>       one record per requirement it declares:
 #                                  `<REQ-…>|new|`, `<REQ-…>|refines|<REQ-…>`
 #                                  or `<REQ-…>|supersedes|<REQ-…>`
+#   md_unpromoted <compilation> <new-requirements> <feature>
+#                                  one record per requirement the feature
+#                                  declares that the compilation does not hold
+#                                  as declared: `<REQ>|<reason>|<detail>`
 #   md_counter <file> [<domain>]   REQ-… the `<!-- Next free number: -->`
 #                                  marker of that domain says; empty when there
 #                                  is none. The default domain is the empty one
@@ -45,8 +52,19 @@
 #   md_untouched <file> <tmpl>     true when the file holds nothing outside
 #                                  what its template shipped with — the
 #                                  scaffold, copied and never written into
+#   md_findings <file>             one record per finding of a review.md, in
+#                                  file order: `F-##|severity|category|file|line`,
+#                                  `-` for a part the finding does not give
+#   md_features <specs>            the feature folders under it, one per line
+#   md_feature_folder <specs> <name>
+#                                  the folder under <specs> the name is on disk:
+#                                  itself, else the one differing in case alone,
+#                                  else the name as given
+#   md_start_commit <file>         the commit of a feature's starting point,
+#   md_start_dirty <file>          and the paths that were dirty at it — the
+#                                  file is `_docs/<Feature>/$MD_START_FILE`
 #
-# The two `_set` readers write nothing: they print, and the caller decides
+# The `_set` and `_put` readers write nothing: they print, and the caller decides
 # whether the file is replaced.
 #
 # Line numbers are the numbers of the file itself: the scanner cuts the comment
@@ -99,8 +117,11 @@ function md_is_req_heading(s) { return s ~ /^#+[[:space:]]*REQ-([A-Z][A-Z0-9]*-)
 #
 # An argument that is not an id at all comes back empty from the first two, and
 # the caller that cares checks with `md_req_is_id`.
+# A bash match rather than grep: this runs once per id, and starting a program
+# per call was most of what reading a project cost.
+MD_REQ_RE_WHOLE="^$MD_REQ_RE\$"
 md_req_is_id() {
-  printf '%s' "${1:-}" | grep -Eq "^$MD_REQ_RE\$"
+  [[ "${1:-}" =~ $MD_REQ_RE_WHOLE ]]
 }
 
 md_req_domain() {
@@ -139,33 +160,49 @@ md_req_id() {
 # One scanner serves both uses — `probe=1` asks it whether a comment was left
 # open at EOF instead of printing, because a stray `<!--` makes everything after
 # it invisible to every parser above.
-MD_AWK_UNCOMMENT='
-{
-  rest = $0; out = ""
+#
+# The scanner is a function, so a reader runs it as the first rule of its own
+# program — one awk per read, where `md_uncomment | awk` started two. The state
+# is reset per file, so one program can read several.
+MD_AWK_STRIP='
+function md_strip(s,   rest, out, p) {
+  rest = s; out = ""
   while (rest != "") {
-    if (incomment) {
+    if (md_incomment) {
       p = index(rest, "-->")
       if (p == 0) break
-      rest = substr(rest, p + 3); incomment = 0
+      rest = substr(rest, p + 3); md_incomment = 0
     } else {
       p = index(rest, "<!--")
       if (p == 0) { out = out rest; break }
-      out = out substr(rest, 1, p - 1); rest = substr(rest, p + 4); incomment = 1
+      out = out substr(rest, 1, p - 1); rest = substr(rest, p + 4); md_incomment = 1
     }
   }
-  if (!probe) print out
+  return out
 }
-END { if (probe && incomment) print "open" }
+FNR == 1 { md_incomment = 0 }
+{ $0 = md_strip($0) }
 '
 
 md_uncomment() {
   [[ -f "$1" ]] || return 0
-  awk -v probe=0 "$MD_AWK_UNCOMMENT" "$1"
+  awk "$MD_AWK_STRIP"'{ print }' "$1"
+}
+
+# `md_uncomment <file> | awk [opts] <program>` in one program: the program sees
+# every line with its comment text cut out, and the line numbers of the file.
+# Usage: md_awk <file> <program> [awk options ...]. A missing file prints
+# nothing, as md_uncomment does.
+md_awk() {
+  local file="$1" prog="$2"
+  shift 2
+  [[ -f "$file" ]] || return 0
+  awk "$@" "$MD_AWK_STRIP$prog" "$file"
 }
 
 md_comment_open() {
   [[ -f "$1" ]] || return 1
-  [[ -n "$(awk -v probe=1 "$MD_AWK_UNCOMMENT" "$1")" ]]
+  [[ -n "$(awk "$MD_AWK_STRIP"'END { if (md_incomment) print "open" }' "$1")" ]]
 }
 
 # ── The fields of a document ──────────────────────────────────────
@@ -202,6 +239,7 @@ function md_value(s,   v) {
   sub(/[[:space:]]+$/, "", v)
   return md_unquote(v)
 }
+BEGIN { k = tolower(k) }
 NR == 1 && /^---[[:space:]]*$/ { fm = 1; next }
 fm && /^(---|\.\.\.)[[:space:]]*$/ { fm = 0; next }
 '
@@ -211,7 +249,7 @@ fm && /^(---|\.\.\.)[[:space:]]*$/ { fm = 0; next }
 # piece. A quoted YAML value comes back without its quotes: a value carrying a
 # colon has to be quoted, and the quotes are the format's, not the value's.
 md_field() {
-  md_uncomment "$1" | awk -v k="$(printf '%s' "$2" | tr '[:upper:]' '[:lower:]')" "$MD_AWK_FIELD"'
+  md_awk "$1" "$MD_AWK_FIELD"'
     fm && tolower($0) ~ "^" k "[[:space:]]*:" {
       v = md_value($0)
       if (v != "") { print v; exit }
@@ -220,23 +258,32 @@ md_field() {
       v = md_value($0)
       if (v != "") { print v; exit }
     }
-  '
+  ' -v k="$2"
 }
 
 # The `status` field of a document, as the first word of its value.
 # `absent` when the document carries none.
 md_status() {
-  local v w
+  local w
   [[ -f "$1" ]] || { printf 'absent'; return 0; }
-  v="$(md_field "$1" status)"
-  w="$(printf '%s' "$v" | awk '
-    {
-      split($0, a, /[[:space:]]+/)
+  # The field and its first word in one program: md_field's rules, then the
+  # word taken off the value it would have printed.
+  w="$(md_awk "$1" "$MD_AWK_FIELD"'
+    function first_word(v,   a, w) {
+      split(v, a, /[[:space:]]+/)
       w = a[1]
       gsub(/^[^A-Za-z]+|[^A-Za-z]+$/, "", w)
-      if (w != "") { print tolower(w); exit }
+      return tolower(w)
     }
-  ')"
+    fm && tolower($0) ~ "^" k "[[:space:]]*:" {
+      v = md_value($0)
+      if (v != "") { print first_word(v); exit }
+    }
+    !fm && tolower($0) ~ "^>[[:space:]]*" k "[[:space:]]*:" {
+      v = md_value($0)
+      if (v != "") { print first_word(v); exit }
+    }
+  ' -v k=status)"
   [[ -z "$w" ]] && w="absent"
   printf '%s' "$w"
 }
@@ -251,14 +298,14 @@ md_status() {
 # has no line number at all, so `md_field_set` fails and the caller says so —
 # the value is not inserted where the reader would not have found it.
 md_field_line() {
-  md_uncomment "$1" | awk -v k="$(printf '%s' "$2" | tr '[:upper:]' '[:lower:]')" "$MD_AWK_FIELD"'
+  md_awk "$1" "$MD_AWK_FIELD"'
     fm && tolower($0) ~ "^" k "[[:space:]]*:" {
       if (md_value($0) != "") { print NR; exit }
     }
     !fm && tolower($0) ~ "^>[[:space:]]*" k "[[:space:]]*:" {
       if (md_value($0) != "") { print NR; exit }
     }
-  '
+  ' -v k="$2"
 }
 
 # Only the line the key names changes, and only the first one: the value is
@@ -291,15 +338,197 @@ md_field_set() {
   ' "$1"
 }
 
+# A field the document may not carry yet: rewritten where it is, otherwise
+# inserted as the line after the <anchor> field, in the form that line has — a
+# frontmatter property `key: value`, or `> Key: value` in a document written
+# before frontmatter. Fails, printing nothing, when there is no anchor line to
+# put it under: a field is never added where the format has no field block.
+md_field_put() {
+  local n
+  if [[ -n "$(md_field_line "$1" "$2")" ]]; then
+    md_field_set "$1" "$2" "$3"
+    return
+  fi
+  n="$(md_field_line "$1" "$4")"
+  [[ -n "$n" ]] || return 1
+  MD_KEY="$2" MD_VAL="$3" awk -v n="$n" '
+    { print }
+    NR == n {
+      k = tolower(ENVIRON["MD_KEY"])
+      if ($0 ~ /^>/) printf "> %s%s: %s\n", toupper(substr(k, 1, 1)), substr(k, 2), ENVIRON["MD_VAL"]
+      else           printf "%s: %s\n", k, ENVIRON["MD_VAL"]
+    }
+  ' "$1"
+}
+
 md_req_ids() {
-  md_uncomment "$1" | awk "$MD_AWK_ENTRY"'
+  md_awk "$1" "$MD_AWK_ENTRY"'
     md_is_entry($0) { print md_id($0) }
   '
 }
 
 md_req_lines() {
-  md_uncomment "$1" | awk -v want="$2" "$MD_AWK_ENTRY"'
+  md_awk "$1" "$MD_AWK_ENTRY"'
     md_is_entry($0) { if (md_id($0) == want) print NR }
+  ' -v want="$2"
+}
+
+# Why <name> cannot be a feature folder under _docs/, or nothing when it can.
+# A feature name is a path segment and nothing more: a separator, `.`/`..` or a
+# leading dot would put the files a command writes somewhere other than
+# _docs/<name>/. A trailing slash is refused rather than trimmed — the name is
+# used on disk exactly as given. `architecture` is the baseline's folder, in any
+# case: on a case-insensitive filesystem `Architecture` opens the same one.
+md_name_problem() {
+  local bad lower
+  lower="$(printf '%s' "$1" | LC_ALL=C tr 'A-Z' 'a-z')"
+  [[ "$lower" == "architecture" ]] && { printf "it is the architecture baseline's folder"; return 0; }
+  case "$1" in
+    "")       printf 'it is empty'; return 0 ;;
+    */*|*\\*) printf 'it carries a path separator'; return 0 ;;
+    .|..)     printf "it is '%s'" "$1"; return 0 ;;
+    .*)       printf 'it starts with a dot'; return 0 ;;
+  esac
+  bad="$(printf '%s' "$1" | LC_ALL=C tr -d 'A-Za-z0-9._-')"
+  [[ -z "$bad" ]] || printf "it holds '%s'" "$bad"
+}
+
+# The feature folders under <specs>, in the shell's sorted order: a glob rather
+# than find | sed | sort — dot-folders and links left out, no program started,
+# and `architecture/`, the baseline's sections, which no command takes as a
+# feature.
+md_features() {
+  local d
+  for d in "$1"/*/; do
+    d="${d%/}"
+    [[ -d "$d" && ! -L "$d" ]] || continue
+    [[ "${d##*/}" == "architecture" ]] && continue
+    printf '%s\n' "${d##*/}"
+  done
+  return 0
+}
+
+# The folder a feature name is on disk under <specs>. On a case-insensitive
+# filesystem `_docs/cart` opens `_docs/Cart`, and a step that only compared the
+# argument with itself would never notice — so the name is compared against the
+# folders actually there: the same name first, then one differing in case alone.
+# A name no folder matches comes back as given. Dot-folders and links are not
+# features. Read by the shell, no program started.
+md_feature_folder() {
+  local name found=""
+  while IFS= read -r name; do
+    [[ -n "$name" ]] || continue
+    [[ "$name" == "$2" ]] && { printf '%s' "$name"; return 0; }
+    if [[ -z "$found" ]]; then
+      shopt -s nocasematch
+      [[ "$name" == "$2" ]] && found="$name"
+      shopt -u nocasematch
+    fi
+  done <<< "$(md_features "$1")"
+  printf '%s' "${found:-$2}"
+}
+
+# Where a feature's code starts: `_docs/<Feature>/.implement-start`, written
+# once by `spec-edit.sh start` before /sdd-implement spawns its first role and
+# never rewritten, read by review-set.sh. Nothing is written into git for it —
+# the commands that took it only read. The format:
+#   COMMIT=<the commit HEAD was on>
+#   DATE=<YYYY-MM-DD>
+#
+#   DIRTY:
+#   <a path the working tree held changed or untracked at that moment>
+MD_START_FILE=".implement-start"
+md_start_commit() {
+  local line
+  [[ -f "$1" ]] || return 0
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ "$line" == COMMIT=* ]] && { printf '%s' "${line#COMMIT=}"; return 0; }
+  done < "$1"
+  return 0
+}
+md_start_dirty() {
+  local line inside=0
+  [[ -f "$1" ]] || return 0
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ "$line" == "DIRTY:" ]]; then inside=1; continue; fi
+    [[ $inside -eq 1 && -n "$line" ]] && printf '%s\n' "$line"
+  done < "$1"
+  return 0
+}
+
+# The feature an entry belongs to — the first name inside its `*(Source: …)*`,
+# as written. Empty when the compilation holds no entry with that id, or the
+# entry names no source. Whose entry it is decides whether a feature promoting
+# that number writes its own entry or someone else's.
+md_req_source() {
+  md_awk "$1" "$MD_AWK_ENTRY"'
+    md_is_entry($0) && md_id($0) == want {
+      p = index($0, "(Source:"); if (p == 0) exit
+      rest = substr($0, p + 8); q = index(rest, ")"); if (q > 0) rest = substr(rest, 1, q - 1)
+      split(rest, part, ","); src = part[1]; gsub(/^[[:space:]]+|[[:space:]]+$/, "", src)
+      print src; exit
+    }
+  ' -v want="$2"
+}
+
+# Whether a feature was promoted as it declares, in one place: the stage
+# (feature-state.sh) and the postcondition of /sdd-actualize (gate.sh --verify)
+# read it here, so the two cannot disagree about the same compilation. A record
+# per way a declared requirement is not there as declared — a replacement can
+# owe two:
+#   <REQ>|missing|             new, supersedes — no entry carries the number
+#   <REQ>|foreign|<source>     new, supersedes — the entry is another feature's
+#   <REQ>|no-target|<target>   supersedes — the replaced requirement has no entry
+#   <REQ>|unmarked|<target>    supersedes — its entry does not say
+#                              `superseded by <REQ>`
+#   <REQ>|unrefined|<target>   refines — its entry is neither this feature's nor
+#                              carries `refined by <feature>`
+# The first entry of a number is the one read, as everywhere else; sources are
+# compared as folders are, case aside. Nothing printed is a feature promoted.
+md_unpromoted() {
+  local decl
+  decl="$(md_req_relations "$2")"
+  [[ -n "$decl" ]] || return 0
+  if [[ ! -f "$1" ]]; then
+    printf '%s\n' "$decl" | awk -F'|' 'NF && $2 != "refines" { print $1 "|missing|" } NF && $2 == "refines" { print $1 "|unrefined|" $3 }'
+    return 0
+  fi
+  SDD_DECL="$decl" SDD_FEATURE="$3" md_awk "$1" "$MD_AWK_ENTRY"'
+    function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
+    BEGIN { me = tolower(ENVIRON["SDD_FEATURE"]) }
+    md_is_entry($0) {
+      id = md_id($0)
+      if (id in seen) next
+      seen[id] = 1; src[id] = ""; mine[id] = 0; sup[id] = ""
+      p = index($0, "(Source:")
+      if (p == 0) next
+      rest = substr($0, p + 8); q = index(rest, ")"); if (q > 0) rest = substr(rest, 1, q - 1)
+      n = split(rest, part, ",")
+      src[id] = trim(part[1])
+      for (i = 2; i <= n; i++) {
+        f = trim(part[i])
+        if (f ~ /^refined by /) { if (tolower(trim(substr(f, 12))) == me) mine[id] = 1 }
+        else if (f ~ /^superseded by /) sup[id] = md_id(f)
+      }
+    }
+    END {
+      n = split(ENVIRON["SDD_DECL"], rec, "\n")
+      for (i = 1; i <= n; i++) {
+        if (split(rec[i], r, "|") < 2) continue
+        d = r[1]; rel = r[2]; t = r[3]
+        if (rel == "refines") {
+          if (t == "" || !(t in seen) || (tolower(src[t]) != me && !mine[t])) print d "|unrefined|" t
+          continue
+        }
+        # A replacement owes two things, its own entry and the mark on the
+        # one it replaced, and each missing one is a record of its own.
+        if (!(d in seen))                print d "|missing|"
+        else if (tolower(src[d]) != me)  print d "|foreign|" src[d]
+        if (rel != "supersedes")         continue
+        if (t == "" || !(t in seen))     print d "|no-target|" t
+        else if (sup[t] != d)            print d "|unmarked|" t
+      }
+    }
   '
 }
 
@@ -307,7 +536,7 @@ md_req_lines() {
 # requirements.md is written when the feature is actualized, and
 # until then this heading is the only record that the number is in use.
 md_req_declared() {
-  md_uncomment "$1" | awk "$MD_AWK_DECL"'
+  md_awk "$1" "$MD_AWK_DECL"'
     md_is_req_heading($0) { print md_id($0) }
   '
 }
@@ -329,7 +558,7 @@ md_req_declared() {
 # still holds the number, which is `md_req_declared`'s business, and nothing of
 # it is promoted.
 md_req_relations() {
-  md_uncomment "$1" | awk "$MD_AWK_DECL"'
+  md_awk "$1" "$MD_AWK_DECL"'
     function flush() { if (id != "") print id "|" rel "|" target; id = "" }
     /^##[[:space:]]/ { oos = (tolower($0) ~ /^##[[:space:]]+out of scope/) }
     md_is_req_heading($0) {
@@ -447,6 +676,96 @@ fm { next }
 # before it gets here.
 md_untouched() {
   [[ -f "$1" && -f "$2" ]] || return 1
-  [[ "$(md_uncomment "$1" | awk "$MD_AWK_SKELETON")" \
-     == "$(md_uncomment "$2" | awk "$MD_AWK_SKELETON")" ]]
+  [[ "$(md_awk "$1" "$MD_AWK_SKELETON")" == "$(md_awk "$2" "$MD_AWK_SKELETON")" ]]
+}
+
+# The hint of each `## ` section: the comment right under the heading, joined
+# into one line. Prints `<heading>|<hint>` per section that has one, in file
+# order. Read off a template, where the hint is what a section asks for — the
+# wording a command phrases its question from, without opening the file.
+md_hints() {
+  [[ -f "$1" ]] || return 0
+  awk '
+    /^## / { h = substr($0, 4); sub(/[[:space:]]+$/, "", h); under = 1; next }
+    under && !c && /^[[:space:]]*<!--/ { c = 1; t = ""; sub(/^[[:space:]]*<!--/, "") }
+    c {
+      line = $0; end = 0
+      if (index(line, "-->")) { sub(/-->.*/, "", line); end = 1 }
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+      if (line != "") t = (t == "" ? line : t " " line)
+      if (end) { print h "|" t; c = 0; under = 0 }
+      next
+    }
+    under && NF { under = 0 }
+  ' "$1"
+}
+
+# The lines of `## Open Questions` that carry an answer — `**Answer:**` on the
+# line is the whole discriminator, as the spec-modes protocol fixes it. Prints
+# their count, 0 for none or for a file that is not there. The template's
+# example lives in a comment and is cut out first.
+md_answered() {
+  local n
+  n="$(md_awk "$1" '
+    /^## / { inside = ($0 ~ /^## Open Questions[[:space:]]*$/); next }
+    inside && index($0, "**Answer:**") { n++ }
+    END { print n + 0 }')"
+  printf '%s\n' "${n:-0}"
+}
+
+# The findings of a code review, the format `.sdd/templates/review.md` fixes:
+#
+#   ### F-01 — Critical — Security
+#
+#   > [!danger] Where: `src/main/java/.../CartController.java:42`
+#   > **What:** …
+#
+# and the list form a report written before the callouts carries,
+# `- **Where:** \`path:42\``. The heading gives the number, the severity and the
+# category; the first `Where:` under it gives the place — the first backticked
+# span on that line when there is one, the rest of the line when there is not.
+# The line is the number after the last colon; a range (`:42-48`) is read as
+# its first line, which is where a marker above it belongs, and a place with no
+# number has none. A part the finding does not give comes back as `-`, never as
+# a guess: which line a finding about a whole file is about is not this
+# reader's to say.
+#
+# The template's example lives in a comment, and the comment is cut out first:
+# a fresh report has no findings.
+md_findings() {
+  md_awk "$1" '
+    function trim(s) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
+    function orno(s) { s = trim(s); return s == "" ? "-" : s }
+    function flush() {
+      if (id != "") print id "|" orno(sev) "|" orno(cat) "|" orno(file) "|" orno(line)
+      id = ""
+    }
+    /^#+[[:space:]]/ {
+      flush()
+      if (match($0, /^#+[[:space:]]+F-[0-9]+/)) {
+        head = substr($0, RSTART, RLENGTH); sub(/^#+[[:space:]]+/, "", head)
+        id = head; sev = ""; cat = ""; file = ""; line = ""; placed = 0
+        rest = substr($0, RSTART + RLENGTH)
+        gsub(/—|–/, "|", rest); gsub(/[[:space:]]-[[:space:]]/, "|", rest)
+        n = split(rest, part, "|"); k = 0
+        for (i = 1; i <= n; i++) {
+          p = trim(part[i]); if (p == "") continue
+          k++; if (k == 1) sev = p; else if (k == 2) cat = p
+        }
+      }
+      next
+    }
+    id != "" && !placed && match($0, /Where:/) {
+      placed = 1
+      where = substr($0, RSTART + RLENGTH); gsub(/\*/, "", where)
+      if (match(where, /`[^`]+`/)) where = substr(where, RSTART + 1, RLENGTH - 2)
+      where = trim(where)
+      if (match(where, /:[0-9]+([-–][0-9]+)?$/)) {
+        line = substr(where, RSTART + 1, RLENGTH - 1); sub(/[-–].*$/, "", line)
+        where = substr(where, 1, RSTART - 1)
+      }
+      file = where
+    }
+    END { flush() }
+  '
 }

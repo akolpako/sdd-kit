@@ -3,7 +3,10 @@
 #
 # Sourced, never run, and sourced before the script reads its arguments, so the
 # module sees the raw `$@`:
-#   [[ -r "$(dirname "$0")/lib/log.sh" ]] && . "$(dirname "$0")/lib/log.sh"
+#   SDD_HERE="${0%/*}"; [[ "$SDD_HERE" == "$0" ]] && SDD_HERE="."
+#   [[ -r "$SDD_HERE/lib/log.sh" ]] && . "$SDD_HERE/lib/log.sh"
+# (the directory taken off $0 by the shell: `dirname` is a program, and
+# starting one costs more than the rest of the line)
 #
 # The scripts are run by the agent, inside a host session. Their output goes
 # into a context the human never sees and which dies with the session, so a run
@@ -38,6 +41,15 @@
 # is written after its child exits. This is the mechanism, not a bug. The run id
 # is inherited through the environment and ties the records of one run together.
 #
+# A run handed `-` among its arguments reads somebody's words from stdin — the
+# text of `spec-edit.sh answer|section|compile-entry|promote`, the records of
+# `marker -`, the blocks of `spawn-prompt.sh … -`. Those words are what was
+# written, and the argv alone shows only that something was. The wrapper saves
+# stdin to a file, hands that file to the child as its stdin and logs it as a
+# `stdin:` block, capped like the streams. Only when `-` is there: any other
+# run is left reading the stdin it was given, since draining a terminal would
+# wait on a human nobody asked.
+#
 # What this module must never do: change a byte on stdout or stderr, or the exit
 # code; fail a script — every write is best-effort, and an unwritable log
 # directory is silence, not an error; detect the host; create anything when
@@ -62,8 +74,9 @@
 
 SDD_LOG_NAME="$(basename "$0")"
 
-# spawn-prompt.sh is exempt from the per-stream cap: its stdout is logged whole.
-# That output is the assignment a role received, and *the role did the wrong
+# spawn-prompt.sh is exempt from the per-stream cap: its stdout is logged whole,
+# and so is the file its PROMPT= line names, as a `prompt:` block. That text is
+# the assignment a role received, and *the role did the wrong
 # thing* is a question only the full text answers. It cannot be recovered any
 # other way — the prompt is rendered from a gate run over the tree as it stood
 # at that moment, and by the time anybody is reading the log the tree has moved
@@ -134,8 +147,8 @@ sdd_log_stream() {
 }
 
 sdd_log_record() {
-  local rc="$1" start="$2" end="$3" out="$4" err="$5"
-  shift 5
+  local rc="$1" start="$2" end="$3" out="$4" err="$5" in="$6"
+  shift 6
   local log="$SDD_LOG_DIR/sdd.log" head="$SDD_LOG_HEAD"
   case "$SDD_LOG_FULL_STDOUT" in *" $SDD_LOG_NAME "*) head=0 ;; esac
   mkdir -p "$SDD_LOG_DIR" 2>/dev/null || return 0
@@ -145,7 +158,13 @@ sdd_log_record() {
       "$(sdd_log_stamp)" "$SDD_LOG_RUN" "$rc" "$(sdd_log_dur "$start" "$end")" \
       "$SDD_LOG_NAME" "$(sdd_log_argv ${1+"$@"})"
     printf 'cwd=%s\n' "$PWD"
+    [[ -n "$in" ]] && sdd_log_stream stdin "$in" "$SDD_LOG_HEAD" "$SDD_LOG_TAIL"
     sdd_log_stream stdout "$out" "$head" "$SDD_LOG_TAIL"
+    if [[ $head -eq 0 ]]; then
+      local pf
+      pf="$(sed -n 's/^PROMPT=//p' "$out" 2>/dev/null | head -n 1)"
+      [[ -n "$pf" && -f "$pf" ]] && sdd_log_stream prompt "$pf" 0 0
+    fi
     sdd_log_stream stderr "$err" "$SDD_LOG_HEAD" "$SDD_LOG_TAIL"
     # stderr is silenced before the append, not after: a redirection bash
     # cannot open is reported on whichever stderr is current at that point,
@@ -154,57 +173,20 @@ sdd_log_record() {
   return 0
 }
 
-sdd_log_write_note() {
-  local event="$1"
-  shift
-  [[ -n "${SDD_LOG_DIR:-}" ]] || return 0
-  mkdir -p "$SDD_LOG_DIR" 2>/dev/null || return 0
-  {
-    printf '== %s run=%s note=%s %s\n' \
-      "$(sdd_log_stamp)" "${SDD_LOG_RUN:-}" "$event" "$SDD_LOG_NAME"
-    printf '%s\n' "$*" | sed 's/^/| /'
-  } 2>/dev/null >>"$SDD_LOG_DIR/sdd.log"
-  return 0
-}
-
-# What a script has to say that its raw output does not carry. Defined as a
-# no-op when logging is off, so a caller never branches on whether it is on.
-sdd_log_note() { :; }
-
 # ── The child ─────────────────────────────────────────────────────
 # The re-exec of the wrapper below, and only it. The flag is dropped from the
 # environment on the way in: the scripts this one runs are not this run, and
 # each of them wraps and logs itself.
 if [[ "${SDD_LOG_CHILD:-}" == "1" ]]; then
   unset SDD_LOG_CHILD
-  sdd_log_note() { sdd_log_write_note "$@"; }
   return 0
 fi
 
 # ── Configuration ─────────────────────────────────────────────────
-# The known keys, as written, one KEY=value per line. A strict read over a fixed
-# set: quotes are stripped, comments and blank lines skipped, everything else
-# ignored without a word.
-sdd_log_conf_read() {
-  awk '
-    { sub(/\r$/, "") }
-    /^[[:space:]]*#/ { next }
-    {
-      line = $0
-      sub(/^[[:space:]]+/, "", line)
-      sub(/[[:space:]]+$/, "", line)
-      p = index(line, "=")
-      if (p < 2) next
-      key = substr(line, 1, p - 1)
-      val = substr(line, p + 1)
-      sub(/[[:space:]]+$/, "", key)
-      sub(/^[[:space:]]+/, "", val)
-      if (key !~ /^SDD_LOG(_DIR|_MAX|_HEAD|_TAIL)?$/) next
-      gsub(/^["\047]|["\047]$/, "", val)
-      print key "=" val
-    }
-  ' "$1" 2>/dev/null
-}
+# Read by lib/conf.sh, next to this file. Behind a test: this module must not
+# fail a script, and without the parser the defaults and the environment are
+# what is left.
+[[ -r "${BASH_SOURCE[0]%/*}/conf.sh" ]] && . "${BASH_SOURCE[0]%/*}/conf.sh"
 
 sdd_log_num() {
   case "${1:-}" in
@@ -222,7 +204,7 @@ sdd_log_resolve() {
   # A run id already in the environment means an outer wrapper resolved
   # everything and exported it. The file is read once per run: a nested script
   # re-reading it could disagree with its own parent halfway through.
-  if [[ -z "${SDD_LOG_RUN:-}" && -r "$PWD/.sdd/sdd.conf" ]]; then
+  if [[ -z "${SDD_LOG_RUN:-}" && -r "$PWD/.sdd/sdd.conf" ]] && declare -F sdd_conf_read >/dev/null; then
     while IFS='=' read -r key val; do
       case "$key" in
         SDD_LOG)      c_log="$val" ;;
@@ -232,7 +214,7 @@ sdd_log_resolve() {
         SDD_LOG_TAIL) c_tail="$val" ;;
       esac
     done <<EOF
-$(sdd_log_conf_read "$PWD/.sdd/sdd.conf")
+$(sdd_conf_read "$PWD/.sdd/sdd.conf" '^SDD_LOG(_DIR|_MAX|_HEAD|_TAIL)?$')
 EOF
   fi
 
@@ -259,21 +241,33 @@ EOF
 # Returns only when it could not capture the run; the script then goes on
 # unwrapped, which is the same silence an unwritable log directory gets.
 sdd_log_wrap() {
-  local out err rc start end
+  local out err in="" a rc start end
   out="$(mktemp "${TMPDIR:-/tmp}/sdd-log-out.XXXXXX" 2>/dev/null)" || return 1
   err="$(mktemp "${TMPDIR:-/tmp}/sdd-log-err.XXXXXX" 2>/dev/null)" || { rm -f "$out"; return 1; }
+  # stdin is taken before anything else can fail: past this point the run goes
+  # on wrapped or not at all, and an unwrapped run would find stdin drained.
+  for a in ${1+"$@"}; do
+    [[ "$a" == "-" ]] || continue
+    in="$(mktemp "${TMPDIR:-/tmp}/sdd-log-in.XXXXXX" 2>/dev/null)" || { rm -f "$out" "$err"; return 1; }
+    cat >"$in"
+    break
+  done
 
   start="$(sdd_log_ms)"
-  SDD_LOG_CHILD=1 "${BASH:-bash}" "$0" ${1+"$@"} >"$out" 2>"$err"
+  if [[ -n "$in" ]]; then
+    SDD_LOG_CHILD=1 "${BASH:-bash}" "$0" ${1+"$@"} <"$in" >"$out" 2>"$err"
+  else
+    SDD_LOG_CHILD=1 "${BASH:-bash}" "$0" ${1+"$@"} >"$out" 2>"$err"
+  fi
   rc=$?
   end="$(sdd_log_ms)"
 
   cat "$out"
   cat "$err" >&2
 
-  sdd_log_record "$rc" "$start" "$end" "$out" "$err" ${1+"$@"}
+  sdd_log_record "$rc" "$start" "$end" "$out" "$err" "$in" ${1+"$@"}
 
-  rm -f "$out" "$err"
+  rm -f "$out" "$err" ${in:+"$in"}
   exit "$rc"
 }
 

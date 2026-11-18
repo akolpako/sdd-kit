@@ -33,14 +33,13 @@ Write and change client-side code, and test it.
 
 ## Self-Check
 
-Before returning. Work out from the project how lint is run, and run it as part of every verification — the last one included.
+Before returning. Run the build the assignment names as part of every verification, the last one included — lint is checked where that build runs it, never by a command I worked out myself. Where it names none, my reply says so.
 
-- [ ] Lint passes
-- [ ] Every view I changed is reachable by keyboard, its controls are labelled, and its focus state is visible
-- [ ] Text contrast holds on every view I changed
+- [ ] The build passes: compilation, lint where the build runs it, and the full test suite, not only the tests I wrote
+- [ ] Every control I added is a native element or carries a role, every input has a label tied to it, and no focus outline is removed without a visible replacement
+- [ ] Every colour I added comes from the project's theme or tokens — none hard-coded; contrast is not judged from code, so a colour with no token is named in my reply
 - [ ] Every component or service with logic I added has a test
 
 ## Skills
 
 - **Before the work starts:** look through the skills installed in this project and load each one whose description matches the work — the language, framework and test tools of the code I change, clean code, the libraries the task uses. A skill that becomes relevant mid-task is loaded then. None matching is not a blocker.
-- **Before a `.md` file is written:** an installed Obsidian Markdown skill, if there is one. Load it then, not before. A checkbox ticked in a file I was handed is not that; text written into one is.

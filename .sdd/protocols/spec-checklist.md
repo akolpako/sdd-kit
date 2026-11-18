@@ -6,7 +6,7 @@ Four passes over the spec, run before a single question is asked. Each item come
 
 1. **Completeness** — the spec says everything it must:
    - **Intent coverage comes first.** The role writing `new-requirements.md` walks `raw.md` point by point and finds, for each, either the requirement that covers it or the line in `## Out of Scope` that excludes it. A point in neither is a `FAIL`. A point that turns out to be out of scope is written into `## Out of Scope` in the human's terms, never dropped quietly.
-   - Every requirement's conditions of satisfaction meet the count and shape `.sdd/templates/new-requirements.md` fixes.
+   - Every requirement meets what `.sdd/protocols/requirements-writing.md` §4 fixes — the count and shape of its conditions included.
    - `## Out of Scope` is on the page: what the feature does not cover is stated, not implied.
    - Assumptions are on the page as `A-##` lines, and edge cases are present.
 2. **AC validation** — every condition of satisfaction, one at a time, against four properties: **testable** (a test or a manual check can decide it), **independent** (it does not lean on another condition to be understood), **unambiguous** (it has exactly one reading), **measurable** (it names a number or an observable outcome). A vague condition is rewritten when the fix is wording, and becomes a question when it needs a decision.

@@ -40,6 +40,20 @@ Every command but `/sdd-status` opens with `.sdd/scripts/gate.sh`. **Its output 
 
 A step's result is read the same way — `.sdd/scripts/gate.sh <command> <Feature> --verify`; `VERIFY=fail` relays every `FAIL:` line and stops. **Nothing is written by hand in place of what did not get written** — not a file, not a marker, not a task mark.
 
-**Before any overwrite, `.sdd/scripts/spec-edit.sh backup`.** A non-zero exit is a stop: nothing is overwritten without its copy, and no role is spawned to write it.
+**Words go to a script on stdin, never on its command line.** Whatever a human or a role wrote — an answer, a finding, the wording of an entry, the sweep of markers — is passed as `-` with a quoted here-document, whose closing word appears nowhere in the text:
 
-**The command file never reaches the role** — what the role needs is in the spawn prompt (`.sdd/AGENTS.md`). `.sdd/scripts/spawn-prompt.sh` renders it from the gate's `SPAWN:` record; relay it word for word, adding only the `KEY=value` a script could not know and editing nothing inside.
+```
+.sdd/scripts/spec-edit.sh answer <file> <line> - <<'SDD_TEXT'
+EUR and `USD`
+SDD_TEXT
+```
+
+Inside double quotes on a command line a backtick runs a command and a `$` expands, so the file gets something nobody wrote. `spawn-prompt.sh` takes such values the same way, as `KEY:` blocks after a `-` (its header comment shows the shape).
+
+**`FEEDBACK=on` from the gate means the project keeps a log of what gets in the way of the engine.** What got in the way of this command — a script that failed or printed what it could not have, two engine files asking for different things, something this file left out, something it had read that was not needed — is written there, one record per fact, naming the engine file: `.sdd/scripts/feedback.sh <script|conflict|missing|unused|skill> --by=orchestrator --command=<command> --feature=<FeatureName> -`, the remark on stdin. A record is written when the thing happens, not at the end, and a problem the run recovered from is still one: a script that exited non-zero, a role sent back to redo what its file should have told it. A record changes nothing in the run, and with nothing to say nothing is written. Without the key, no record is written at all. The roles write their own; their remarks never pass through here.
+
+**`.sdd/sdd.conf` is never read or edited by hand.** It may hold a token. The build answers go in through `.sdd/scripts/spec-edit.sh conf-set`, and every value a step needs comes out of a script.
+
+**Before any overwrite, `.sdd/scripts/spec-edit.sh backup <FeatureName>`.** A non-zero exit is a stop: nothing is overwritten without its copy, and no role is spawned to write it.
+
+**The command file never reaches the role** — what the role needs is in the spawn prompt, as the core instructions every role is loaded with say. `.sdd/scripts/spawn-prompt.sh` renders it from the gate's `SPAWN:` record into a file and prints `PASS=`: the spawn call carries that line and nothing else. What a script could not know goes into the file as an argument of `spawn-prompt.sh` — `KEY=value`, or a `KEY:` block on stdin — never as text added to the spawn call. The file is not opened, retyped or summarised here.

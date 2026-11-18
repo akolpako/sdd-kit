@@ -1,6 +1,6 @@
 ---
 name: maven-lib-source
-description: 'Reads the real source of a class from Maven dependencies, in the version the build uses. Use before stating what a dependency class or method does or whether it exists in the project''s version, and instead of digging through ~/.m2 with find, unzip, jar or javap. Maven only.'
+description: 'Reads the real source of a class from the Maven dependencies, in the version the build uses. Use before stating what a dependency class or method does or whether the project''s version has it, instead of digging through ~/.m2 with find, unzip, jar or javap.'
 ---
 
 # Maven library source

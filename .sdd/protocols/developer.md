@@ -7,7 +7,7 @@ How code is written on this project. **What** is to be built arrives with the as
 ## 1. Input
 
 - **What the prompt states is settled.** It was checked before you were called, and a settled check re-decided produces a second answer to the same question. A file the prompt names and you still cannot read is reported, never assumed away.
-- The build command arrives resolved in the prompt. Run `.sdd/scripts/build-command.sh` yourself only when the prompt carries none — two resolutions of the same project can produce two different commands.
+- The build command arrives resolved in the prompt, and it is the only one you run — through the script line the prompt gives with it, never typed out. That line answers `BUILD=green` or `red` and keeps the build's own output in the file its `LOG=` names; on red it prints the last lines of it. Read further into that file only when those lines do not show the cause. A prompt that carries no command is reported, never filled in with a command of your own — a build nobody agreed to verifies nothing.
 - Search the codebase for existing patterns before creating anything new. The existing test suite stays green, and no API breaks without a migration.
 
 ## 2. Attempt Limit

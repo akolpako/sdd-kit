@@ -43,4 +43,3 @@ Before returning:
 ## Skills
 
 - **Installed skills:** before the work starts, look through the skills installed in this project and load each one whose description matches it — requirements analysis, acceptance criteria, the domain of the feature. None matching is not a blocker.
-- **Before a `.md` file is written:** an installed Obsidian Markdown skill, if there is one. Load it then, not before.

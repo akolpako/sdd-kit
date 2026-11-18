@@ -34,12 +34,22 @@
 # recording them as a tree would record the state the defect has nothing to do
 # with.
 #
-# Usage: run.sh [--update] [<fixture> ...]
-#   no argument   every fixture
+# Usage: run.sh [--update] [--checks=<job,...>|none] [--no-fixtures] [--bash=<path>] [<fixture> ...]
+#   no argument   every check and every fixture
 #   <fixture>     the name of a directory under fixtures/
+#   --checks=     only these property checks — the names of the queue below
+#                 (`collisions`, `stacks`, `jira-publish`, …); `none` runs no
+#                 check. A name the queue does not hold is an error.
+#   --no-fixtures no fixture at all, only the checks
+#   --bash=       the bash every script under test runs on — `--bash=/bin/bash`
+#                 is macOS's 3.2, the floor the engine keeps to. The runner
+#                 itself stays on the bash that started it: under 3.2 it would
+#                 lose `wait -n` and run every job one after another.
 #   --update      overwrite the golden files with what the scripts print now.
 #                 A golden is a decision: run this only after reading the diff
 #                 the plain run printed, never to make a red run green.
+#   A narrowed run is for the edit at hand; the whole suite still runs before
+#   a set of changes is done.
 #
 # The environment it reads:
 #   SDD_TEST_JOBS    how many checks and fixtures run at once. Default: the
@@ -112,15 +122,15 @@ specify-requirements|specify|requirements|KEPT=none
 specify-design-tasks|specify|design+tasks|KEPT=new-requirements.md
 review-requirements|review|requirements|
 review-design-tasks|review|design+tasks|
-implement-backend|implement|backend|
-implement-frontend|implement|frontend|
+implement-backend|implement|backend|HELD=none
+implement-frontend|implement|frontend|HELD=TASK-009
 code-review-review-set|code-review|review-set|
-code-fix-backend|code-fix|findings-backend|TRIAGE=Critical and Major fixed, the rest gets a marker.;FINDINGS=F-01 CartService.java:42 — the total ignores the discount.\nF-02 CartService.java:57 — no test for an empty cart.
-code-fix-frontend|code-fix|findings-frontend|TRIAGE=Fix everything.;FINDINGS=F-03 cart.component.ts:12 — the total is formatted client-side.
+code-fix-backend|code-fix|findings-backend|TRIAGE=Critical and Major fixed, the rest gets a marker.;FINDINGS=F-01\nF-02
+code-fix-frontend|code-fix|findings-frontend|TRIAGE=Fix everything.;FINDINGS=F-03
 actualize-baseline|actualize|baseline-from-feature|
 refused-no-template|implement|no-such-scope|
 refused-no-value|code-fix|findings-backend|TRIAGE=Fix everything.
-refused-multiline-inline|implement|backend|FEATURE=Cart\nBasket
+refused-multiline-inline|implement|backend|HELD=none;FEATURE=Cart\nBasket
 refused-alien-base|code-review|review-set|BASE=no-such-ref'
 
 # One line per postcondition check: <case>|<command>|<option;option>. The last
@@ -143,7 +153,7 @@ refused-no-verify|review|'
 # stands for the feature name of the fixture. Each case runs on its own copy of
 # the project; the golden records what the script printed and what changed on
 # disk.
-EDIT_CASES='backup|backup
+EDIT_CASES='backup|backup;<F>
 status-ready|status;<F>;ready;new-requirements.md;design.md;tasks.md
 status-draft|status;<F>;draft;new-requirements.md
 status-repeat|status;<F>;ready;new-requirements.md;new-requirements.md
@@ -165,7 +175,8 @@ compile-entry-new|compile-entry;<F>;REQ-900;final;Saved carts. A shopper keeps a
 compile-entry-superseded|compile-entry;<F>;REQ-002;superseded-by:REQ-900
 compile-entry-no-text|compile-entry;<F>;REQ-900;final
 compile-entry-domained|compile-entry;<F>;REQ-ACC-900;final;Password reset. An account holder sets a new password over a mailed link.
-compile-entry-refined|compile-entry;<F>;REQ-001;final;Catalog listing. A shopper browses and filters the products on offer.
+compile-entry-refined|compile-entry;<F>;REQ-001;refine;Catalog listing. A shopper browses and filters the products on offer.
+compile-entry-foreign-final|compile-entry;<F>;REQ-001;final;Catalog listing. A shopper browses and filters the products on offer.
 section-text|section;_docs/<F>/raw.md;Problem;Shoppers lose the cart when the session drops.
 section-heading-hashes|section;_docs/<F>/raw.md;## Problem;Shoppers lose the cart when the session drops.
 section-empty|section;_docs/<F>/raw.md;Users
@@ -200,10 +211,17 @@ not-a-key|issue.json|Cart;--out;_docs/<KEY>/raw.md|JIRA_URL=https://jira.example
 
 UPDATE=0
 SELECTED=""
+CHECKS=""
+NO_FIXTURES=0
+BASH_UNDER_TEST=""
 while (( $# > 0 )); do
   case "$1" in
     --update) UPDATE=1 ;;
-    -h|--help) sed -n '2,44p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --checks=*) CHECKS="${1#--checks=}"; [[ -n "$CHECKS" ]] || { printf 'ERROR=--checks= names nothing: a list of checks, or none\n' >&2; exit 1; } ;;
+    --no-fixtures) NO_FIXTURES=1 ;;
+    --bash=*) BASH_UNDER_TEST="${1#--bash=}"
+              [[ -x "$BASH_UNDER_TEST" ]] || { printf 'ERROR=--bash= is not an executable: %s\n' "$BASH_UNDER_TEST" >&2; exit 1; } ;;
+    -h|--help) sed -n '2,52p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     -*) printf 'ERROR=unknown option: %s\n' "$1" >&2; exit 1 ;;
     *)  SELECTED="$SELECTED $1" ;;
   esac
@@ -221,8 +239,16 @@ TMP_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/sdd-tests.XXXXXX")" || exit 1
 # shell reports collapsed, so a path normalized against the uncollapsed one
 # comes back through the golden with the machine's name still on it.
 TMP_ROOT="$(cd "$TMP_ROOT" && pwd)" || exit 1
+
+# The scripts start with `#!/usr/bin/env bash`, so the first bash on PATH is
+# the one they run on.
+if [[ -n "$BASH_UNDER_TEST" ]]; then
+  mkdir -p "$TMP_ROOT/bash-under-test" && ln -s "$BASH_UNDER_TEST" "$TMP_ROOT/bash-under-test/bash" || exit 1
+  export PATH="$TMP_ROOT/bash-under-test:$PATH"
+  printf 'scripts run on: %s\n' "$("$TMP_ROOT/bash-under-test/bash" -c 'printf %s "$BASH_VERSION"')"
+fi
 trap 'rm -rf "$TMP_ROOT"' EXIT
-mkdir -p "$TMP_ROOT/out" "$TMP_ROOT/res" "$TMP_ROOT/rc" || exit 1
+mkdir -p "$TMP_ROOT/out" "$TMP_ROOT/res" "$TMP_ROOT/rc" "$TMP_ROOT/time" || exit 1
 
 # git reads the machine's identity, its default branch and its global ignore
 # file. A test that inherits those passes on one machine and fails on the next.
@@ -299,6 +325,31 @@ normalize() {
       -e 's/^\(+++ .*\)	.*/\1/'
 }
 
+# What a run changed in a tree. The list of files is diff's, the content of a
+# changed file is git's: Apple's diff and GNU diff cut the same change into
+# different hunks, so a golden written on one system failed on the other, and
+# git computes it the same everywhere. The header line and the hunk heading are
+# kept to the form diff prints — git adds the nearest heading of the file after
+# `@@`, an `index` line of blob ids, and its own prefixes to the two paths.
+tree_diff() {
+  local line a b
+  diff -rq -x .git "$1" "$2" 2>&1 | while IFS= read -r line; do
+    if [[ "$line" =~ ^Files\ (.+)\ and\ (.+)\ differ$ ]]; then
+      a="${BASH_REMATCH[1]}"; b="${BASH_REMATCH[2]}"
+      printf 'diff -ru -x .git %s %s\n' "$a" "$b"
+      git diff --no-index --no-color --no-ext-diff -U3 -- "$a" "$b" \
+        | A="$a" B="$b" awk '
+            /^diff --git / || /^index / { next }
+            /^--- / && !h { print "--- " ENVIRON["A"]; next }
+            /^\+\+\+ / && !h { print "+++ " ENVIRON["B"]; h = 1; next }
+            /^@@ / { sub(/ @@.*/, " @@") }
+            { print }'
+    else
+      printf '%s\n' "$line"
+    fi
+  done
+}
+
 # What a run left behind, as the golden files record it: the output, the exit
 # code, then whatever went to stderr.
 record() {
@@ -372,9 +423,9 @@ run_prompt_case() {
   fi
 
   if [[ "$cmd" == "init" ]]; then
-    out="$(cd "$project" && "$RENDERER" init "$scope" ${argv[@]+"${argv[@]}"} 2>"$err")"; rc=$?
+    out="$(cd "$project" && "$RENDERER" init "$scope" ${argv[@]+"${argv[@]}"} --print 2>"$err")"; rc=$?
   else
-    out="$(cd "$project" && "$RENDERER" "$cmd" "$feature" "$scope" ${argv[@]+"${argv[@]}"} 2>"$err")"; rc=$?
+    out="$(cd "$project" && "$RENDERER" "$cmd" "$feature" "$scope" ${argv[@]+"${argv[@]}"} --print 2>"$err")"; rc=$?
   fi
 
   record "$out" "$rc" "$err" "$actual"
@@ -422,7 +473,7 @@ run_edit_case() {
 
   record "$out" "$rc" "$err" "$actual"
   printf '### tree\n' >> "$actual"
-  diff -ru -x .git "$project" "$work" 2>&1 | normalize >> "$actual"
+  tree_diff "$project" "$work" | normalize >> "$actual"
   compare "$fixture" "edit $name" "$FIXTURES/$fixture/golden-edit/$name.txt" "$actual"
 }
 
@@ -549,6 +600,21 @@ check_log() {
   [[ -e "$work/off" ]] && ok=1
   prop_check log "SDD_LOG=0" "$ok" "SDD_LOG=0 created $work/off"
 
+  # Words handed over on stdin are in the record when `-` says the run reads
+  # them, and only then: without `-` stdin is left alone, the record carries
+  # no block, and the child still gets what was sent.
+  ( cd "$work/tree" && printf 'nofile.txt|1|sdd-stdin-words\n' \
+      | SDD_LOG_DIR="$work/in" "$SCRIPTS/spec-edit.sh" marker - ) >/dev/null 2>&1
+  ( cd "$work/tree" && printf 'sdd-unread-words\n' \
+      | SDD_LOG_DIR="$work/in" "$next" ) >/dev/null 2>&1
+  ok=0
+  grep -q '^stdin:$' "$work/in/sdd.log" 2>/dev/null \
+    && grep -qx '| nofile.txt|1|sdd-stdin-words' "$work/in/sdd.log" \
+    && ! grep -q 'sdd-unread-words' "$work/in/sdd.log" \
+    && [[ "$(grep -c '^stdin:$' "$work/in/sdd.log")" == "1" ]] || ok=1
+  prop_check log "stdin block" "$ok" \
+    "expected one stdin: block, from the run given '-', in $work/in/sdd.log"
+
   # A gate run and the scripts it fans out to are one run: the same id, and the
   # nested records ahead of the gate's own, which is written after its child
   # exits.
@@ -575,7 +641,7 @@ check_log() {
 . "$SCRIPTS/lib/format.sh"
 
 check_format() {
-  local work="$TMP/format-check" ok n v val out
+  local work="$TMP/format-check" ok n v val out rc
 
   printf 'format\n'
   rm -rf "$work" && mkdir -p "$work" || exit 1
@@ -690,22 +756,18 @@ check_format() {
       "wrote '$val' over $n line(s) where the file had 3, and the marker does not carry it"
   done
 
-  # A compilation record is three fields split on `|`. A source carrying one
-  # used to shift every field after it: the status was read as the source, and
-  # the entry landed in the wrong counter — the one that decides `actualized`
-  # against `implemented`.
+  # A compilation record is three fields split on `|`, and a source carrying one
+  # used to shift every field after it. A feature name holding `|` is refused at
+  # every entry point now — it never reaches a per-feature record at all.
   mkdir -p "$work/pipe/_docs/Ca|rt" || exit 1
   printf '# Requirements Compilation\n\n<!-- Next free number: REQ-002 -->\n\n## Requirements\n\n- **REQ-001** — Cart holds items. A shopper keeps picked items until checkout. *(Source: Ca|rt, draft)*\n' \
     > "$work/pipe/_docs/requirements.md"
   printf '# Requirements — Ca|rt\n\n> Status: ready\n\n## Requirements\n\n### REQ-001 — Cart holds items\n\nA shopper keeps picked items until checkout.\n' \
     > "$work/pipe/_docs/Ca|rt/new-requirements.md"
-  out="$(cd "$work/pipe" && "$SCRIPTS/feature-state.sh" 'Ca|rt' 2>&1)"
-  n="$(printf '%s\n' "$out" | sed -n '/^COMPILATION_ENTRIES:$/,$p' | sed -n '2p')"
-  v="$(printf '%s\n' "$out" | awk -F= '$1 == "COMPILATION_DRAFT" { print $2 }')"
+  out="$(cd "$work/pipe" && "$SCRIPTS/feature-state.sh" 'Ca|rt' 2>&1)"; rc=$?
   ok=0
-  [[ "$v" == "1" && "$n" == "REQ-001|draft" ]] || ok=1
-  prop_check format "compilation source is |-sanitized" "$ok" \
-    "the record came back as '$n' and COMPILATION_DRAFT=$v, where 'REQ-001|draft' and 1 are the entry"
+  [[ $rc -eq 2 && "$out" == *"is not a feature name — it holds '|'"* ]] || ok=1
+  prop_check format "a name holding | is refused" "$ok" "exit $rc: $out"
   ok=0
   printf '%s\n' "$out" | grep -q 'name the source' && ok=1
   prop_check format "no drift against its own folder" "$ok" \
@@ -754,6 +816,35 @@ check_format() {
   ok=0; md_untouched "$work/fresh.md" "$work/no-template.md" && ok=1
   prop_check format "no template is not an answer" "$ok" \
     "a template that is not on disk read as matching the file"
+
+  # Whether a feature was promoted as it declares: one reader for the stage and
+  # for --verify. A replacement whose target has no entry is not promoted.
+  cat > "$work/comp.md" <<'SDD_T'
+## Requirements
+
+- **REQ-001** — Old. *(Source: Cart, superseded by REQ-004)*
+- **REQ-002** — Other. *(Source: Promo, refined by cart)*
+- **REQ-003** — Mine. *(Source: Cart)*
+- **REQ-004** — Replacement. *(Source: Cart)*
+- **REQ-006** — Foreign. *(Source: Promo)*
+- **REQ-007** — Replacement of nothing. *(Source: Cart)*
+SDD_T
+  cat > "$work/decl.md" <<'SDD_T'
+## Requirements
+
+### REQ-002 — Reworded
+**Refines:** REQ-002
+### REQ-003 — Mine
+### REQ-004 — Replacement
+**Supersedes:** REQ-001
+### REQ-005 — Never written
+### REQ-006 — Taken
+### REQ-007 — Replacement of nothing
+**Supersedes:** REQ-009
+SDD_T
+  out="$(md_unpromoted "$work/comp.md" "$work/decl.md" Cart | tr '\n' ' ')"
+  ok=0; [[ "$out" == "REQ-005|missing| REQ-006|foreign|Promo REQ-007|no-target|REQ-009 " ]] || ok=1
+  prop_check format "md_unpromoted names what is not there as declared" "$ok" "printed: $out"
 }
 
 # The build command, by the shape of the project. Which keys `.sdd/sdd.conf`
@@ -786,7 +877,7 @@ ABC-12345x|warn'
   while IFS='|' read -r name want; do
     [[ -n "$name" ]] || continue
     out="$(cd "$work" && "$GATE" new "$name" 2>&1)"
-    warn="$(printf '%s\n' "$out" | sed -n 's/^NAME_WARN=//p')"
+    warn="$(printf '%s\n' "$out" | grep 'neither PascalCase nor a Jira issue key')"
     ok=0
     if [[ "$want" == "quiet" ]]; then
       [[ -z "$warn" ]] || ok=1
@@ -794,10 +885,36 @@ ABC-12345x|warn'
       [[ -n "$warn" ]] || ok=1
     fi
     prop_check name "$name is $want" "$ok" \
-      "NAME_WARN=${warn:-<empty>}"
+      "WARN: ${warn:-<none>}"
   done <<EOF
 $cases
 EOF
+}
+
+# A name that is not a path segment is refused wherever a feature is named, so no
+# write lands outside _docs/<name>/.
+check_name_everywhere() {
+  local work="$TMP/name-everywhere" out rc ok name
+  printf 'name everywhere\n'
+  rm -rf "$work" && mkdir -p "$work" && cp -R "$FIXTURES/two-stacks/tree/." "$work/" || exit 1
+  ok=0
+  for name in '../web' 'Cart/' '.hidden'; do
+    ( cd "$work" && "$EDITOR_SH" scaffold spec "$name" tasks.md ) >/dev/null 2>&1; rc=$?; [[ $rc -eq 2 ]] || ok=1
+    ( cd "$work" && "$EDITOR_SH" scaffold feature "$name" ) >/dev/null 2>&1; rc=$?; [[ $rc -eq 2 ]] || ok=1
+    ( cd "$work" && "$GATE" implement "$name" ) >/dev/null 2>&1; rc=$?; [[ $rc -eq 1 ]] || ok=1
+    ( cd "$work" && "$SCRIPTS/feature-state.sh" "$name" ) >/dev/null 2>&1; rc=$?; [[ $rc -eq 2 ]] || ok=1
+  done
+  [[ -e "$work/web/tasks.md" ]] && ok=1
+  # Another spelling of a folder's name opens it only where the filesystem
+  # ignores case. Elsewhere it is another feature, and there is none by it.
+  out="$(cd "$work" && "$GATE" implement cart 2>&1)"
+  if [[ -d "$work/_docs/cart" ]]; then
+    printf '%s\n' "$out" | grep -q '^FOLDER=Cart$' || ok=1
+  else
+    printf '%s\n' "$out" | grep -q '^GATE=stop$' || ok=1
+    printf '%s\n' "$out" | grep -q '^FOLDER=cart$' || ok=1
+  fi
+  prop_check name "a name that is not a path segment is refused everywhere" "$ok" "$(printf '%s' "$out" | head -3 | tr '\n' '~')"
 }
 
 check_build() {
@@ -810,16 +927,18 @@ check_build() {
   # <name>|<build files, space separated>|<sdd.conf lines, ; separated>|
   # <expected ROOT>|<expected BACKEND>|<expected FRONTEND>|<expected SOURCE>|
   # <the SDD_BUILD_* keys the gate has to ask for, space separated>
-  local cases='backend-answered|pom.xml|SDD_BUILD_ROOT=mvn -q verify|mvn -q verify|mvn -q verify||config|
+  local cases='backend-answered|pom.xml|SDD_BUILD_ROOT=mvn -q verify|mvn -q verify|mvn -q verify|mvn -q verify|config|
 backend-stack-key|pom.xml|SDD_BUILD_BACKEND=mvn -q verify|mvn -q verify|mvn -q verify||config|
 backend-missing|pom.xml|||||detected|SDD_BUILD_BACKEND
-frontend-answered|package.json|SDD_BUILD_ROOT=npm test|npm test||npm test|config|
+frontend-answered|package.json|SDD_BUILD_ROOT=npm test|npm test|npm test|npm test|config|
 frontend-missing|package.json|||||detected|SDD_BUILD_FRONTEND
 two-answered|backend/pom.xml frontend/package.json|SDD_BUILD_BACKEND=cd backend && mvn verify;SDD_BUILD_FRONTEND=cd frontend && npm test||cd backend && mvn verify|cd frontend && npm test|config|
 two-root-only|backend/pom.xml frontend/package.json|SDD_BUILD_ROOT=make all|make all|||config|SDD_BUILD_BACKEND SDD_BUILD_FRONTEND
 two-half|backend/pom.xml frontend/package.json|SDD_BUILD_BACKEND=cd backend && mvn verify||cd backend && mvn verify||config|SDD_BUILD_FRONTEND
 no-stack-answered|Makefile|SDD_BUILD_ROOT=make verify|make verify|make verify|make verify|config|
-no-stack-missing|Makefile|||||none|SDD_BUILD_ROOT'
+no-stack-missing|Makefile|||||none|SDD_BUILD_ROOT
+quote-inside|pom.xml|SDD_BUILD_ROOT=mvn verify -Dgroups="fast"|mvn verify -Dgroups="fast"|mvn verify -Dgroups="fast"|mvn verify -Dgroups="fast"|config|
+quote-around|pom.xml|SDD_BUILD_ROOT="mvn -q verify"|mvn -q verify|mvn -q verify|mvn -q verify|config|'
 
   local name files lines want_root want_be want_fe want_source want_ask
   local dir f line key old_ifs
@@ -866,6 +985,33 @@ no-stack-missing|Makefile|||||none|SDD_BUILD_ROOT'
   done <<EOF
 $cases
 EOF
+
+  # build-run.sh: the verdict comes back, the output stays in the log.
+  local br="$SCRIPTS/build-run.sh" rc
+  rm -rf "$work" && mkdir -p "$work/.sdd" || exit 1
+  printf '<project/>\n' > "$work/pom.xml"
+  printf 'SDD_BUILD_ROOT=echo quiet-line\n' > "$work/.sdd/sdd.conf"
+  out="$(cd "$work" && "$br" root 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 0 ]] || ok=1
+  printf '%s\n' "$out" | grep -q '^BUILD=green$' || ok=1
+  printf '%s\n' "$out" | grep -qx 'quiet-line' && ok=1
+  grep -qx 'quiet-line' "$work/.sdd/build/root.log" || ok=1
+  prop_check build "a green build answers green and keeps its output in the log" "$ok" "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
+  printf 'SDD_BUILD_BACKEND=echo first; echo broke >&2; exit 3\n' > "$work/.sdd/sdd.conf"
+  out="$(cd "$work" && "$br" backend 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 0 ]] || ok=1
+  printf '%s\n' "$out" | grep -q '^BUILD=red$' || ok=1
+  printf '%s\n' "$out" | grep -q '^EXIT=3$' || ok=1
+  [[ "$(printf '%s\n' "$out" | sed -n '/^TAIL:$/,$p' | tr '\n' '~')" == 'TAIL:~first~broke~' ]] || ok=1
+  prop_check build "a red build answers red with the tail" "$ok" "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
+  out="$(cd "$work" && "$br" frontend 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 2 && "$out" == *"no build command for frontend"* ]] || ok=1
+  [[ -f "$work/.sdd/build/frontend.log" ]] && ok=1
+  prop_check build "no command is a stop, never a guess" "$ok" "exit $rc: $out"
 }
 
 # What `/sdd-init` left behind, over the one state no fixture can hold: the
@@ -1407,7 +1553,6 @@ EOF
   out="$(cd "$work/wall" && "$GATE" specify Cart 2>&1)"; rc=$?
   ok=0
   [[ "$rc" == "0" ]] && printf '%s\n' "$out" | grep -q '^GATE=stop$' || ok=1
-  printf '%s\n' "$out" | grep -q '^NEXT_REQ=$' || ok=1
   printf '%s\n' "$out" | grep -q 'No requirement number is free: REQ-004 REQ-005 REQ-006 REQ-007 REQ-008' || ok=1
   printf '%s\n' "$out" | grep -q '^-|NEXT=|' || ok=1
   prop_check taken "the gate stops with no number to issue" "$ok" \
@@ -1456,6 +1601,39 @@ EOF
     "exit=$rc, where a task requiring REQ-0041 was read as using REQ-004 and moved the answer off it"
 }
 
+# The cases of one fixture run side by side, CASE_JOBS at a time. A script
+# spends its time starting programs rather than computing, so a fixture run
+# case after case was the whole wall time of the suite. Each case gets a root
+# of its own holding a copy of the project at the same relative path — what
+# `normalize` rewrites to `<tmp>` reads back exactly as before — and its output
+# is printed in case order once the fixture is done.
+CASE_JOBS="${SDD_TEST_CASE_JOBS:-8}"
+case "$CASE_JOBS" in ''|*[!0-9]*|0) CASE_JOBS=8 ;; esac
+CASE_N=0
+case_bg() {
+  local i=$CASE_N fixture="$1"
+  shift
+  CASE_N=$(( CASE_N + 1 ))
+  (
+    local root="$TMP/case-$i" a args=()
+    mkdir -p "$root" && cp -R "$TMP/$fixture" "$root/$fixture" || exit 1
+    for a in "$@"; do args+=("${a//@PROJECT@/$root/$fixture}"); done
+    TMP="$root"
+    "${args[@]}"
+    printf '0\n' > "$root.rc"
+  ) > "$TMP/case-$i.out" 2>&1 &
+  (( CASE_N % CASE_JOBS == 0 )) && wait
+  return 0
+}
+case_collect() {
+  local i
+  wait
+  for (( i = 0; i < CASE_N; i++ )); do
+    cat "$TMP/case-$i.out"
+    [[ "$(cat "$TMP/case-$i.rc" 2>/dev/null)" == "0" ]] || { printf 'ERROR=case %s did not finish\n' "$i" >&2; exit 1; }
+  done
+}
+
 run_fixture() {
   local fixture="$1"
   local dir="$FIXTURES/$fixture"
@@ -1496,7 +1674,7 @@ run_fixture() {
 
   printf '%s\n' "$fixture"
   for cmd in $COMMANDS; do
-    run_case "$fixture" "$cmd" "$project" "$FEATURE" "$EXTRA"
+    case_bg "$fixture" run_case "$fixture" "$cmd" @PROJECT@ "$FEATURE" "$EXTRA"
   done
 
   local line name pcmd pscope pargs
@@ -1507,7 +1685,7 @@ run_fixture() {
     if [[ "$pcmd" == "code-review" && -n "$EXTRA" && "$pargs" != *BASE=* ]]; then
       pargs="BASE=$EXTRA${pargs:+;$pargs}"
     fi
-    run_prompt_case "$fixture" "$name" "$pcmd" "$pscope" "$pargs" "$project" "$FEATURE"
+    case_bg "$fixture" run_prompt_case "$fixture" "$name" "$pcmd" "$pscope" "$pargs" @PROJECT@ "$FEATURE"
   done <<EOF
 $PROMPT_CASES
 EOF
@@ -1515,7 +1693,7 @@ EOF
   local vcmd vopts
   while IFS='|' read -r name vcmd vopts; do
     [[ -n "$name" ]] || continue
-    run_verify_case "$fixture" "$name" "$vcmd" "$vopts" "$project" "$FEATURE"
+    case_bg "$fixture" run_verify_case "$fixture" "$name" "$vcmd" "$vopts" @PROJECT@ "$FEATURE"
   done <<EOF
 $VERIFY_CASES
 EOF
@@ -1523,7 +1701,7 @@ EOF
   local eargs
   while IFS='|' read -r name eargs; do
     [[ -n "$name" ]] || continue
-    run_edit_case "$fixture" "$name" "$eargs" "$project" "$FEATURE"
+    case_bg "$fixture" run_edit_case "$fixture" "$name" "$eargs" @PROJECT@ "$FEATURE"
   done <<EOF
 $EDIT_CASES
 EOF
@@ -1531,10 +1709,11 @@ EOF
   local jjson jargs jenv
   while IFS='|' read -r name jjson jargs jenv; do
     [[ -n "$name" ]] || continue
-    run_jira_case "$fixture" "$name" "$jjson" "$jargs" "$jenv" "$project" "$FEATURE"
+    case_bg "$fixture" run_jira_case "$fixture" "$name" "$jjson" "$jargs" "$jenv" @PROJECT@ "$FEATURE"
   done <<EOF
 $JIRA_CASES
 EOF
+  case_collect
 }
 
 # ── The jobs ──────────────────────────────────────────────────────
@@ -1725,14 +1904,60 @@ EOF
   prop_check relations "verify names what did not arrive" "$ok" \
     "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
 
+  # ── The promotion in one call, on a copy ───────────────────────
+  # promote reads the relations off the page and takes only the words. A line
+  # missing is a stop that names it, and the compilation stays as it was.
+  local one="$work.one" words before
+  rm -rf "$one" && cp -R "$work" "$one" || exit 1
+  before="$(cat "$one/_docs/requirements.md")"
+  words='REQ-003|Cart holds items. A shopper keeps up to 50 items until checkout.
+REQ-004|Account checkout. An order needs an account.'
+  out="$(cd "$one" && printf '%s\nREQ-009|Stray. Nobody declared it.\n' "$words" | "$EDITOR_SH" promote Checkout - 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 2 && "$out" == *'REQ-009 is not declared'* && "$out" == *'REQ-005 has no wording on stdin'* ]] || ok=1
+  [[ "$(cat "$one/_docs/requirements.md")" == "$before" ]] || ok=1
+  prop_check relations "promote: a wording missing or stray stops it, nothing written" "$ok" \
+    "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
+  words="$words
+REQ-005|Order summary. A shopper sees the order before paying."
+  out="$(cd "$one" && printf '%s\n' "$words" | "$EDITOR_SH" promote Checkout - 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 0 ]] || ok=1
+  [[ "$(printf '%s\n' "$out" | sed -n '/^ENTRIES:$/,$p' | sed 1d | tr '\n' ' ')" \
+      == 'REQ-002|refined REQ-004|appended REQ-001|superseded REQ-005|appended ' ]] || ok=1
+  grep -q 'REQ-002\*\* — Cart holds items. A shopper keeps up to 50 items until checkout. \*(Source: Cart, refined by Checkout)\*' \
+    "$one/_docs/requirements.md" || ok=1
+  grep -q '^- \*\*REQ-003\*\*' "$one/_docs/requirements.md" && ok=1
+  ( cd "$one" && "$GATE" actualize Checkout --verify ) >/dev/null 2>&1 || ok=1
+  [[ "$(cd "$one" && "$state" Checkout | sed -n 's/^STAGE=//p')" == "actualized" ]] || ok=1
+  prop_check relations "promote: every record in one call, and verify passes" "$ok" \
+    "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
+  before="$(cat "$one/_docs/requirements.md")"
+  out="$(cd "$one" && printf '%s\n' "$words" | "$EDITOR_SH" promote Checkout - 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 0 && "$(cat "$one/_docs/requirements.md")" == "$before" ]] || ok=1
+  prop_check relations "promote: a re-run changes nothing" "$ok" \
+    "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
   # ── The promotion ───────────────────────────────────────────────
-  out="$(cd "$work" && "$EDITOR_SH" compile-entry Checkout REQ-002 final "Cart holds items. A shopper keeps up to 50 items until checkout." 2>&1)"
+  out="$(cd "$work" && "$EDITOR_SH" compile-entry Checkout REQ-002 refine "Cart holds items. A shopper keeps up to 50 items until checkout." 2>&1)"
   line="$(grep 'REQ-002\*\*' "$work/_docs/requirements.md")"
   ok=0
   printf '%s\n' "$out" | grep -q '^ACTION=refined$' || ok=1
   [[ "$line" == *'up to 50 items'*'*(Source: Cart, refined by Checkout)*'* ]] || ok=1
   prop_check relations "a refinement leaves its trace" "$ok" \
     "the entry reads: $line"
+
+  # One entry of three is a promotion cut short, not a promoted feature.
+  out="$(cd "$work" && "$state" Checkout)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^STAGE=implemented$' || ok=1
+  printf '%s\n' "$out" | grep -q '^NEXT=/sdd-actualize Checkout$' || ok=1
+  printf '%s\n' "$out" | grep -q 'not REQ-004, REQ-005 — a promotion cut short' || ok=1
+  prop_check relations "a promotion cut short is not actualized" "$ok" \
+    "$(printf '%s' "$out" | grep -E '^(STAGE|NEXT)=|cut short' | tr '\n' '~')"
 
   ( cd "$work" \
     && "$EDITOR_SH" compile-entry Checkout REQ-004 final "Account checkout. An order needs an account." \
@@ -1773,7 +1998,7 @@ EOF
   ok=0; [[ "$v" == "implemented" ]] || ok=1
   prop_check relations "refine-only, not yet promoted" "$ok" "STAGE=$v where nothing of it is in the compilation"
 
-  ( cd "$work" && "$EDITOR_SH" compile-entry Promo REQ-002 final "Cart holds items. A member keeps up to 80 items, anyone else 50." ) >/dev/null 2>&1
+  ( cd "$work" && "$EDITOR_SH" compile-entry Promo REQ-002 refine "Cart holds items. A member keeps up to 80 items, anyone else 50." ) >/dev/null 2>&1
   line="$(grep 'REQ-002\*\*' "$work/_docs/requirements.md")"
   v="$(cd "$work" && "$state" Promo | sed -n 's/^STAGE=//p')"
   out="$(cd "$work" && "$state" Checkout | sed -n 's/^STAGE=//p')"
@@ -1786,7 +2011,7 @@ EOF
   # The same call again adds no second trace, and a later supersession keeps
   # the ones that are there.
   ( cd "$work" \
-    && "$EDITOR_SH" compile-entry Promo REQ-002 final "Cart holds items. A member keeps up to 80 items, anyone else 50." \
+    && "$EDITOR_SH" compile-entry Promo REQ-002 refine "Cart holds items. A member keeps up to 80 items, anyone else 50." \
     && "$EDITOR_SH" compile-entry Checkout REQ-002 superseded-by:REQ-005 ) >/dev/null 2>&1
   line="$(grep 'REQ-002\*\*' "$work/_docs/requirements.md")"
   ok=0
@@ -1828,6 +2053,840 @@ EOF
     "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
 }
 
+# Words reach spec-edit.sh from a human or a role and are written as given:
+# a backslash, a backtick, a dollar sign or a quote is text, never syntax.
+check_text() {
+  local work="$TMP/text-check" out line ok rc
+  local nasty='Matches \d+ in C:\new\table, `code` and $HOME "quoted"'
+
+  printf 'text\n'
+  rm -rf "$work" && mkdir -p "$work/_docs/Cart" || exit 1
+  cat > "$work/_docs/requirements.md" <<'EOF'
+# Requirements Compilation
+
+<!-- Next free number: REQ-002 -->
+
+## Requirements
+
+- **REQ-001** — Old. Old wording. *(Source: Cart)* ^req-001
+EOF
+  printf 'int a;\nint b;\n' > "$work/A.java"
+
+  # ── As an argument ──────────────────────────────────────────────
+  ( cd "$work" && "$EDITOR_SH" compile-entry Cart REQ-002 final "New. $nasty" \
+              && "$EDITOR_SH" compile-entry Cart REQ-001 final "Old. $nasty" \
+              && "$EDITOR_SH" marker A.java 2 "$nasty" ) >/dev/null 2>&1
+  ok=0
+  [[ "$(grep -cF -- "$nasty" "$work/_docs/requirements.md")" == "2" ]] || ok=1
+  grep -qF -- "// TODO Code Review: $nasty (" "$work/A.java" || ok=1
+  [[ "$(grep -c '' "$work/A.java")" == "3" ]] || ok=1
+  prop_check text "an argument is written byte for byte" "$ok" \
+    "requirements.md: $(tr '\n' '~' < "$work/_docs/requirements.md") A.java: $(tr '\n' '~' < "$work/A.java")"
+
+  # ── On stdin ────────────────────────────────────────────────────
+  # The way the commands pass words: `-`, and a quoted here-document.
+  printf '# Raw\n\n## Problem\n\n<!-- hint -->\n\n## Users\n' > "$work/_docs/Cart/raw.md"
+  ( cd "$work" && "$EDITOR_SH" section _docs/Cart/raw.md Problem - <<'SDD_TEXT'
+- Does `REQ-001` cost $5? \d+ **Answer:** yes
+second line
+SDD_TEXT
+  ) >/dev/null 2>&1
+  ( cd "$work" && printf '%s\n' "Stdin. $nasty" | "$EDITOR_SH" compile-entry Cart REQ-003 final - \
+              && printf '%s\n' "$nasty" | "$EDITOR_SH" marker A.java 1 - ) >/dev/null 2>&1
+  ok=0
+  grep -qF -- '- Does `REQ-001` cost $5? \d+ **Answer:** yes' "$work/_docs/Cart/raw.md" || ok=1
+  grep -qx 'second line' "$work/_docs/Cart/raw.md" || ok=1
+  grep -qF -- "**REQ-003** — Stdin. $nasty" "$work/_docs/requirements.md" || ok=1
+  [[ "$(head -1 "$work/A.java")" == "// TODO Code Review: $nasty ("* ]] || ok=1
+  prop_check text "'-' reads the text from stdin" "$ok" \
+    "raw.md: $(tr '\n' '~' < "$work/_docs/Cart/raw.md") A.java: $(tr '\n' '~' < "$work/A.java")"
+
+  out="$(cd "$work" && printf 'a\nb\n' | "$EDITOR_SH" marker A.java 1 - 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 2 && "$out" == *"holds a newline"* ]] || ok=1
+  [[ "$(grep -c '' "$work/A.java")" == "4" ]] || ok=1
+  prop_check text "a marker of two lines is a stop" "$ok" "exit $rc: $out"
+
+  # ── marker -, the batch ─────────────────────────────────────────
+  # Records in any order land above the lines they name as the file stood before
+  # the call; two on one line keep their order; the text is the rest of the line.
+  local b1
+  mkdir -p "$work/batch" && printf '1\n2\n3\n4\n5\n' > "$work/batch/B.java" && printf 'x\n  y\n' > "$work/batch/b.py"
+  out="$(cd "$work/batch" && "$EDITOR_SH" marker - 2>&1 <<SDD_RECS
+B.java|2|first on 2
+B.java|4|on 4, with a | inside and $nasty
+b.py|2|py
+B.java|2|second on 2
+SDD_RECS
+)"; rc=$?
+  b1="$(sed 's/ ([0-9-]*)$//' "$work/batch/B.java" | tr '\n' '~')"
+  ok=0; [[ $rc -eq 0 ]] || ok=1
+  [[ "$b1" == "1~// TODO Code Review: first on 2~// TODO Code Review: second on 2~2~3~// TODO Code Review: on 4, with a | inside and $nasty~4~5~" ]] || ok=1
+  [[ "$(sed -n 2p "$work/batch/b.py")" == "  # TODO Code Review: py ("* ]] || ok=1
+  [[ "$(printf '%s\n' "$out" | sed -n '/^MARKERS:$/,$p' | sed 1d | tr '\n' ' ')" == "B.java:4 B.java:2 B.java:2 b.py:2 " ]] || ok=1
+  prop_check text "marker - writes every record bottom-up" "$ok" "exit $rc: $(printf '%s' "$out" | tr '\n' '~') B.java: $b1"
+
+  # One bad record writes nothing, and every bad one is named.
+  cp "$work/batch/B.java" "$work/batch/B.before"
+  out="$(cd "$work/batch" && printf 'B.java|1|fine\nB.java|99|past the end\nC.json|1|no syntax\n' | "$EDITOR_SH" marker - 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 2 && "$out" == *"record 2:"* && "$out" == *"record 3:"* && "$out" != *"record 1:"* ]] || ok=1
+  cmp -s "$work/batch/B.java" "$work/batch/B.before" || ok=1
+  prop_check text "marker - checks every record before writing one" "$ok" "exit $rc: $out"
+
+  # ── spawn-prompt.sh, values on stdin ────────────────────────────
+  local proj="$TMP/text-prompt" a b
+  rm -rf "$proj" && mkdir -p "$proj" && cp -R "$FIXTURES/actualized/tree/." "$proj/" || exit 1
+  a="$(cd "$proj" && "$RENDERER" code-fix Cart findings-backend --print "TRIAGE=Fix all." "FINDINGS=F-01 a.java:1 — x
+F-02 b.java:2 — y" 2>&1)"
+  b="$(cd "$proj" && "$RENDERER" code-fix Cart findings-backend --print - 2>&1 <<'SDD_VALUES'
+
+TRIAGE:
+Fix all.
+
+FINDINGS:
+F-01 a.java:1 — x
+F-02 b.java:2 — y
+
+SDD_VALUES
+  )"
+  ok=0; [[ -n "$a" && "$a" == "$b" ]] || ok=1
+  prop_check text "stdin blocks render as the arguments do" "$ok" "$(diff <(printf '%s\n' "$a") <(printf '%s\n' "$b") | tr '\n' '~')"
+
+  b="$(cd "$proj" && "$RENDERER" code-fix Cart findings-backend --print - 2>&1 <<'SDD_VALUES'
+TRIAGE:
+Keep `$HOME` and \d+ as written.
+FINDINGS:
+F-01 a.java:1 — x
+SDD_VALUES
+  )"
+  ok=0; printf '%s\n' "$b" | grep -qxF 'Keep `$HOME` and \d+ as written.' || ok=1
+  prop_check text "a stdin value is not expanded" "$ok" "$(printf '%s' "$b" | tr '\n' '~')"
+
+  out="$(cd "$proj" && printf 'TRIAGE:\nx\nFINDINGS:\ny\n' | "$RENDERER" code-fix Cart findings-backend - "TRIAGE=z" 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 1 && "$out" == *"given twice"* ]] || ok=1
+  prop_check text "a key given twice is refused" "$ok" "exit $rc: $out"
+
+  # Without --print the prompt goes to a file and the spawn call carries one line.
+  local file
+  out="$(cd "$proj" && "$RENDERER" code-fix Cart findings-backend "TRIAGE=Fix all." "FINDINGS=F-01" 2>&1)"; rc=$?
+  file="$proj/.sdd/run/code-fix-Cart-findings-backend.md"
+  b="$(cd "$proj" && "$RENDERER" code-fix Cart findings-backend --print "TRIAGE=Fix all." "FINDINGS=F-01" 2>&1)"
+  ok=0; [[ $rc -eq 0 && -f "$file" && "$(cat "$file")" == "$b" ]] || ok=1
+  [[ "$out" == "PROMPT=$file"$'\n'"PASS=Your assignment is in $file. Read it whole and follow it." ]] || ok=1
+  prop_check text "the prompt is written to .sdd/run/ and PASS= names it" "$ok" "exit $rc: $out"
+}
+
+# A raw.md that is still the template the scaffold copied holds no description:
+# /sdd-next-story runs again over it, and /sdd-specify has nothing to write from.
+check_raw() {
+  local work="$TMP/raw-check" out rc ok
+
+  printf 'raw\n'
+  rm -rf "$work" && mkdir -p "$work/_docs" || exit 1
+  ( cd "$work" && "$EDITOR_SH" scaffold feature Cart ) >/dev/null 2>&1
+
+  out="$(cd "$work" && "$GATE" new Cart 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -q '^GATE=ok$' || ok=1
+  prop_check raw "next-story runs again over the template" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  out="$(cd "$work" && "$EDITOR_SH" scaffold feature Cart 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 0 ]] || ok=1
+  prop_check raw "scaffold feature copies over the template" "$ok" "exit $rc: $out"
+
+  # The questions of /sdd-next-story come from the template's hints, printed
+  # here, one line per section, so the command never opens the template.
+  out="$(cd "$work" && "$EDITOR_SH" scaffold feature Cart --hints 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 0 ]] || ok=1
+  printf '%s\n' "$out" | grep -q '^HINTS:$' || ok=1
+  printf '%s\n' "$out" | grep -q '^Problem|What hurts today\. .*"add a cancel button"\.$' || ok=1
+  [[ "$(printf '%s\n' "$out" | grep -c '^[A-Z][a-z ]*|')" == "6" ]] || ok=1
+  printf '%s\n' "$out" | grep -q -- '<!--\|-->' && ok=1
+  out2="$(cd "$work" && "$EDITOR_SH" scaffold feature Cart 2>&1)"
+  printf '%s\n' "$out2" | grep -q '^HINTS:' && ok=1
+  prop_check raw "scaffold feature --hints prints one hint per section" "$ok" "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
+  out="$(cd "$work" && "$GATE" specify Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^GATE=stop$' || ok=1
+  printf '%s\n' "$out" | grep -q 'raw.md holds nothing but the template' || ok=1
+  prop_check raw "specify stops on the template" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  ( cd "$work" && "$EDITOR_SH" section _docs/Cart/raw.md Problem - <<<'Shoppers lose their cart.' ) >/dev/null 2>&1
+  out="$(cd "$work" && "$GATE" new Cart 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -q 'already holds a description' || ok=1
+  out="$(cd "$work" && "$EDITOR_SH" scaffold feature Cart 2>&1)"; rc=$?
+  [[ $rc -eq 2 ]] || ok=1
+  grep -q 'Shoppers lose their cart.' "$work/_docs/Cart/raw.md" || ok=1
+  prop_check raw "a written description is kept" "$ok" "exit $rc: $out"
+}
+
+# The tasks a review is told are unfinished by design: the unchecked ones only.
+# A task marked [x] that kept an old BLOCKED: reason has code behind it.
+check_blocked_set() {
+  local work="$TMP/blocked-set" out ok
+
+  printf 'blocked-set\n'
+  rm -rf "$work" && mkdir -p "$work/_docs/Cart" || exit 1
+  printf 'x\n' > "$work/_docs/code-style.md"
+  printf '# Architecture\n\nA monolith.\n' > "$work/_docs/architecture.md"
+  for f in new-requirements design; do
+    printf -- '---\nstatus: ready\n---\n\n# %s\n\nBody.\n' "$f" > "$work/_docs/Cart/$f.md"
+  done
+  cat > "$work/_docs/Cart/tasks.md" <<'EOF'
+---
+status: ready
+---
+
+# Tasks — Cart
+
+## Tasks
+
+- [x] **TASK-001** — Done after a retry — BLOCKED: old reason
+  - **Requires:** REQ-001
+  - **Type:** backend
+- [ ] **TASK-002** — Still blocked — BLOCKED: no schema
+  - **Requires:** REQ-001
+  - **Type:** backend
+EOF
+  ( cd "$work" && git init -q . && git add -A && git commit -qm base \
+    && git checkout -qb feature && printf 'class A {}\n' > A.java ) >/dev/null 2>&1
+
+  out="$(cd "$work" && "$GATE" code-review Cart --prompt-data 2>&1)"
+  out="$(printf '%s\n' "$out" | awk '/^[A-Z_]+:$/ { inside = ($0 == "BLOCKED:"); next } inside && NF')"
+  ok=0; [[ "$out" == "TASK-002|Still blocked|no schema" ]] || ok=1
+  prop_check blocked-set "only unchecked tasks are excused" "$ok" "BLOCKED: $(printf '%s' "$out" | tr '\n' '~')"
+
+  # A fix run marks the report stale whatever it said, BLOCKED included, so a
+  # stale report holds promotion back the way a blocked one does.
+  local proj="$TMP/stale-actualize"
+  rm -rf "$proj" && mkdir -p "$proj" && cp -R "$FIXTURES/actualized/tree/." "$proj/" || exit 1
+  ( cd "$proj" && "$EDITOR_SH" verdict-stale Cart ) >/dev/null 2>&1
+  out="$(cd "$proj" && "$GATE" actualize Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^GATE=ask$' || ok=1
+  printf '%s\n' "$out" | awk '/^[A-Z_]+:$/ { inside = ($0 == "ASK:"); next } inside' | grep -q "says 'stale" || ok=1
+  prop_check blocked-set "a stale report is asked about before promotion" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  # The marker sweep scaffold review writes into the report's last section.
+  ( cd "$proj" && git init -q . \
+      && printf 'class A {\n  // TODO Code Review: the total ignores the discount (2026-11-01)\n}\n' > A.java \
+      && printf '<!-- TODO Code Review: label missing (2026-11-02) -->\n' > a.html \
+      && printf -- '- TODO Code Review: not code (2026-11-03)\n' > _docs/note.md ) >/dev/null 2>&1
+  out="$(cd "$proj" && "$EDITOR_SH" scaffold review Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^MARKERS=2$' || ok=1
+  grep -qxF -- '- `A.java:2` — the total ignores the discount (2026-11-01)' "$proj/_docs/Cart/review.md" || ok=1
+  grep -qxF -- '- `a.html:1` — label missing (2026-11-02)' "$proj/_docs/Cart/review.md" || ok=1
+  grep -q 'not code' "$proj/_docs/Cart/review.md" && ok=1
+  prop_check blocked-set "the report lists the markers in the tree, _docs/ aside" "$ok" "$out — $(sed -n '/^## Older/,$p' "$proj/_docs/Cart/review.md" | tr '\n' '~')"
+}
+
+# The starting point of a feature: written once, read by the review set, which
+# then holds this feature's code and names what was dirty before it began.
+check_start() {
+  local work="$TMP/start" out ok first sec
+
+  printf 'start\n'
+  rm -rf "$work" && mkdir -p "$work/_docs/Cart" || exit 1
+  out="$(cd "$work" && "$EDITOR_SH" start Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^START=none$' || ok=1
+  [[ -e "$work/_docs/Cart/.implement-start" ]] && ok=1
+  prop_check start "outside git nothing is written" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  ( cd "$work" && git init -q . && git add -A && git commit -qm base --allow-empty && git branch -M base \
+      && git checkout -qb feature && printf 'other\n' > Other.java && git add -A && git commit -qm other \
+      && printf 'dirty\n' > Dirty.java ) >/dev/null 2>&1
+  out="$(cd "$work" && "$EDITOR_SH" start Cart 2>&1)"
+  first="$(cd "$work" && git rev-parse HEAD)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^START=written$' || ok=1
+  grep -qx "COMMIT=$first" "$work/_docs/Cart/.implement-start" || ok=1
+  grep -qx 'Dirty.java' "$work/_docs/Cart/.implement-start" || ok=1
+  prop_check start "the commit and the dirty files are recorded" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  ( cd "$work" && git commit -q --allow-empty -m later ) >/dev/null 2>&1
+  out="$(cd "$work" && "$EDITOR_SH" start Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^START=kept$' || ok=1
+  grep -qx "COMMIT=$first" "$work/_docs/Cart/.implement-start" || ok=1
+  prop_check start "a re-run keeps the first record" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  printf 'class Mine {}\n' > "$work/Mine.java"
+  out="$(cd "$work" && "$SCRIPTS/review-set.sh" --start=_docs/Cart/.implement-start 2>&1)"
+  sec() { printf '%s\n' "$out" | awk -v h="$1:" '/^[A-Z_]+:$/ { inside = ($0 == h); next } inside && NF' | tr '\n' ','; }
+  ok=0
+  printf '%s\n' "$out" | grep -qx "ROOT=$first" || ok=1
+  [[ "$(sec UNTRACKED)" == "Dirty.java,Mine.java," ]] || ok=1
+  [[ "$(sec PREEXISTING)" == "Dirty.java," ]] || ok=1
+  printf '%s\n' "$out" | grep -q 'Other.java' && ok=1
+  prop_check start "the set starts at the feature, the dirty files named" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  mkdir -p "$work/web" && printf '{}\n' > "$work/web/package-lock.json" && printf 'x\n' > "$work/yarn.lock"
+  printf 'more\n' >> "$work/Other.java"
+  out="$(cd "$work" && "$SCRIPTS/review-set.sh" --start=_docs/Cart/.implement-start 2>&1)"
+  ok=0
+  [[ "$(sec EXCLUDED)" == "web/package-lock.json,yarn.lock," ]] || ok=1
+  [[ "$(sec UNTRACKED)" == "Dirty.java,Mine.java," ]] || ok=1
+  [[ "$(sec FILES)" == "1|0|Other.java," ]] || ok=1
+  rm -rf "$work/web" "$work/yarn.lock"; ( cd "$work" && git checkout -q -- Other.java )
+  prop_check start "lock files are named apart, the diff's files counted" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  out="$(cd "$work" && "$SCRIPTS/review-set.sh" base --start=_docs/Cart/.implement-start 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q 'Other.java' || ok=1
+  [[ -z "$(sec PREEXISTING)" ]] || ok=1
+  prop_check start "an explicit base wins over the starting point" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  ( cd "$work" && git reset -q --hard base && git commit -q --allow-empty -m rewritten ) >/dev/null 2>&1
+  out="$(cd "$work" && "$GATE" code-review Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q 'no longer in the history of HEAD' || ok=1
+  printf '%s\n' "$out" | grep -qx "ROOT=$first" && ok=1
+  prop_check start "a starting commit a reset dropped falls back with a warning" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+}
+
+# The feedback log: off by default and silent, on only with SDD_FEEDBACK=1 —
+# then the gate says so, every prompt closes with the call for its role, and a
+# record lands in .sdd/log/feedback.log. It is written and never read, so these
+# cases are what notice it broken.
+check_feedback() {
+  local work="$TMP/feedback" out rc ok
+
+  printf 'feedback\n'
+  rm -rf "$work" && cp -R "$FIXTURES/two-stacks/tree" "$work" && rm -rf "$work/.sdd" && mkdir -p "$work/.sdd" || exit 1
+  printf 'SDD_BUILD_BACKEND=mvn verify\nSDD_BUILD_FRONTEND=npm test\n' > "$work/.sdd/sdd.conf"
+
+  out="$(cd "$work" && printf 'x\n' | "$SCRIPTS/feedback.sh" script --by=r --command=implement - 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 0 && "$out" == "FEEDBACK=off" && ! -e "$work/.sdd/log/feedback.log" ]] || ok=1
+  (cd "$work" && "$GATE" implement Cart 2>&1) | grep -q '^FEEDBACK=' && ok=1
+  (cd "$work" && "$SCRIPTS/spawn-prompt.sh" implement Cart backend HELD=none --print 2>&1) | grep -q 'feedback.sh' && ok=1
+  prop_check feedback "off: nothing written, no key, no word in a prompt" "$ok" "exit $rc: $out"
+
+  printf 'SDD_FEEDBACK=1\n' >> "$work/.sdd/sdd.conf"
+  out="$(cd "$work" && "$GATE" implement Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -qx 'FEEDBACK=on' || ok=1
+  out="$(cd "$work" && "$SCRIPTS/spawn-prompt.sh" implement Cart backend HELD=none --print 2>&1)"
+  printf '%s\n' "$out" | grep -qF ".sdd/scripts/feedback.sh <kind> --by=backend-developer --command=implement --feature=Cart - <<'SDD_TEXT'" || ok=1
+  prop_check feedback "on: the gate says so, the prompt carries the filled-in call" "$ok" "$(printf '%s' "$out" | tail -n 15 | tr '\n' '~')"
+
+  out="$(cd "$work" && env -u SDD_LOG_DIR SDD_LOG=0 "$SCRIPTS/feedback.sh" missing --by=backend-developer --command=implement --feature=Cart - <<'SDD_TEXT' 2>&1
+the prompt named no `code-style.md` $HOME
+SDD_TEXT
+)"; rc=$?
+  ok=0
+  [[ $rc -eq 0 && "$out" == "FEEDBACK=written" ]] || ok=1
+  grep -q '^## .* | missing | backend-developer | implement | Cart$' "$work/.sdd/log/feedback.log" || ok=1
+  grep -qF 'the prompt named no `code-style.md` $HOME' "$work/.sdd/log/feedback.log" || ok=1
+  prop_check feedback "a record is written as given, SDD_LOG=0 notwithstanding" "$ok" "exit $rc: $out"
+
+  out="$(cd "$work" && printf 'x\n' | "$SCRIPTS/feedback.sh" opinion --by=r --command=implement - 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 2 ]] || ok=1
+  out="$(cd "$work" && printf '  \n' | "$SCRIPTS/feedback.sh" script --by=r --command=implement - 2>&1)"; rc=$?
+  [[ $rc -eq 2 ]] || ok=1
+  prop_check feedback "a kind off the list and an empty remark are refused" "$ok" "exit $rc: $out"
+}
+
+# The two stops of /sdd-spec-review that used to be judged by eye: the coverage
+# matrix, and whether a file with a question still on it may be called ready.
+check_spec_review() {
+  local work="$TMP/spec-review-check" out rc ok
+
+  printf 'spec-review\n'
+  rm -rf "$work" && mkdir -p "$work/_docs/Cart" || exit 1
+  cat > "$work/_docs/Cart/new-requirements.md" <<'EOF'
+---
+status: draft
+---
+
+# Requirements — Cart
+
+## Requirements
+
+### REQ-001 — Cart total
+- **Description:** x ^req-001
+
+### REQ-002 — Promo codes
+- **Description:** y ^req-002
+
+## Open Questions
+
+<!-- hint -->
+- Which currency? — recommended: EUR, A-01
+
+## Out of Scope
+
+### REQ-003 — Gift wrapping
+EOF
+  cat > "$work/_docs/Cart/tasks.md" <<'EOF'
+---
+status: draft
+---
+
+# Tasks — Cart
+
+## Tasks
+
+- [ ] **TASK-001** — Total
+  - **Requires:** [REQ-001](new-requirements.md#^req-001), REQ-009
+  - **Type:** backend
+EOF
+
+  out="$(cd "$work" && "$SCRIPTS/feature-state.sh" Cart 2>&1)"
+  ok=0
+  [[ "$(printf '%s\n' "$out" | awk '/^[A-Z_]+:$/ { s = $0; next } s == "UNCOVERED:" && NF')" == "REQ-002|Promo codes" ]] || ok=1
+  [[ "$(printf '%s\n' "$out" | awk '/^[A-Z_]+:$/ { s = $0; next } s == "UNDECLARED:" && NF')" == "TASK-001|REQ-009" ]] || ok=1
+  prop_check spec-review "the matrix stops are computed" "$ok" "$(printf '%s' "$out" | sed -n '/^UNCOVERED:/,/^ANOMALIES:/p' | tr '\n' '~')"
+
+  out="$(cd "$work" && "$EDITOR_SH" status Cart ready new-requirements.md tasks.md 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 2 && "$out" == *"Open Questions is not empty in: _docs/Cart/new-requirements.md (1 line(s))"* ]] || ok=1
+  grep -q '^status: draft$' "$work/_docs/Cart/tasks.md" || ok=1
+  prop_check spec-review "ready is refused over an open question" "$ok" "exit $rc: $out"
+
+  out="$(cd "$work" && "$EDITOR_SH" status Cart ready new-requirements.md tasks.md --accept-open 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 0 ]] || ok=1
+  grep -q '^status: ready$' "$work/_docs/Cart/new-requirements.md" || ok=1
+  prop_check spec-review "--accept-open readies it as it stands" "$ok" "exit $rc: $out"
+
+  # ── The human's answers ─────────────────────────────────────────
+  # Line 18 is the question, 17 the hint comment, 10 a requirement.
+  local f="$work/_docs/Cart/new-requirements.md" n_before
+  n_before="$(grep -c '' "$f")"
+  out="$(cd "$work" && "$EDITOR_SH" answer _docs/Cart/new-requirements.md 18 - 2>&1 <<'SDD_TEXT'
+EUR and `USD`, $5 \d
+SDD_TEXT
+  )"; rc=$?
+  ok=0
+  [[ $rc -eq 0 ]] || ok=1
+  [[ "$(sed -n 18p "$f")" == '- Which currency? — recommended: EUR, A-01 **Answer:** EUR and `USD`, $5 \d' ]] || ok=1
+  [[ "$(grep -c '' "$f")" == "$n_before" ]] || ok=1
+  prop_check spec-review "an answer is appended to its line and moves none" "$ok" "exit $rc: $out — $(sed -n 18p "$f")"
+
+  ok=0
+  for at in 18 17 10 99 x; do
+    out="$(cd "$work" && "$EDITOR_SH" answer _docs/Cart/new-requirements.md "$at" "no" 2>&1)"; rc=$?
+    [[ $rc -eq 2 ]] || ok=1
+  done
+  [[ "$(grep -c 'Answer:' "$f")" == "1" ]] || ok=1
+  prop_check spec-review "an answer lands on an open question or nowhere" "$ok" "last: exit $rc: $out"
+
+  out="$(cd "$work" && "$EDITOR_SH" answer _docs/Cart/new-requirements.md new "REQ-002 has no task" 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 2 && "$out" == *"carries it"* ]] || ok=1
+  out="$(cd "$work" && "$EDITOR_SH" answer _docs/Cart/new-requirements.md new "REQ-002 has no task — **Answer:** not in this feature" 2>&1)"; rc=$?
+  [[ $rc -eq 0 && "$out" == *":19"* ]] || ok=1
+  [[ "$(sed -n 19p "$f")" == '- REQ-002 has no task — **Answer:** not in this feature' ]] || ok=1
+  [[ "$(sed -n 20p "$f")" == '' && "$(sed -n 21p "$f")" == '## Out of Scope' ]] || ok=1
+  prop_check spec-review "a decision nobody asked about is a line of its own" "$ok" "exit $rc: $out — $(sed -n 17,21p "$f" | tr '\n' '~')"
+
+  printf -- '---\nstatus: draft\n---\n\n## Open Questions\n' > "$work/_docs/Cart/design.md"
+  out="$(cd "$work" && "$EDITOR_SH" answer _docs/Cart/design.md new "Add a task? **Answer:** yes" 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 0 ]] || ok=1
+  [[ "$(sed -n '5,7p' "$work/_docs/Cart/design.md" | tr '\n' '~')" == '## Open Questions~~- Add a task? **Answer:** yes~' ]] || ok=1
+  prop_check spec-review "a new line goes into an empty section" "$ok" "exit $rc: $out — $(tr '\n' '~' < "$work/_docs/Cart/design.md")"
+
+  # The scope of a review round is read off the page: an answered line in a
+  # file's ## Open Questions makes its record a fold, and the other file stays
+  # a full review.
+  printf -- '---\nstatus: draft\n---\n# R\n\n## Requirements\n\n### REQ-001 — Cart total\n\n## Open Questions\n\n- Which currency? — recommended: EUR, A-01\n' > "$work/_docs/Cart/new-requirements.md"
+  printf -- '---\nstatus: draft\n---\n# Design — Cart\n\n## Open Questions\n\n<!-- - x **Answer:** y -->\n' > "$work/_docs/Cart/design.md"
+  printf '# Raw\n' > "$work/_docs/Cart/raw.md"
+  out="$(cd "$work" && "$GATE" review Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '|requirements$' || ok=1
+  printf '%s\n' "$out" | grep -q '|design+tasks$' || ok=1
+  prop_check spec-review "no answered line: both files get the full review" "$ok" "$(printf '%s' "$out" | sed -n '/^SPAWN:/,/^$/p' | tr '\n' '~')"
+
+  printf -- '---\nstatus: draft\n---\n# R\n\n## Requirements\n\n### REQ-001 — Cart total\n\n## Open Questions\n\n- Which currency? — recommended: EUR, A-01 **Answer:** EUR\n' > "$work/_docs/Cart/new-requirements.md"
+  out="$(cd "$work" && "$GATE" review Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^requirements-engineer|.sdd/protocols/spec-modes.md,.sdd/protocols/requirements-writing.md,.sdd/protocols/docs-format.md|fold-requirements$' || ok=1
+  printf '%s\n' "$out" | grep -q '|design+tasks$' || ok=1
+  prop_check spec-review "an answered line makes that file's round a fold, without the checklist" "$ok" "$(printf '%s' "$out" | sed -n '/^SPAWN:/,/^$/p' | tr '\n' '~')"
+}
+
+# The build answer goes into .sdd/sdd.conf through a script, so that whoever
+# writes it never reads a file that may hold a token.
+check_conf_set() {
+  local work="$TMP/conf-set" out rc ok
+
+  printf 'conf-set\n'
+  rm -rf "$work" && mkdir -p "$work" || exit 1
+
+  out="$(cd "$work" && printf '%s\n' 'mvn verify -Dgroups="fast"' | "$EDITOR_SH" conf-set SDD_BUILD_ROOT - 2>&1)"
+  ok=0
+  [[ "$out" == *"ACTION=added"* ]] || ok=1
+  [[ "$(cat "$work/.sdd/sdd.conf")" == 'SDD_BUILD_ROOT=mvn verify -Dgroups="fast"' ]] || ok=1
+  [[ "$("$SCRIPTS/build-command.sh" "$work" | sed -n 's/^ROOT=//p')" == 'mvn verify -Dgroups="fast"' ]] || ok=1
+  prop_check conf-set "creates the file, and the reader reads it back" "$ok" "$out / $(tr '\n' '~' < "$work/.sdd/sdd.conf")"
+
+  printf 'JIRA_TOKEN=secret\n# a comment\nSDD_BUILD_ROOT=old\nSDD_LOG=0' > "$work/.sdd/sdd.conf"
+  out="$(cd "$work" && "$EDITOR_SH" conf-set SDD_BUILD_ROOT 'make all' 2>&1)"
+  ok=0
+  [[ "$out" == *"ACTION=replaced"* && "$out" != *secret* ]] || ok=1
+  [[ "$(cat "$work/.sdd/sdd.conf")" == $'JIRA_TOKEN=secret\n# a comment\nSDD_BUILD_ROOT=make all\nSDD_LOG=0' ]] || ok=1
+  out="$(cd "$work" && "$EDITOR_SH" conf-set SDD_BUILD_FRONTEND 'npm test' 2>&1)"
+  [[ "$(tail -2 "$work/.sdd/sdd.conf")" == $'SDD_LOG=0\nSDD_BUILD_FRONTEND=npm test' ]] || ok=1
+  out="$(cd "$work" && "$EDITOR_SH" conf-set SDD_BUILD_ROOT 'make all' 2>&1)"
+  [[ "$out" == *"ACTION=unchanged"* ]] || ok=1
+  prop_check conf-set "rewrites one line, appends, and leaves an answer alone" "$ok" "$out / $(tr '\n' '~' < "$work/.sdd/sdd.conf")"
+
+
+  out="$(cd "$work" && "$EDITOR_SH" conf-set JIRA_TOKEN x 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 2 ]] || ok=1
+  grep -q '^JIRA_TOKEN=secret$' "$work/.sdd/sdd.conf" || ok=1
+  prop_check conf-set "writes build keys only" "$ok" "exit $rc: $out"
+
+  # A key set twice: the reader takes the last line, so that is the one written.
+  local dup="$TMP/conf-set-dup"
+  rm -rf "$dup" && mkdir -p "$dup/.sdd" || exit 1
+  printf 'SDD_BUILD_ROOT=first\n  SDD_BUILD_ROOT = "second"\n' > "$dup/.sdd/sdd.conf"
+  out="$(cd "$dup" && "$EDITOR_SH" conf-set SDD_BUILD_ROOT second 2>&1)"
+  ok=0
+  [[ "$out" == *"ACTION=unchanged"* ]] || ok=1
+  out="$(cd "$dup" && "$EDITOR_SH" conf-set SDD_BUILD_ROOT third 2>&1)"
+  [[ "$(cat "$dup/.sdd/sdd.conf")" == $'SDD_BUILD_ROOT=first\nSDD_BUILD_ROOT=third' ]] || ok=1
+  [[ "$("$SCRIPTS/build-command.sh" "$dup" | sed -n 's/^ROOT=//p')" == 'third' ]] || ok=1
+  prop_check conf-set "a key set twice is written where the reader reads it" "$ok" "$out / $(tr '\n' '~' < "$dup/.sdd/sdd.conf")"
+}
+
+# The backups: one feature and the project's files per snapshot, and only the
+# last SDD_BACKUP_KEEP snapshots kept — never a folder the op did not name.
+check_backup() {
+  local work="$TMP/backup" out ok i left
+
+  printf 'backup\n'
+  rm -rf "$work" && mkdir -p "$work/.sdd" "$work/_docs/Cart" "$work/_docs/Promo" "$work/_docs/architecture" "$work/_docs/.backup/mine" || exit 1
+  for f in requirements.md architecture/01-context.md Cart/tasks.md Promo/tasks.md; do printf 'x\n' > "$work/_docs/$f"; done
+  for i in 1 2 3 4; do mkdir -p "$work/_docs/.backup/2026010$i-000000"; done
+  printf 'SDD_BACKUP_KEEP=3\n' > "$work/.sdd/sdd.conf"
+  out="$(cd "$work" && "$EDITOR_SH" backup cart 2>&1)"
+  left="$(cd "$work/_docs/.backup" && ls | tr '\n' ' ')"
+  ok=0
+  printf '%s\n' "$out" | grep -qx 'FILES=3' || ok=1
+  printf '%s\n' "$out" | grep -qx 'PRUNED=2' || ok=1
+  printf '%s\n' "$out" | grep -q 'Promo' && ok=1
+  [[ "$left" == 20260103-000000\ 20260104-000000\ 2*\ mine\  ]] || ok=1
+  prop_check backup "one feature and the project's files, the oldest pruned, the rest left" "$ok" "$(printf '%s' "$out" | tr '\n' '~') / left: $left"
+}
+
+# A two-stack project asks for the build of the stacks a feature builds, and
+# no more; a marker goes into the languages a brownfield tree is told by.
+check_stacks() {
+  local work="$TMP/stacks-check" out ok f
+
+  printf 'stacks\n'
+  rm -rf "$work" && mkdir -p "$work/_docs/Cart" "$work/web" "$work/.sdd" || exit 1
+  printf '<project/>\n' > "$work/pom.xml"; printf '{}\n' > "$work/web/package.json"
+  printf 'SDD_BUILD_BACKEND=mvn verify\n' > "$work/.sdd/sdd.conf"
+  for f in new-requirements design; do
+    printf -- '---\nstatus: ready\n---\n\n# %s\n\nBody.\n' "$f" > "$work/_docs/Cart/$f.md"
+  done
+  printf -- '---\nstatus: ready\n---\n\n# Tasks\n\n## Tasks\n\n- [ ] **TASK-001** — a\n  - **Requires:** REQ-001\n  - **Type:** backend\n' \
+    > "$work/_docs/Cart/tasks.md"
+
+  out="$(cd "$work" && "$GATE" implement Cart 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -q '^GATE=ok$' || ok=1
+  prop_check stacks "a backend-only feature needs no frontend build" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  printf -- '- [ ] **TASK-002** — b\n  - **Requires:** REQ-001\n  - **Type:** frontend\n' >> "$work/_docs/Cart/tasks.md"
+  out="$(cd "$work" && "$GATE" implement Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^GATE=ask$' || ok=1
+  printf '%s\n' "$out" | grep -q 'holds no SDD_BUILD_FRONTEND' || ok=1
+  prop_check stacks "a frontend task asks for the frontend build" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  # The proposal names only the scripts package.json has: a `build` it lacks
+  # would fail before a test ran.
+  printf '{ "scripts": { "test": "node --test" } }\n' > "$work/web/package.json"
+  out="$(cd "$work" && "$SCRIPTS/build-command.sh" . 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -qx 'web|package.json|cd web && npm test|frontend' || ok=1
+  printf '{ "scripts": { "build": "tsc", "test": "jest" } }\n' > "$work/web/package.json"
+  out="$out~$(cd "$work" && "$SCRIPTS/build-command.sh" . 2>&1)"
+  printf '%s\n' "$out" | grep -qx 'web|package.json|cd web && npm run build && npm test|frontend' || ok=1
+  printf '{}\n' > "$work/web/package.json"
+  prop_check stacks "the npm proposal names only the scripts package.json has" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  # The same backend-only feature under /sdd-code-fix: a finding is about this
+  # feature's code, so its stacks are the breakdown's.
+  ( cd "$work" && sed -i.bak '/TASK-002/,$d' _docs/Cart/tasks.md && rm -f _docs/Cart/tasks.md.bak \
+      && printf -- '---\nverdict: BLOCKED\n---\n\n# Review\n' > _docs/Cart/review.md )
+  out="$(cd "$work" && "$GATE" code-fix Cart 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -q 'SDD_BUILD_FRONTEND' && ok=1
+  prop_check stacks "code-fix asks only for the stacks the feature has" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  # Backend done, frontend open: the backend role is not spawned, so its build
+  # is not asked for.
+  printf -- '- [ ] **TASK-002** — b\n  - **Requires:** REQ-001\n  - **Type:** frontend\n' >> "$work/_docs/Cart/tasks.md"
+  ( cd "$work" && sed -i.bak 's/- \[ \] \*\*TASK-001/- [x] **TASK-001/' _docs/Cart/tasks.md && rm -f _docs/Cart/tasks.md.bak \
+      && printf 'SDD_BUILD_FRONTEND=npm test\n' > .sdd/sdd.conf )
+  out="$(cd "$work" && "$GATE" implement Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^GATE=ok$' || ok=1
+  printf '%s\n' "$out" | grep -q '^ROLE_ORDER=frontend$' || ok=1
+  printf '%s\n' "$out" | grep -q '^backend-developer' && ok=1
+  prop_check stacks "a stack with every task done is not spawned" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  # One package.json and backend tasks: detection sees a frontend only. The root
+  # command stands in for the backend, and with none the backend is asked for.
+  rm -f "$work/pom.xml"; rm -rf "$work/web"; printf '{}\n' > "$work/package.json"
+  ( cd "$work" && sed -i.bak 's/- \[x\] \*\*TASK-001/- [ ] **TASK-001/; s/Type:\*\* frontend/Type:** backend/' _docs/Cart/tasks.md \
+      && rm -f _docs/Cart/tasks.md.bak && printf 'SDD_BUILD_ROOT=npm test\n' > .sdd/sdd.conf )
+  # The command a role builds with is prompt data, so it is read where the
+  # renderer reads it.
+  out="$(cd "$work" && "$GATE" implement Cart --prompt-data 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^GATE=ok$' || ok=1
+  printf '%s\n' "$out" | grep -q '^BUILD_BACKEND=npm test$' || ok=1
+  prop_check stacks "the root command stands in for an undetected stack" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  printf 'SDD_BUILD_FRONTEND=npm test\n' > "$work/.sdd/sdd.conf"
+  out="$(cd "$work" && "$GATE" implement Cart 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^GATE=ask$' || ok=1
+  printf '%s\n' "$out" | grep -q 'No build command for the backend stack: the tasks of this feature build it' || ok=1
+  prop_check stacks "an undetected stack with no answer is asked for" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  ok=0
+  for f in a.rs b.php c.kts d.swift; do
+    printf 'x\n' > "$work/$f"
+    ( cd "$work" && "$EDITOR_SH" marker "$f" 1 note ) >/dev/null 2>&1 || ok=1
+    grep -q '^// TODO Code Review: note' "$work/$f" || ok=1
+  done
+  prop_check stacks "markers in rs, php, kts, swift" "$ok" "$(head -1 "$work/a.rs")"
+}
+
+# Two features handed one number, and a reworded entry that was retired: the
+# promotion stops instead of writing one feature's requirement over another's.
+check_collisions() {
+  local work="$TMP/collisions" out rc ok line
+  printf 'collisions\n'
+  rm -rf "$work" && mkdir -p "$work/_docs/Promo" "$work/_docs/Cart" || exit 1
+  cat > "$work/_docs/requirements.md" <<'EOR'
+<!-- Next free number: REQ-003 -->
+
+## Requirements
+
+- **REQ-001** — Catalog listing. A shopper browses. *(Source: Catalog)* ^req-001
+- **REQ-002** — Cart holds items. A shopper keeps items. *(Source: Cart, superseded by REQ-009)* ^req-002
+EOR
+  printf -- '---\nstatus: ready\n---\n\n# R\n\n## Requirements\n\n### REQ-001 — Promo codes\n- **Description:** x ^req-001\n' > "$work/_docs/Promo/new-requirements.md"
+  printf -- '---\nstatus: ready\n---\n\n# D\n\nBody.\n' > "$work/_docs/Promo/design.md"
+  printf -- '---\nstatus: ready\n---\n\n# T\n\n## Tasks\n\n- [x] **TASK-001** — P\n  - **Requires:** REQ-001\n  - **Type:** backend\n' > "$work/_docs/Promo/tasks.md"
+  printf 'raw\n' > "$work/_docs/Promo/raw.md"
+  mkdir -p "$work/_docs/architecture" && printf '# Overview\n\nText.\n' > "$work/_docs/architecture/01-system-overview.md"
+  printf '| Topic | Path |\n' > "$work/_docs/architecture.index.md"
+
+  out="$(cd "$work" && "$GATE" actualize Promo 2>&1)"
+  ok=0
+  printf '%s\n' "$out" | grep -q '^GATE=stop$' || ok=1
+  printf '%s\n' "$out" | grep -q 'already holds REQ-001 as an entry of Catalog — two features were handed one number' || ok=1
+  prop_check collisions "actualize stops on a number another feature's entry holds" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  out="$(cd "$work" && "$EDITOR_SH" compile-entry Promo REQ-001 final "Promo codes. x" 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 2 && "$out" == *"is an entry of Catalog, not of Promo"* ]] || ok=1
+  grep -q 'Catalog listing. A shopper browses. \*(Source: Catalog)\*' "$work/_docs/requirements.md" || ok=1
+  prop_check collisions "final never writes over another feature's entry" "$ok" "exit $rc: $out"
+
+  out="$(cd "$work" && "$GATE" actualize Promo --verify 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 2 && "$out" == *"is an entry of Catalog, not of Promo"* ]] || ok=1
+  prop_check collisions "verify does not count another feature's entry" "$ok" "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
+  # Refining a retired entry is a stop; refining a live one keeps every mark.
+  printf -- '---\nstatus: ready\n---\n\n# R\n\n## Requirements\n\n### REQ-004 — Bigger cart\n- **Refines:** REQ-002\n- **Description:** x ^req-004\n' > "$work/_docs/Promo/new-requirements.md"
+  out="$(cd "$work" && "$GATE" actualize Promo 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -q 'REQ-002 is superseded by REQ-009 — a retired requirement is not reworded' || ok=1
+  prop_check collisions "a retired entry is not refined" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  ( cd "$work" && "$EDITOR_SH" compile-entry Promo REQ-002 refine "Cart holds items. More of them." ) >/dev/null 2>&1
+  line="$(grep 'REQ-002\*\*' "$work/_docs/requirements.md")"
+  ok=0; [[ "$line" == *'*(Source: Cart, refined by Promo, superseded by REQ-009)*'* ]] || ok=1
+  prop_check collisions "a rewording keeps the superseded mark" "$ok" "the entry reads: $line"
+
+  # Two features declaring one number, reported before either is promoted.
+  printf -- '---\nstatus: draft\n---\n\n## Requirements\n\n### REQ-004 — Cart badge\n' > "$work/_docs/Cart/new-requirements.md"
+  out="$(cd "$work" && "$SCRIPTS/next-req.sh" . 2>&1)"
+  ok=0; printf '%s\n' "$out" | awk '/^[A-Z_]+:$/ { s = $0; next } s == "COLLISIONS:" && NF' | grep -qx 'REQ-004|Cart,Promo' || ok=1
+  out="$(cd "$work" && "$GATE" actualize Promo 2>&1)"
+  printf '%s\n' "$out" | grep -q 'Declared by more than one feature: REQ-004 (Cart,Promo)' || ok=1
+  prop_check collisions "one number declared by two features is reported" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+}
+
+# A feature that declares no requirement has no compilation entry to be told
+# actualized by: the `actualized:` property of its new-requirements.md is the
+# mark, written by spec-edit.sh as the last write of the promotion.
+# The findings of a review, as /sdd-code-fix gets them: the place out of either
+# form of `Where:`, a range read as its first line, and the stack of the build
+# file nearest above the file — `-` where no build file settles it.
+check_findings() {
+  local work="$TMP/findings-check" out ok exp f
+  printf 'findings\n'
+  rm -rf "$work" && mkdir -p "$work/_docs/Cart" "$work/web" "$work/.sdd" || exit 1
+  printf '{}\n' > "$work/web/package.json"
+  mkdir -p "$work/api" && printf '<project/>\n' > "$work/api/pom.xml"
+  printf 'SDD_BUILD_BACKEND=mvn verify\nSDD_BUILD_FRONTEND=cd web && npm test\n' > "$work/.sdd/sdd.conf"
+  for f in new-requirements design; do
+    printf -- '---\nstatus: ready\n---\n\n# %s\n\nBody.\n' "$f" > "$work/_docs/Cart/$f.md"
+  done
+  printf -- '---\nstatus: ready\n---\n\n# T\n\n## Tasks\n\n- [x] **TASK-001** — a\n  - **Type:** backend\n- [x] **TASK-002** — b\n  - **Type:** frontend\n' \
+    > "$work/_docs/Cart/tasks.md"
+  cat > "$work/_docs/Cart/review.md" <<'SDD_REVIEW'
+---
+verdict: BLOCKED
+---
+
+# Code Review — Cart
+
+## Findings
+
+<!--
+### F-09 — Critical — Security
+
+> [!danger] Where: `api/X.java:1`
+-->
+
+### F-01 — Critical — Security
+
+> [!danger] Where: `api/src/Cart.java:42`
+> **What:** x
+
+### F-02 — Minor — Style
+
+> [!note] Where: `web/src/app.ts:10-14`
+
+### F-03 — Suggestion — Quality
+
+> [!tip] Where: `README.md`
+
+### F-04 — Major — Spec Deviation
+
+> [!warning] **What:** no place.
+
+### F-05 — Major — Performance
+- **Where:** `api/src/Repo.java:7`
+
+## Requirement coverage
+
+Where: `api/Elsewhere.java:3`
+SDD_REVIEW
+  exp='F-01|Critical|Security|api/src/Cart.java|42|backend
+F-02|Minor|Style|web/src/app.ts|10|frontend
+F-03|Suggestion|Quality|README.md|-|-
+F-04|Major|Spec Deviation|-|-|-
+F-05|Major|Performance|api/src/Repo.java|7|backend'
+  out="$(cd "$work" && "$GATE" code-fix Cart 2>&1)"
+  ok=0; [[ "$(printf '%s\n' "$out" | sed -n '/^FINDINGS:$/,/^$/p' | sed '1d;/^$/d')" == "$exp" ]] || ok=1
+  prop_check findings "two stacks: each finding goes to the build file above it" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  # No build file above it: the type of the tasks that name the file decides,
+  # and tasks of both types naming it leave the choice to the human.
+  printf -- '---\nstatus: ready\n---\n\n# T\n\n## Tasks\n\n- [x] **TASK-001** — a\n  - **Type:** backend\n- [x] **TASK-002** — b\n  - **Type:** frontend\n  - **Description:** Update `README.md`.\n' \
+    > "$work/_docs/Cart/tasks.md"
+  out="$(cd "$work" && "$GATE" code-fix Cart 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -qx 'F-03|Suggestion|Quality|README.md|-|frontend' || ok=1
+  prop_check findings "no build file: the tasks that name the file give the stack" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+  printf -- '---\nstatus: ready\n---\n\n# T\n\n## Tasks\n\n- [x] **TASK-001** — a\n  - **Type:** backend\n  - **Description:** Link `README.md`.\n- [x] **TASK-002** — b\n  - **Type:** frontend\n  - **Description:** Update `README.md`.\n' \
+    > "$work/_docs/Cart/tasks.md"
+  out="$(cd "$work" && "$GATE" code-fix Cart 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -qx 'F-03|Suggestion|Quality|README.md|-|-' || ok=1
+  prop_check findings "tasks of both types name the file: the human names the role" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  # One stack in the breakdown: every finding is that stack's, placed or not.
+  sed -i.bak '/TASK-002/,$d' "$work/_docs/Cart/tasks.md" && rm -f "$work/_docs/Cart/tasks.md.bak"
+  out="$(cd "$work" && "$GATE" code-fix Cart 2>&1)"
+  ok=0; [[ "$(printf '%s\n' "$out" | sed -n '/^FINDINGS:$/,/^$/p' | grep -c '|backend$')" == "5" ]] || ok=1
+  prop_check findings "one stack: every finding is the feature's" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+}
+
+# A rewrite replaces the file by a rename, so a run cut short never leaves half
+# of it. What a rename would lose is kept: the mode of a script a marker lands
+# in, and a symlink, which is written through rather than replaced.
+check_replace() {
+  local work="$TMP/replace-check" edit="$SCRIPTS/spec-edit.sh" ok
+  printf 'replace\n'
+  rm -rf "$work" && mkdir -p "$work/bin" "$work/real" || exit 1
+  printf '#!/bin/sh\necho one\necho two\n' > "$work/bin/run.sh" && chmod 755 "$work/bin/run.sh"
+  printf 'a: 1\nb: 2\n' > "$work/real/conf.yml" && ln -s ../real/conf.yml "$work/bin/conf.yml"
+
+  ( cd "$work" && SDD_LOG=0 "$edit" marker bin/run.sh 3 'Two is wrong.' ) >/dev/null 2>&1
+  ( cd "$work" && SDD_LOG=0 "$edit" marker bin/conf.yml 2 'B is wrong.' ) >/dev/null 2>&1
+  ok=0
+  [[ -x "$work/bin/run.sh" ]] && grep -q 'Two is wrong' "$work/bin/run.sh" \
+    && [[ -L "$work/bin/conf.yml" ]] && grep -q 'B is wrong' "$work/real/conf.yml" \
+    && [[ -z "$(find "$work" -name '*.sdd-new.*')" ]] || ok=1
+  prop_check replace "mode and symlink survive" "$ok" \
+    "after two markers: run.sh $( [[ -x "$work/bin/run.sh" ]] && echo keeps || echo lost ) +x, conf.yml $( [[ -L "$work/bin/conf.yml" ]] && echo 'is still a link' || echo 'is no longer a link' ), leftovers: $(find "$work" -name '*.sdd-new.*' | tr '\n' ' ')"
+}
+
+check_no_requirements() {
+  local work="$TMP/no-reqs" state="$SCRIPTS/feature-state.sh" out rc ok f
+  printf 'no-requirements\n'
+  rm -rf "$work" && mkdir -p "$work/_docs/Tidy" "$work/_docs/architecture" || exit 1
+  printf '<!-- Next free number: REQ-002 -->\n\n## Requirements\n\n- **REQ-001** — Catalog. Browse. *(Source: Catalog)* ^req-001\n' > "$work/_docs/requirements.md"
+  f="$work/_docs/Tidy/new-requirements.md"
+  printf -- '---\ntype: requirements\nstatus: ready\ntags:\n  - sdd/requirements\n---\n\n# R\n\n## Requirements\n\nNone — a refactor.\n' > "$f"
+  printf -- '---\nstatus: ready\n---\n\n# D\n\nBody.\n' > "$work/_docs/Tidy/design.md"
+  printf -- '---\nstatus: ready\n---\n\n# T\n\n## Tasks\n\n- [x] **TASK-001** — Tidy\n  - **Type:** backend\n' > "$work/_docs/Tidy/tasks.md"
+  printf 'raw\n' > "$work/_docs/Tidy/raw.md"
+  printf '# Overview\n\nText.\n' > "$work/_docs/architecture/01-system-overview.md"
+  printf '| Topic | Path |\n' > "$work/_docs/architecture.index.md"
+
+  out="$(cd "$work" && "$state" Tidy 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -qx 'STAGE=implemented' || ok=1
+  [[ "$out" != *"holds no entry sourced by this feature"* ]] || ok=1
+  prop_check no-requirements "no mark: implemented, and no complaint about entries it never declared" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+
+  # The baseline's folder is not a feature: not listed, and not a name.
+  out="$(cd "$work" && "$state" 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -qx 'COUNT=1' || ok=1
+  printf '%s\n' "$out" | grep -q '^architecture|' && ok=1
+  prop_check no-requirements "_docs/architecture/ is not listed as a feature" "$ok" "$(printf '%s' "$out" | tr '\n' '~')"
+  out="$(cd "$work" && "$state" Architecture 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 2 && "$out" == *"architecture baseline's folder"* ]] || ok=1
+  prop_check no-requirements "architecture, in any case, is refused as a feature name" "$ok" "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
+  out="$(cd "$work" && "$GATE" actualize Tidy --verify 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 2 && "$out" == *"carries no 'actualized:' property"* ]] || ok=1
+  prop_check no-requirements "verify fails while the mark is missing" "$ok" "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
+  out="$(cd "$work" && "$EDITOR_SH" actualized Tidy 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 0 ]] || ok=1
+  [[ "$(sed -n 3,4p "$f" | tr '\n' '~')" == "status: ready~actualized: $(date +%Y-%m-%d)~" ]] || ok=1
+  prop_check no-requirements "the mark goes in as a property under status" "$ok" "exit $rc: $out — $(tr '\n' '~' < "$f")"
+
+  out="$(cd "$work" && "$state" Tidy 2>&1)"
+  ok=0; printf '%s\n' "$out" | grep -qx 'STAGE=actualized' || ok=1
+  out="$(cd "$work" && "$GATE" actualize Tidy --verify 2>&1)"; rc=$?
+  [[ $rc -eq 0 ]] || ok=1
+  prop_check no-requirements "with the mark: actualized, and verify passes" "$ok" "exit $rc: $(printf '%s' "$out" | tr '\n' '~')"
+
+  ( cd "$work" && "$EDITOR_SH" actualized Tidy ) >/dev/null 2>&1
+  ok=0; [[ "$(grep -c '^actualized:' "$f")" == 1 ]] || ok=1
+  prop_check no-requirements "a second run rewrites the mark, never adds one" "$ok" "$(tr '\n' '~' < "$f")"
+
+  # promote takes the same mark for such a feature, and refuses words for it.
+  out="$(cd "$work" && "$EDITOR_SH" promote Tidy 2>&1)"; rc=$?
+  ok=0
+  [[ $rc -eq 0 && "$out" == *"ACTUALIZED=$(date +%Y-%m-%d)"* && "$(grep -c '^actualized:' "$f")" == 1 ]] || ok=1
+  out="$(cd "$work" && printf 'REQ-002|x\n' | "$EDITOR_SH" promote Tidy - 2>&1)"; rc=$?
+  [[ $rc -eq 2 && "$out" == *'declares no requirement'* ]] || ok=1
+  prop_check no-requirements "promote marks it, and refuses wording" "$ok" "exit $rc: $out"
+
+  printf '# R\n\n> Status: ready\n\n## Requirements\n\nNone.\n' > "$f"
+  ( cd "$work" && "$EDITOR_SH" actualized Tidy ) >/dev/null 2>&1
+  ok=0; [[ "$(sed -n 4p "$f")" == "> Actualized: $(date +%Y-%m-%d)" ]] || ok=1
+  prop_check no-requirements "a document without frontmatter gets the blockquote form" "$ok" "$(tr '\n' '~' < "$f")"
+
+  printf -- '---\nstatus: ready\n---\n\n## Requirements\n\n### REQ-002 — Tidy\n- **Description:** x ^req-002\n' > "$f"
+  out="$(cd "$work" && "$EDITOR_SH" actualized Tidy 2>&1)"; rc=$?
+  ok=0; [[ $rc -eq 2 && "$out" == *"declares REQ-002"* ]] || ok=1
+  grep -q 'actualized' "$f" && ok=1
+  prop_check no-requirements "a feature with requirements is refused the mark" "$ok" "exit $rc: $out"
+}
 
 job_body() {
   local name="$1"; shift
@@ -1841,12 +2900,20 @@ job_body() {
   : > "$RESULTS"
   printf '1\n' > "$TMP_ROOT/rc/$name"
   job_env "j-$name"
+  local start=$SECONDS
   "$@"
+  printf '%s %s\n' "$(( SECONDS - start ))" "$name" > "$TMP_ROOT/time/$name"
   printf '0\n' > "$TMP_ROOT/rc/$name"
 }
 
+KNOWN_CHECKS=","
 start_job() {
   local name="$1"
+  case "$name" in
+    fixture-*) ;;
+    *) KNOWN_CHECKS="$KNOWN_CHECKS$name,"
+       [[ -z "$CHECKS" || ",$CHECKS," == *",$name,"* ]] || return 0 ;;
+  esac
   JOB_NAMES+=("$name")
   if (( JOBS == 1 )); then
     ( job_body "$@" ) > "$TMP_ROOT/out/$name" 2>&1
@@ -1859,6 +2926,7 @@ start_job() {
 # ── The queue ─────────────────────────────────────────────────────
 start_job names            check_names
 start_job feature-name     check_feature_name
+start_job name-everywhere  check_name_everywhere
 start_job log              check_log
 start_job format           check_format
 start_job build            check_build
@@ -1868,6 +2936,19 @@ start_job interrupted      check_interrupted
 start_job domains          check_domains
 start_job taken            check_taken
 start_job relations        check_relations
+start_job text             check_text
+start_job raw              check_raw
+start_job blocked-set      check_blocked_set
+start_job start            check_start
+start_job spec-review      check_spec_review
+start_job feedback         check_feedback
+start_job conf-set         check_conf_set
+start_job backup           check_backup
+start_job stacks           check_stacks
+start_job collisions       check_collisions
+start_job findings         check_findings
+start_job replace          check_replace
+start_job no-requirements  check_no_requirements
 start_job jira-tokens      check_jira_tokens
 start_job lib-source       check_suite lib-source
 start_job confluence-fetch   check_suite confluence
@@ -1876,7 +2957,18 @@ start_job confluence-search  check_suite confluence search.sh
 start_job jira-fetch         check_suite jira
 start_job jira-publish       check_suite jira publish.sh
 
-[[ -n "$SELECTED" ]] || SELECTED="$(cd "$FIXTURES" && ls -d */ 2>/dev/null | sed 's#/$##')"
+# A check named on the command line that the queue does not hold would narrow
+# the run to nothing and pass.
+for name in $(printf '%s' "$CHECKS" | tr ',' ' '); do
+  [[ "$name" == "none" || "$KNOWN_CHECKS" == *",$name,"* ]] || {
+    printf 'ERROR=no such check: %s — one of%s\n' "$name" "$(printf '%s' "$KNOWN_CHECKS" | tr ',' ' ')" >&2; exit 1; }
+done
+
+if (( NO_FIXTURES )); then
+  [[ -z "$SELECTED" ]] || { printf 'ERROR=--no-fixtures and fixtures named:%s\n' "$SELECTED" >&2; exit 1; }
+else
+  [[ -n "$SELECTED" ]] || SELECTED="$(cd "$FIXTURES" && ls -d */ 2>/dev/null | sed 's#/$##')"
+fi
 
 for name in $SELECTED; do
   [[ -d "$FIXTURES/$name" ]] || { printf 'ERROR=no such fixture: %s\n' "$name" >&2; exit 1; }
@@ -1889,7 +2981,7 @@ wait
 
 # ── The report ────────────────────────────────────────────────────
 BAD=0
-for name in "${JOB_NAMES[@]}"; do
+for name in ${JOB_NAMES[@]+"${JOB_NAMES[@]}"}; do
   [[ -f "$TMP_ROOT/out/$name" ]] && cat "$TMP_ROOT/out/$name"
   [[ "$(cat "$TMP_ROOT/rc/$name" 2>/dev/null)" == "0" ]] || {
     printf 'ERROR=job did not finish: %s\n' "$name" >&2
@@ -1898,13 +2990,15 @@ for name in "${JOB_NAMES[@]}"; do
 done
 
 PASSED=0; FAILED=0; WRITTEN=0
-for name in "${JOB_NAMES[@]}"; do
+for name in ${JOB_NAMES[@]+"${JOB_NAMES[@]}"}; do
   [[ -f "$TMP_ROOT/res/$name" ]] || continue
   PASSED=$(( PASSED + $(grep -c '^P$' "$TMP_ROOT/res/$name" || true) ))
   FAILED=$(( FAILED + $(grep -c '^F$' "$TMP_ROOT/res/$name" || true) ))
   WRITTEN=$(( WRITTEN + $(grep -c '^W$' "$TMP_ROOT/res/$name" || true) ))
 done
 
+# The jobs that set the wall time: the run is as long as its slowest one.
+printf '\nslowest: %s\n' "$(cat "$TMP_ROOT/time/"* 2>/dev/null | sort -rn | head -n 5 | awk '{ printf "%s%s %ss", sep, $2, $1; sep = ", " }')"
 printf '\n%s passed, %s failed' "$PASSED" "$FAILED"
 (( UPDATE )) && printf ', %s written' "$WRITTEN"
 printf '\n'

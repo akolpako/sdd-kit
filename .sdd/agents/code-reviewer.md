@@ -33,7 +33,7 @@ Every finding carries one of four severities. The severity decides the order fin
 | Severity | What it means | Examples |
 |---|---|---|
 | **Critical** | Blocks the merge | SQL injection, missing auth check, a secret committed to the repo, data loss, broken functionality, red tests |
-| **Major** | Fix before merge | A failure path with no error handling, business logic with no test, an N+1 query |
+| **Major** | Should be fixed before merge; named in the verdict, does not block it | A failure path with no error handling, business logic with no test, an N+1 query |
 | **Minor** | Worth fixing | Naming, duplication, an undocumented public API |
 | **Suggestion** | Optional | Formatting, verbose logging |
 
@@ -54,4 +54,3 @@ Before returning:
 ## Skills
 
 - **Before the review starts:** look through the skills installed in this project and load each one whose description matches the diff — the languages, frameworks and test tools it touches, clean code and architecture principles, the libraries it relies on. None matching is not a blocker.
-- **Before a `.md` file is written:** an installed Obsidian Markdown skill, if there is one. Load it then, not before.

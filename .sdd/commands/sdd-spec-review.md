@@ -15,9 +15,10 @@ Turns a `draft` spec into a `ready` one through the checklist and an interview. 
   - `.sdd/protocols/orchestration.md`
   - the output of `.sdd/scripts/gate.sh review`
   - the prompts `.sdd/scripts/spawn-prompt.sh` renders
-  - the `## Open Questions` section of `new-requirements.md` and `design.md`, and the `REQ-###` headings of `new-requirements.md` for the matrix
+  - the `## Open Questions` section of `new-requirements.md` and `design.md`
   - nothing else of the feature's spec files — those are the roles' to read
 - **Writes,** and nothing else in either file — everything else in their bodies is the roles':
+  - the snapshot that precedes the run
   - the `status` markers of the feature's `new-requirements.md`, `design.md`, `tasks.md`
   - the `## Open Questions` section of `new-requirements.md` and `design.md` — the human's answers, appended to the lines they answer
   - never `_docs/requirements.md` — `/sdd-actualize` is what writes it
@@ -26,46 +27,50 @@ Turns a `draft` spec into a `ready` one through the checklist and an interview. 
 
 1. **Gate:** run `.sdd/scripts/gate.sh review <FeatureName>`. `GATE=ok` reviews. `ANOMALIES:` open the session rather than close it — several of them are exactly what this review exists to settle.
 
-2. **Spawn** both `SPAWN:` records: per record, run `.sdd/scripts/spawn-prompt.sh review <FeatureName> <scope>`. A role returns its `FAIL` list and what it left on the page. **The questions are read from `## Open Questions` of its file, never out of its report.**
+   Then back up: run `.sdd/scripts/spec-edit.sh backup <FeatureName>` — the roles rewrite the spec in place. If it exits non-zero, stop.
 
-3. **Interview and re-spawn,** requirements first, then design. One round over one file:
-   - **Read `## Open Questions`** out of that file. Nothing there, and nothing raised by the round before it, means the file is done — go on to step 4.
+   Then reset: run `.sdd/scripts/spec-edit.sh status <FeatureName> draft <file ...>`, naming each file whose `STATUS_*` is `ready`, and skip the call when none is. `ready` is the verdict of this run, never one carried over: the roles are about to change those files, and a run cut short must not leave a rewritten spec marked as reviewed.
+
+2. **Spawn** the `SPAWN:` records one at a time, in the order printed, and the next only once the file of the one before is done (step 3) — the next one as the gate prints it then: per record, run `.sdd/scripts/spawn-prompt.sh review <FeatureName> <scope>`. The design is reviewed against requirements that no longer move — spawned before them, it would ask about text that is about to change and have to run again. A role returns only the `FAIL` items it did not close — what it fixed is on the page. **The questions are read from `## Open Questions` of its file, never out of its report.**
+
+3. **Interview and re-spawn,** one file at a time — requirements, then design. One round over one file:
+   - **Read `## Open Questions`** out of that file, with its line numbers. Nothing there, and nothing raised by the round before it, means the file is done — spawn the next record (step 2), or after the last one go on to step 4.
    - **Ask the human** one line of that section at a time, the role's own recommendation first among the options.
-   - **Write the answers back:** `.sdd/scripts/spec-edit.sh section <file> "Open Questions" "<text>"`. The script replaces the section body whole, so `<text>` carries **every** line of the section, in its own order — a line left out of the call is deleted. Append `**Answer:**` and nothing else; the wording of the question is the role's (`.sdd/protocols/spec-modes.md`).
-   - **Spawn the same scope again** — the same `SPAWN:` record, the same `spawn-prompt.sh` call, the same prompt. Nothing here tells the role which round it is on: what it does with an answered line is its own protocol's.
+   - **Write each answer back** as it arrives: `.sdd/scripts/spec-edit.sh answer <file> <line> -`, the answer on stdin. The script appends `**Answer:**` and the text to that line and to nothing else — the wording of the question is the role's — and adds no line, so the numbers read above hold for every answer of the round.
+   - **Run the gate again and spawn this file's record as it prints it now** — `.sdd/scripts/gate.sh review <FeatureName>`, then `.sdd/scripts/spawn-prompt.sh review <FeatureName> <its scope>`; the `requirements-engineer` record is `new-requirements.md`'s, the `architect` record `design.md`'s. A file whose `## Open Questions` holds an answered line comes back as a fold (`fold-requirements`, `fold-design+tasks`): the answers written in and what they touched re-checked, without the checklist. Nothing here picks the assignment — the gate reads it off the page.
    - Then round two, from the top.
 
-   At most three rounds per file per session, per `.sdd/protocols/interview.md`. What is still open at that ceiling stays on the page, and the verdict of step 7 accounts for it.
+   **At most three rounds per file per session.** What is still open at that ceiling is not asked a fourth time: it stays on the page, and the verdict of step 7 accounts for it. The count belongs to this run and the page carries no counter, so a review re-run after an interruption counts from zero.
 
 4. **Conflicts are settled inside the loop of step 3, not after it.** Finding them is the roles': a new requirement that overlaps or contradicts an entry of `_docs/requirements.md`, and a design decision that contradicts the architecture baseline, each arrive as a line of `## Open Questions` like any other question.
-   - For a requirement the question is always the same one — is it a **refinement** of the existing entry or its **replacement** — and the answer is written back onto its line by the same `spec-edit.sh section` call. The role then records it as the `Refines:` / `Supersedes:` line under the requirement's heading; that line is what `/sdd-actualize` applies to the compilation. Nothing is written into `new-requirements.md` by hand here.
+   - For a requirement the question is always the same one — is it a **refinement** of the existing entry or its **replacement** — and the answer is written back onto its line by the same `spec-edit.sh answer` call. The role then records it as the `Refines:` / `Supersedes:` line under the requirement's heading; that line is what `/sdd-actualize` applies to the compilation. Nothing is written into `new-requirements.md` by hand here.
    - No conflict is left unresolved: a conflict line still unanswered when the rounds are spent is a critical gap, and the verdict of step 7 is `NOT READY`.
 
-5. **Re-run the gate:** the roles have been rewriting `tasks.md` since step 1, so the `TASKS:` records the matrix of step 6 reads come from this run, never from the first one.
+5. **Re-run the gate:** the roles have been rewriting `tasks.md` since step 1, so the matrix of step 6 comes from this run, never from the first one.
 
-6. **Print the coverage matrix** — the orchestrator's own, to the chat, never into a file. Every `REQ-###` declared in `new-requirements.md`, against the `requires` field of the `TASKS:` records of step 5:
+6. **Print the coverage matrix** — the orchestrator's own, to the chat, never into a file: the gate's `COVERAGE:` records of step 5, `<REQ>|<title>|<tasks>`, one row each, as they stand:
 
      | Requirement | Covered by |
      |-------------|------------|
      | `REQ-001` — Cart total | `TASK-001`, `TASK-004` |
      | `REQ-002` — Promo codes | — |
 
-   **A requirement with no task is a stop.** List every one of them and ask the human which it is. A `requires` entry naming a `REQ-###` that `new-requirements.md` does not declare is reported the same way, with the task that names it.
+   **A requirement with no task is a stop.** The gate of step 5 lists them under `UNCOVERED:` — that list, not a count made off the table, is what is asked about: every one of them, and the human says which it is. A `requires` entry naming a `REQ-###` that `new-requirements.md` does not declare is under `UNDECLARED:`, with the task that names it, and is reported the same way.
 
-   Both replies are answers like any other: each is written into the `## Open Questions` of the file whose role applies it, by the same `spec-edit.sh section` call as step 3, and the round that follows applies it.
+   Both replies are answers like any other, except that no role asked them: each becomes a line of its own in the `## Open Questions` of the file whose role applies it — `.sdd/scripts/spec-edit.sh answer <file> new -`, with `<the requirement or task> — <what is wrong> **Answer:** <the human's words>` on stdin — and the round that follows applies it.
    - **Missing task** — into `design.md`, where the next round adds the task.
    - **Not in this feature after all** — into `new-requirements.md`, where the next round moves the requirement to `## Out of Scope`. Its number goes with it and is not reused.
 
-   An answer written here sends the run back to step 3 for one more round, inside the same three-round ceiling, and the matrix is printed again off a fresh step 5.
+   An answer written here sends the run back to step 3 for one more round, inside the same three-round ceiling, and the matrix is printed again off a fresh step 5. A round that changed `new-requirements.md` is followed by one more spawn of the design scope: the breakdown was written against the text that changed.
 
 7. **Close with a verdict** — exactly one of three, printed to the chat and never into a spec file, before any `status` marker is set:
 
       | Verdict | What it means | Status marker |
       |---------|---------------|---------------|
-      | **READY** | Every checklist pass is clean, every question is answered, no requirement is uncovered | `status: ready` on all three files |
+      | **READY** | The checklist came back clean, or everything it raised was answered and folded in; every question is answered, no requirement is uncovered | `status: ready` on all three files |
       | **READY WITH OPEN QUESTIONS** | What is still open is non-critical and written down — the `A-##` assumptions and `## Open Questions` lines, each named in the verdict | `ready` only after the human, having read that list, explicitly agrees |
       | **NOT READY** | A critical gap remains: a question the feature cannot be built without, a requirement no task covers, a contradiction with the architecture baseline | stays `draft`; the blockers are listed, one per line |
 
-   The marker is written by `.sdd/scripts/spec-edit.sh status <FeatureName> ready <file ...>` — the last write of the run, only after every role has returned. A file left with unanswered questions is not named in that call: it keeps `status: draft` and is named in the output instead.
+   The marker is written by `.sdd/scripts/spec-edit.sh status <FeatureName> ready <file ...>` — the last write of the run, only after every role has returned. The script refuses a file whose `## Open Questions` still holds a line — open, or answered and not yet folded in — so such a file rules **READY** out: the verdict is one of the other two. On **READY WITH OPEN QUESTIONS**, once the human has agreed, the call carries `--accept-open` and the lines stay on the page as what was accepted.
 
 8. **Report the next step:** on `READY`, `/sdd-implement <FeatureName>`. On anything else, what is still open and that re-running `/sdd-spec-review <FeatureName>` is what closes it.

@@ -4,8 +4,6 @@ FOLDER=Cart
 STAGE=raw
 BASE=
 ROOT=
-DIFF=
-CHANGED=0
 REVIEW_PATH=_docs/Cart/review.md
 REVIEW_PREVIOUS=
 
@@ -18,7 +16,6 @@ Not a git repository: /sdd-code-review needs git to tell what this feature chang
 ASK:
 
 WARN:
-Not reviewed: new-requirements.md (no status), design.md (no status), tasks.md (no status). The yardstick of this review is an unreviewed spec, and the report says so. /sdd-spec-review Cart is what promotes a spec to ready.
 No task is marked [x]. Whatever the working tree holds is reviewed all the same, but the feature is not implemented — check that /sdd-implement Cart actually ran.
 
 ANOMALIES:

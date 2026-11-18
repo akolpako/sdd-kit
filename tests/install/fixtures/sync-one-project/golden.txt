@@ -31,6 +31,9 @@ d  .claude/skills/angular-practices/
 c  .claude/skills/angular-practices/SKILL.md = <engine>/.sdd/skills/angular-practices/SKILL.md
 d  .claude/skills/confluence/
 c  .claude/skills/confluence/SKILL.md = <engine>/.sdd/skills/confluence/SKILL.md
+d  .claude/skills/confluence/references/
+c  .claude/skills/confluence/references/publish.md = <engine>/.sdd/skills/confluence/references/publish.md
+c  .claude/skills/confluence/references/setup.md = <engine>/.sdd/skills/confluence/references/setup.md
 d  .claude/skills/confluence/scripts/
 c  .claude/skills/confluence/scripts/confluence-fetch.sh = <engine>/.sdd/skills/confluence/scripts/confluence-fetch.sh
 c  .claude/skills/confluence/scripts/confluence-publish.sh = <engine>/.sdd/skills/confluence/scripts/confluence-publish.sh
@@ -66,6 +69,9 @@ d  .claude/skills/java-springboot/
 c  .claude/skills/java-springboot/SKILL.md = <engine>/.sdd/skills/java-springboot/SKILL.md
 d  .claude/skills/jira/
 c  .claude/skills/jira/SKILL.md = <engine>/.sdd/skills/jira/SKILL.md
+d  .claude/skills/jira/references/
+c  .claude/skills/jira/references/publish.md = <engine>/.sdd/skills/jira/references/publish.md
+c  .claude/skills/jira/references/setup.md = <engine>/.sdd/skills/jira/references/setup.md
 d  .claude/skills/jira/scripts/
 c  .claude/skills/jira/scripts/jira-fetch.sh = <engine>/.sdd/skills/jira/scripts/jira-fetch.sh
 c  .claude/skills/jira/scripts/jira-publish.sh = <engine>/.sdd/skills/jira/scripts/jira-publish.sh
@@ -79,6 +85,7 @@ c  .claude/skills/maven-lib-source/scripts/maven-lib-source.sh = <engine>/.sdd/s
 f  .gitignore
 d  .sdd/
 f  .sdd/.sdd-manifest
+c  .sdd/AGENTS.md = <engine>/.sdd/AGENTS.md
 d  .sdd/prompts/
 c  .sdd/prompts/actualize-baseline-from-feature.md = <engine>/.sdd/prompts/actualize-baseline-from-feature.md
 c  .sdd/prompts/code-fix-findings-backend.md = <engine>/.sdd/prompts/code-fix-findings-backend.md
@@ -88,6 +95,8 @@ c  .sdd/prompts/implement-backend.md = <engine>/.sdd/prompts/implement-backend.m
 c  .sdd/prompts/implement-frontend.md = <engine>/.sdd/prompts/implement-frontend.md
 c  .sdd/prompts/init-baseline-from-codebase.md = <engine>/.sdd/prompts/init-baseline-from-codebase.md
 c  .sdd/prompts/review-design+tasks.md = <engine>/.sdd/prompts/review-design+tasks.md
+c  .sdd/prompts/review-fold-design+tasks.md = <engine>/.sdd/prompts/review-fold-design+tasks.md
+c  .sdd/prompts/review-fold-requirements.md = <engine>/.sdd/prompts/review-fold-requirements.md
 c  .sdd/prompts/review-requirements.md = <engine>/.sdd/prompts/review-requirements.md
 c  .sdd/prompts/specify-design+tasks.md = <engine>/.sdd/prompts/specify-design+tasks.md
 c  .sdd/prompts/specify-requirements.md = <engine>/.sdd/prompts/specify-requirements.md
@@ -96,7 +105,6 @@ c  .sdd/protocols/architecture-design.md = <engine>/.sdd/protocols/architecture-
 c  .sdd/protocols/code-review.md = <engine>/.sdd/protocols/code-review.md
 c  .sdd/protocols/developer.md = <engine>/.sdd/protocols/developer.md
 c  .sdd/protocols/docs-format.md = <engine>/.sdd/protocols/docs-format.md
-c  .sdd/protocols/interview.md = <engine>/.sdd/protocols/interview.md
 c  .sdd/protocols/orchestration.md = <engine>/.sdd/protocols/orchestration.md
 c  .sdd/protocols/project-baseline.md = <engine>/.sdd/protocols/project-baseline.md
 c  .sdd/protocols/requirements-writing.md = <engine>/.sdd/protocols/requirements-writing.md
@@ -106,10 +114,13 @@ c  .sdd/protocols/task-breakdown.md = <engine>/.sdd/protocols/task-breakdown.md
 c  .sdd/protocols/task-loop.md = <engine>/.sdd/protocols/task-loop.md
 d  .sdd/scripts/
 c  .sdd/scripts/build-command.sh = <engine>/.sdd/scripts/build-command.sh
+c  .sdd/scripts/build-run.sh = <engine>/.sdd/scripts/build-run.sh
 c  .sdd/scripts/feature-state.sh = <engine>/.sdd/scripts/feature-state.sh
+c  .sdd/scripts/feedback.sh = <engine>/.sdd/scripts/feedback.sh
 c  .sdd/scripts/gate.sh = <engine>/.sdd/scripts/gate.sh
 c  .sdd/scripts/jira-import.sh = <engine>/.sdd/scripts/jira-import.sh
 d  .sdd/scripts/lib/
+c  .sdd/scripts/lib/conf.sh = <engine>/.sdd/scripts/lib/conf.sh
 c  .sdd/scripts/lib/format.sh = <engine>/.sdd/scripts/lib/format.sh
 c  .sdd/scripts/lib/log.sh = <engine>/.sdd/scripts/lib/log.sh
 c  .sdd/scripts/lib/token-counter.py = <engine>/.sdd/scripts/lib/token-counter.py
@@ -148,6 +159,7 @@ f  CLAUDE.md
 # SDD:BEGIN
 .sdd/*
 .claude/
+_docs/.backup/
 # SDD:END
 ### file .sdd/templates/requirements.md
 ---
@@ -168,7 +180,7 @@ All application requirements of the project, one line each.
 - **REQ-001** — <short title>. <one-sentence description>. *(Source: <FeatureName>)* ^req-001
 
 The `^req-001` at the end is the entry's anchor, the id in lower case. It is
-written by `spec-edit.sh compile-entry` and is what another document links to:
+written by `spec-edit.sh promote` and is what another document links to:
 `[REQ-001](requirements.md#^req-001)`.
 
 A project may group its requirements by domain — `REQ-ACC-003` beside
@@ -178,12 +190,12 @@ written by /sdd-actualize when the domain's first entry is compiled. The
 ids carrying no domain are one such sequence too — the one a project that never
 groups anything uses throughout.
 
-An entry with no status suffix is active. The two suffixes, after the source:
-- **REQ-014** — Cart discounts. A cart applies at most one promo code. *(Source: Cart, draft)*
+An entry with no status suffix is active. A retired one says what replaced it,
+after the source:
 - **REQ-012** — Guest checkout. A guest can order without an account. *(Source: Cart, superseded by REQ-031)*
 
 An entry a later feature reworded keeps its source and names that feature
-after it — written by `spec-edit.sh compile-entry`, never by hand:
+after it — written by `spec-edit.sh promote`, never by hand:
 - **REQ-002** — Cart holds items. A shopper keeps up to 50 items until checkout. *(Source: Cart, refined by Checkout)*
 -->
 ### file CLAUDE.md
@@ -196,7 +208,7 @@ This project uses Spec-Driven Development.
 
 ## The assignment
 
-**The prompt carries everything the role needs**: the protocols it is to follow, the paths it may read and write, and whatever was already resolved — the build command, a starting number, the records of the work. A role looks nothing up that the prompt did not name, and reads nothing in a folder the prompt did not name.
+**The prompt carries everything the role needs** — or the file it points at, read whole before anything else: the protocols it is to follow, the paths it may read and write, and whatever was already resolved — the build command, a starting number, the records of the work. A role looks nothing up that the prompt did not name, and reads nothing in a folder the prompt did not name.
 
 What a role changed is read from the working tree, never from its prose.
 
@@ -213,6 +225,8 @@ The `jira` and `confluence` skills' scripts take their tokens from the files pas
 **Publishing is the human's call.** `jira-publish.sh` and `confluence-publish.sh` run with `--yes` only after the human has seen the dry run and said yes in the session; a role never passes `--yes`.
 
 Whatever communication style the session is set to, anything written to `_docs/**` is normal prose.
+
+**A file under `_docs/` is changed by editing the file itself** or by a script the assignment names — never by a program of your own run in a shell (`python3`, `sed -i`, a redirect): in a session nobody watches, such a call waits for a permission nobody grants.
 
 ## Instructions conflicts
 
@@ -238,6 +252,8 @@ host	claude
 <sum>	.claude/settings.json
 <sum>	.claude/skills/angular-practices/SKILL.md
 <sum>	.claude/skills/confluence/SKILL.md
+<sum>	.claude/skills/confluence/references/publish.md
+<sum>	.claude/skills/confluence/references/setup.md
 <sum>	.claude/skills/confluence/scripts/confluence-fetch.sh
 <sum>	.claude/skills/confluence/scripts/confluence-publish.sh
 <sum>	.claude/skills/confluence/scripts/confluence-search.sh
@@ -266,6 +282,8 @@ host	claude
 <sum>	.claude/skills/java-junit/references/junit-rule-state-based-assertions.md
 <sum>	.claude/skills/java-springboot/SKILL.md
 <sum>	.claude/skills/jira/SKILL.md
+<sum>	.claude/skills/jira/references/publish.md
+<sum>	.claude/skills/jira/references/setup.md
 <sum>	.claude/skills/jira/scripts/jira-fetch.sh
 <sum>	.claude/skills/jira/scripts/jira-publish.sh
 <sum>	.claude/skills/jira/scripts/md-to-wiki.awk
@@ -273,6 +291,7 @@ host	claude
 <sum>	.claude/skills/maven-lib-source/SKILL.md
 <sum>	.claude/skills/maven-lib-source/scripts/MavenLibSource.java
 <sum>	.claude/skills/maven-lib-source/scripts/maven-lib-source.sh
+<sum>	.sdd/AGENTS.md
 <sum>	.sdd/prompts/actualize-baseline-from-feature.md
 <sum>	.sdd/prompts/code-fix-findings-backend.md
 <sum>	.sdd/prompts/code-fix-findings-frontend.md
@@ -281,6 +300,8 @@ host	claude
 <sum>	.sdd/prompts/implement-frontend.md
 <sum>	.sdd/prompts/init-baseline-from-codebase.md
 <sum>	.sdd/prompts/review-design+tasks.md
+<sum>	.sdd/prompts/review-fold-design+tasks.md
+<sum>	.sdd/prompts/review-fold-requirements.md
 <sum>	.sdd/prompts/review-requirements.md
 <sum>	.sdd/prompts/specify-design+tasks.md
 <sum>	.sdd/prompts/specify-requirements.md
@@ -288,7 +309,6 @@ host	claude
 <sum>	.sdd/protocols/code-review.md
 <sum>	.sdd/protocols/developer.md
 <sum>	.sdd/protocols/docs-format.md
-<sum>	.sdd/protocols/interview.md
 <sum>	.sdd/protocols/orchestration.md
 <sum>	.sdd/protocols/project-baseline.md
 <sum>	.sdd/protocols/requirements-writing.md
@@ -297,9 +317,12 @@ host	claude
 <sum>	.sdd/protocols/task-breakdown.md
 <sum>	.sdd/protocols/task-loop.md
 <sum>	.sdd/scripts/build-command.sh
+<sum>	.sdd/scripts/build-run.sh
 <sum>	.sdd/scripts/feature-state.sh
+<sum>	.sdd/scripts/feedback.sh
 <sum>	.sdd/scripts/gate.sh
 <sum>	.sdd/scripts/jira-import.sh
+<sum>	.sdd/scripts/lib/conf.sh
 <sum>	.sdd/scripts/lib/format.sh
 <sum>	.sdd/scripts/lib/log.sh
 <sum>	.sdd/scripts/lib/token-counter.py

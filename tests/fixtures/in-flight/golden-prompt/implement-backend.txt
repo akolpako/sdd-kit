@@ -1,3 +1,6 @@
+The rules every role works under: `.sdd/AGENTS.md`. Read them first, unless your
+instructions already carry them.
+
 Working directory: <tmp>/in-flight
 Every `.sdd/...` and `_docs/...` path below and in the protocols it names is
 relative to it.
@@ -18,6 +21,8 @@ Build command — the verification of this run, resolved already:
 
 mvn -q verify
 
+It is run as `.sdd/scripts/build-run.sh backend`, and in no other way.
+
 Files of this run:
 
 _docs/Wishlist/new-requirements.md
@@ -30,6 +35,10 @@ The open tasks of this feature:
 
 TASK-001|open|backend|Wishlist table and entity|
 TASK-002|open|backend|Move an item into the cart|
+
+Blocked tasks the human holds back from this run — not retried:
+
+none
 
 Your type is `backend`, and every task of it above is yours in this one run.
 Your `tasks.md` is `_docs/Wishlist/tasks.md` — run the task loop over it.

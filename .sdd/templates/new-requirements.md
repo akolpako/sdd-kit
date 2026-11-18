@@ -41,18 +41,7 @@ both, and neither when the requirement is simply new:
 
 `Refines` — the existing entry keeps its number and takes this wording.
 `Supersedes` — the existing entry is retired and this requirement stands in its
-place under its own number. The line is read by the engine: it is what
-/sdd-actualize acts on.
-
-Requirements describe *what* and *why*, never *how*.
-One behaviour per condition — "and" inside a condition means it should be split.
-At least two conditions per requirement, one of them an `Error:` condition.
-
-The `^req-###` at the end of the description line is the requirement's anchor,
-the id in lower case — `REQ-ACC-003` gives `^req-acc-003`. It is what
-`design.md` and `tasks.md` link to, so it is written even where nothing points
-at it yet. A term this feature defines is marked ==like this== where it is
-defined, once, and used plainly everywhere after.
+place under its own number.
 -->
 
 ## Assumptions

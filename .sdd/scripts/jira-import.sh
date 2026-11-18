@@ -19,9 +19,10 @@
 # found); 4 — the answer was unusable. On any exit but 0, --out is untouched.
 
 set -uo pipefail
-[[ -r "$(dirname "$0")/lib/log.sh" ]] && . "$(dirname "$0")/lib/log.sh"
+SDD_HERE="${0%/*}"; [[ "$SDD_HERE" == "$0" ]] && SDD_HERE="."
+[[ -r "$SDD_HERE/lib/log.sh" ]] && . "$SDD_HERE/lib/log.sh"
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$SDD_HERE" && pwd)"
 
 if [[ ! -r "$SCRIPT_DIR/lib/format.sh" ]]; then
   printf 'ERROR=missing: %s/lib/format.sh\n' "$SCRIPT_DIR" >&2

@@ -2,10 +2,6 @@ GATE=ask
 FEATURE=Wishlist
 FOLDER=Wishlist
 STAGE=specified
-REQUIREMENTS=present
-DESIGN=present
-COMPILATION=present
-NEXT_REQ=REQ-006
 
 SPAWN:
 architect|.sdd/protocols/project-baseline.md,.sdd/protocols/docs-format.md|baseline-from-feature

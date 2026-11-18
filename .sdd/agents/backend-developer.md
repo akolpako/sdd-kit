@@ -34,16 +34,15 @@ Write and change server-side code, and test it.
 
 ## Self-Check
 
-Before returning. Work out from the project how the build is run, and run it as part of every verification — the last one included.
+Before returning. Run the build the assignment names as part of every verification, the last one included. Where it names none, my reply says so — I never pick one myself.
 
 - [ ] The build passes: compilation and the full test suite, not only the tests I wrote
 - [ ] Every endpoint whose behaviour I changed has an integration test
 - [ ] Every new class or module with logic has a unit test — DTOs, configuration and simple converters excepted
-- [ ] Every schema change has a migration, and it runs against a database that already holds data
+- [ ] Every schema change has a migration written for tables that already hold rows: a new required column carries a default or a backfill, and nothing is dropped or renamed in the same step that stops using it
 - [ ] Every third-party behaviour I relied on was read from the library, not recalled
 - [ ] Nothing in the assignment is left unbuilt — where it is, my reply says so and why
 
 ## Skills
 
 - **Before the work starts:** look through the skills installed in this project and load each one whose description matches the work — the language, frameworks and test tools of the code I change, clean code and architecture principles, the libraries the task uses. A skill that becomes relevant mid-task is loaded then. None matching is not a blocker.
-- **Before a `.md` file is written:** an installed Obsidian Markdown skill, if there is one. Load it then, not before. A checkbox ticked in a file I was handed is not that; text written into one is.

@@ -2,22 +2,12 @@ GATE=stop
 FEATURE=Cart
 FOLDER=Cart
 STAGE=specified
-RAW=present
-REQUIREMENTS=present
-DESIGN=present
-TASKS=present
 STATUS_REQUIREMENTS=draft
 STATUS_DESIGN=draft
 STATUS_TASKS=draft
-COMPILATION=present
-NEXT_REQ=REQ-004
-MODE=draft
 
 REQ_DOMAINS:
 -|NEXT=REQ-004|COUNTER=REQ-003|HIGHEST=REQ-002|DECLARED=REQ-003|DECLARED_IN=Cart|COUNT=3
-
-REQ_DUPLICATES:
-REQ-002
 
 STOP:
 The compilation is already inconsistent — carried by more than one entry: REQ-002. No number is issued until the human repairs it — a REQ-### handed out twice corrupts the compilation quietly.

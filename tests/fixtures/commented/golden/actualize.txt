@@ -2,10 +2,6 @@ GATE=ask
 FEATURE=Cart
 FOLDER=Cart
 STAGE=in progress 2/4
-REQUIREMENTS=present
-DESIGN=present
-COMPILATION=present
-NEXT_REQ=REQ-004
 
 SPAWN:
 architect|.sdd/protocols/project-baseline.md,.sdd/protocols/docs-format.md|baseline-from-feature

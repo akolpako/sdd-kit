@@ -4,6 +4,10 @@ REVIEW=_docs/Wishlist/review.md
 REVIEWED=<today>
 BASE=none — uncommitted changes only
 ROOT=none — nothing is committed yet
+MARKERS=failed
+
+NOTES:
+The TODO Code Review sweep did not complete: fatal: not a git repository (or any of the parent directories): .git
 ### exit=0
 ### tree
 Only in <tmp>/edit/_docs/Wishlist: review.md

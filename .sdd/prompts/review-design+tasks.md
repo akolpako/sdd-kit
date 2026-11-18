@@ -20,12 +20,11 @@ Run your checklist passes over `_docs/{{FOLDER}}/design.md` and
 settle yourself, and write it into those files — no one else writes them.
 
 What only the human can settle goes into `## Open Questions` of
-`_docs/{{FOLDER}}/design.md`, one line each, carrying your recommended answer.
-A line already carrying an `**Answer:**` is the human's: fold it into the design
-it belongs to, retire the `A-##` that line names, and delete the line. Leave
-every line without an answer as it stands, word for word.
+`_docs/{{FOLDER}}/design.md`, and a line there already carrying an
+`**Answer:**` is folded in — both as the spec-modes protocol fixes them.
 
 `tasks.md` is yours to bring in line with the revised requirements and design.
 
-Return: the `FAIL` list first, then what you fixed and what you left on the
-page, worst first.
+Return only the `FAIL` items you did not close, worst first, one line each, or
+that none is left, and a done task the revision made pointless — what you fixed
+is read from the files, never from your reply.

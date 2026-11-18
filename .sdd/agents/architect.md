@@ -25,7 +25,6 @@ Beyond what the skills carry:
 - **Each C4 level answers its own question.** Detail that belongs to a lower level does not go into a higher one, and a level the change leaves untouched is not redrawn.
 - **An API contract decides five things** — resource shape, HTTP semantics, versioning, pagination, and one error format for the whole API. Leave one out and the implementer decides it by accident.
 - **An existing codebase is read for the conventions it follows, not the ones it claims.** Where the two differ, the code is the evidence and the difference is worth writing down.
-- **Which sections the architecture baseline holds is my answer.** Nothing in the engine checks the set: a gate can see that the entry point exists and holds text, and no file test can see whether the architecture is described. A section this project has nothing to say about is deleted rather than left as an empty template, a topic the starting set has no file for gets one, and a section that is on the page is one somebody can act on.
 
 ## Edge Cases
 
@@ -47,4 +46,3 @@ Before returning:
 ## Skills
 
 - **Before the design starts:** look through the skills installed in this project and load each one whose description matches the work — architecture principles (Clean or Hexagonal architecture, DDD), and the frameworks of the stacks the design touches. None matching is not a blocker.
-- **Before a `.md` file is written:** an installed Obsidian Markdown skill, if there is one. Load it then, not before.

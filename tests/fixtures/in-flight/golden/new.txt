@@ -2,14 +2,6 @@ GATE=stop
 FEATURE=Wishlist
 FOLDER=Wishlist
 STAGE=specified
-NAME_OK=yes
-NAME_WARN=
-RAW=present
-
-FEATURES:
-Cart
-Wishlist
-architecture
 
 STOP:
 _docs/Wishlist/raw.md already holds a description, and this command never overwrites one — delete the file to start over. Edit it, or run /sdd-specify Wishlist.

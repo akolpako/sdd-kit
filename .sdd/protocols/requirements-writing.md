@@ -25,11 +25,11 @@ An id is `REQ-###`, or `REQ-<DOMAIN>-###` when the project groups its requiremen
 
 ### The domain
 
-The domains in use are the `DOMAINS:` records of `.sdd/scripts/next-req.sh`, one per sequence, `-` standing for the ungrouped one. Read them before deciding:
+The domains in use arrive with the assignment, one record per sequence, `-` standing for the ungrouped one — the `DOMAINS:` of `.sdd/scripts/next-req.sh`, not to be asked for again. Read them before deciding:
 
 - **The project groups nothing** — every record is `-`. Then this feature adds no domain: its requirements are ungrouped, like everything already in the file. Starting a group is a decision about the whole compilation, not about one feature.
 - **One existing domain covers what this feature is about** — that is the domain, and no question is asked. A domain groups requirements by what they are about, never by which feature happened to write them: a feature touching accounts writes into `ACC` beside the accounts requirements that are already there.
-- **The project groups its requirements and none of the domains fits, or two fit equally** — that is the human's to settle, asked as `.sdd/protocols/interview.md` fixes it: one question, carrying the recommended answer and the domains already in use. A new domain is a decision about how the compilation is organised, and it is never taken silently.
+- **The project groups its requirements and none of the domains fits, or two fit equally** — that is the human's to settle, put on the page as `.sdd/protocols/spec-modes.md` fixes it: one question, carrying the recommended answer and the domains already in use. A new domain is a decision about how the compilation is organised, and it is never taken silently.
 
 ### The number
 
@@ -44,13 +44,18 @@ With the domain settled, the next free number comes from one read-only call:
 
 Never a number counted off the list by eye, and never a number reused: a reused one silently rewrites the history of a requirement. An empty `NEXT` — the script's answer when the numbers it would hand out are already written into the specs, listed in its `TAKEN=` — is not one to guess under: stop and report it, with what the script said.
 
-Declaring `### REQ-### — <short title>` in `new-requirements.md` is the whole of taking a number. `requirements.md` is not written here — that file is written by `/sdd-actualize` alone, once the feature is finished, and until then the declaration is what holds the number. A domain's counter is written there too, by the same command, including the first one of a domain this feature starts.
+Declaring `### REQ-### — <short title>` in `new-requirements.md` is the whole of taking a number. `requirements.md` is not written here — it is written outside any assignment, once the feature is finished, and until then the declaration is what holds the number. A domain's counter is written there at the same time, including the first one of a domain this feature starts.
 
 A `NEXT` that arrived is a number to use, whatever the compilation on disk looks like.
 
 ## 4. Requirements Generation
 
-The structure of a requirement is the one the scaffolded `new-requirements.md` defines, in the hint comments it was copied with.
+The structure of a requirement is the one the scaffolded `new-requirements.md` shows in its hint comment. What every requirement holds to, in whichever pass it is read:
+
+- **What and why, never how.**
+- **One behaviour per condition of satisfaction** — "and" inside a condition means it is two.
+- **At least two conditions, one of them an `Error:` condition.**
+- **The anchor ends the description line** — `^req-###`, the id in lower case (`REQ-ACC-003` gives `^req-acc-003`). It is what `design.md` and `tasks.md` link to, so it is written even where nothing points at it yet.
 
 ## 5. Edge Cases
 

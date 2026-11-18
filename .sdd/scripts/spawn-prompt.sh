@@ -1,46 +1,79 @@
 #!/usr/bin/env bash
 # The spawn prompt of one assignment, rendered from a template — the whole text
-# a role is given, printed ready to relay.
+# a role is given, written to a file the role is pointed at.
 #
-# The command runs this and hands the output to the role word for word: it adds
-# nothing and drops nothing. What goes into a prompt is `.sdd/prompts/`, and the
-# values are this run's own — the gate's, and the `KEY=value` arguments for what
-# only a human or a role could have said.
+# The text never passes through the command that spawns: a prompt retyped into
+# a spawn call costs its whole length in output and can come out reworded, with
+# nothing to tell. The command passes one line, PASS=, and the role reads the
+# rest from disk. What goes into a prompt is `.sdd/prompts/`, and the values are
+# this run's own — the gate's, and the `KEY=value` arguments for what only a
+# human or a role could have said.
 #
-# Usage: spawn-prompt.sh <command> <FeatureName> <scope> [KEY=value ...]
+# Usage: spawn-prompt.sh <command> <FeatureName> <scope> [KEY=value ...] [--print]
+#
+# Prints:
+#   PROMPT=<path>   .sdd/run/<command>-<FeatureName>-<scope>.md (init:
+#                   init-<scope>.md), absolute, overwritten by the next run of
+#                   the same assignment
+#   PASS=<line>     the whole of what the spawn call carries
+# --print prints the prompt itself instead and writes no file — for a human
+# reading what a role would get.
 #   init            takes no feature name: spawn-prompt.sh init <scope> [KEY=value ...]
 #   <scope>         the third field of the gate's SPAWN: record
-#   KEY=value       a value the gate cannot know: KEPT=, TRIAGE=, FINDINGS=,
-#                   BASE=. Nothing may be empty — pass `none` where there is
+#   KEY=value       a value the gate cannot know: KEPT=, HELD=, TRIAGE=,
+#                   FINDINGS=, BASE=. Nothing may be empty — pass `none` where there is
 #                   nothing, so a forgotten argument stays distinguishable from
 #                   an answer of "none". BASE= is the one that is not rendered
 #                   from the argument: it is handed to the gate as its base-ref
 #                   — two detections of a review set produce two sets — and what
 #                   the prompt carries is the base the gate resolved.
+#   -               the values that are somebody's words — TRIAGE=, FINDINGS= —
+#                   read from stdin instead, as blocks under a `KEY:` line of
+#                   their own, passed through a quoted here-document:
+#                     spawn-prompt.sh code-fix Cart findings-backend - <<'SDD_VALUES'
+#                     TRIAGE:
+#                     the human's answer
+#                     FINDINGS:
+#                     F-01 …
+#                     SDD_VALUES
+#                   On a command line inside double quotes, a backtick in
+#                   them would run and a `$` would expand. A key given both
+#                   ways is an error.
 #
-# Every prompt opens with the working directory, written by this script rather
-# than by a template: a role is handed `.sdd/...` and `_docs/...` paths by the
+# Every prompt opens with two lines written by this script rather than by a
+# template. The first names the core every role works under — `.sdd/AGENTS.md`
+# and any `.sdd/rules/*.md` — to be read unless the host already loaded it: a
+# Copilot CLI sub-agent is handed neither, and nothing else would tell it that
+# nobody commits. The second is the working directory: a role is handed `.sdd/...` and `_docs/...` paths by the
 # assignment and by every protocol it carries, and nothing else in the prompt
 # says what they are relative to. One that cannot resolve a path widens its
 # search until it finds something, and widening ends at `/`.
 #
+# With SDD_FEEDBACK=1 in `.sdd/sdd.conf`, every prompt closes with a paragraph
+# on the feedback log and the `feedback.sh` call for this role, command and
+# feature (see feedback.sh). Without it, nothing is added.
+#
 # Templates: `.sdd/prompts/<command>-<scope>.md`, addressed to the role.
 #   {{KEY}}            inline, replaced by the value; a multi-line value here
-#                      is an error, not a squashed line
+#                      is an error, not a squashed line. An empty value reads
+#                      `(none)`, as a block does: a sentence with a hole in it
+#                      reads as a number or a ref nobody gave
 #   {{KEY}} alone on a line, and {{SECTION:NAME}}
 #                      the block form: the whole value, or the whole section of
 #                      the gate's output. Nothing to print reads `(none)`
 #   A placeholder with no value is an error and no prompt is printed: half an
 #   assignment is worse than none.
 #
-# Exit codes: 0 — the prompt was printed; 1 — the environment is wrong;
+# Exit codes: 0 — the prompt was written (printed, under --print); 1 — the environment is wrong;
 #             2 — nothing to render: the gate stopped, this run has no such
 #             assignment, there is no template for it, or a value is missing.
 
 set -uo pipefail
-[[ -r "$(dirname "$0")/lib/log.sh" ]] && . "$(dirname "$0")/lib/log.sh"
+SDD_HERE="${0%/*}"; [[ "$SDD_HERE" == "$0" ]] && SDD_HERE="."
+[[ -r "$SDD_HERE/lib/log.sh" ]] && . "$SDD_HERE/lib/log.sh"
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$SDD_HERE" && pwd)"
+[[ -r "$SDD_HERE/lib/conf.sh" ]] && . "$SDD_HERE/lib/conf.sh"
 GATE="$SCRIPT_DIR/gate.sh"
 PROMPTS="$SCRIPT_DIR/../prompts"
 
@@ -79,8 +112,16 @@ VALS="$TMP/values"; SECS="$TMP/sections"; ARGS="$TMP/arguments"
 mkdir -p "$VALS" "$SECS" "$ARGS"
 
 BASE_ARG=""
+FROM_STDIN=0
+PRINT=0
 while (( $# > 0 )); do
   case "$1" in
+    -)
+      FROM_STDIN=1
+      ;;
+    --print)
+      PRINT=1
+      ;;
     [A-Z]*=*)
       key="${1%%=*}"; val="${1#*=}"
       case "$key" in
@@ -99,6 +140,40 @@ while (( $# > 0 )); do
   esac
   shift
 done
+
+# The blocks of stdin: a `KEY:` line opens one, and everything up to the next
+# such line is its value, with the blank lines around it trimmed.
+if [[ $FROM_STDIN -eq 1 ]]; then
+  cat > "$TMP/stdin"
+  mkdir -p "$TMP/stdin.d" || exit 1
+  awk -v dir="$TMP/stdin.d" '
+    /^[A-Z][A-Z0-9_]*:$/ { key = substr($0, 1, length($0) - 1); n[key] = 0; order[++k] = key; next }
+    key == "" { if (NF) { bad = 1 }; next }
+    { n[key]++; line[key, n[key]] = $0 }
+    END {
+      if (bad) { print "ERROR=stdin holds text before its first KEY: line" > "/dev/stderr"; exit 1 }
+      for (i = 1; i <= k; i++) {
+        key = order[i]; first = 1; last = n[key]
+        while (first <= last && line[key, first] ~ /^[[:space:]]*$/) first++
+        while (last >= first && line[key, last] ~ /^[[:space:]]*$/) last--
+        f = dir "/" key
+        printf "" > f
+        for (j = first; j <= last; j++) print line[key, j] > f
+        close(f)
+      }
+    }
+  ' "$TMP/stdin" || exit 1
+  for f in "$TMP/stdin.d"/*; do
+    [[ -f "$f" ]] || continue
+    key="${f##*/}"
+    [[ -s "$f" ]] || { printf 'ERROR=empty value: %s: on stdin — write `none` where there is nothing\n' "$key" >&2; exit 1; }
+    [[ "$key" != "BASE" ]] || { printf 'ERROR=BASE= is an argument, never a block of stdin\n' >&2; exit 1; }
+    [[ ! -f "$ARGS/$key" ]] || { printf 'ERROR=%s is given twice, as an argument and on stdin\n' "$key" >&2; exit 1; }
+    # The file holds the value with its last newline; a value is compared and
+    # rendered without it, as an argument would be.
+    printf '%s' "$(cat "$f")" > "$ARGS/$key"
+  done
+fi
 
 TEMPLATE="$PROMPTS/$CMD-$SCOPE.md"
 if [[ ! -f "$TEMPLATE" ]]; then
@@ -219,6 +294,7 @@ render_inline() {
       fail "the value of {{$token}} is more than one line: give the placeholder a line of its own"
       return
     fi
+    [[ -n "$value" ]] || value='(none)'
     out="$out$value"
   done
   printf '%s%s\n' "$out" "$line"
@@ -231,6 +307,11 @@ RENDERED="$TMP/prompt.txt"
 # script was run in, which is the project root the command was typed in — the
 # same one the gate read `_docs/` from a moment ago. Written here so that a
 # prompt added later cannot be the one that leaves it out.
+CORE='`.sdd/AGENTS.md`'
+for r in .sdd/rules/*.md; do
+  [[ -f "$r" ]] && CORE="$CORE, \`$r\`"
+done
+printf 'The rules every role works under: %s. Read them first, unless your\ninstructions already carry them.\n\n' "$CORE" >> "$RENDERED"
 printf 'Working directory: %s\nEvery `.sdd/...` and `_docs/...` path below and in the protocols it names is\nrelative to it.\n\n' "$PWD" >> "$RENDERED"
 
 while IFS= read -r line || [[ -n "$line" ]]; do
@@ -247,11 +328,51 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   esac
 done < "$TEMPLATE"
 
+# The feedback log, when the project turned it on (SDD_FEEDBACK=1): one closing
+# paragraph, the same in every scope, with the call already filled in — the
+# role picks the kind and writes the words. Off, the prompt carries no word of
+# it, and no golden changes.
+if declare -F sdd_feedback_on >/dev/null && sdd_feedback_on; then
+  cat >> "$RENDERED" <<EOF_TAIL
+
+## Feedback on the engine
+
+This project keeps a log of what gets in the way of the engine's assignments.
+When something in this one did, write one record per fact, naming the engine
+file it is about — a script, a protocol, this assignment, a skill:
+
+.sdd/scripts/feedback.sh <kind> --by=$ROLE --command=$CMD --feature=${FEATURE:--} - <<'SDD_TEXT'
+<what happened, and the file it is about>
+SDD_TEXT
+
+<kind> is one of: \`script\` — a script failed or printed what it could not
+have; \`conflict\` — two engine files ask for different things, both named;
+\`missing\` — the assignment lacked something: what you looked up, and where you
+found it; \`unused\` — it had you read or load something you did not need;
+\`skill\` — a skill's rule is wrong for this project, or its script failed.
+Write it when it happens, not at the end; a problem you worked around is
+still one — a script that exited non-zero, a rule you had to guess at. A
+record changes nothing in your work: a script that failed is still reported
+in your reply. Nothing to say — write nothing.
+EOF_TAIL
+fi
+
 # Half an assignment is worse than none: nothing is printed unless all of it is.
 if [[ $FAIL -ne 0 ]]; then
   printf 'ERROR=no prompt was printed for %s: fix the values above and run it again\n' "$SCOPE" >&2
   exit 2
 fi
 
-cat "$RENDERED"
+if [[ $PRINT -eq 1 ]]; then
+  cat "$RENDERED"
+  exit 0
+fi
+
+# Written whole or not at all: a role pointed at half a file would take it for
+# the whole assignment.
+OUT_DIR="$PWD/.sdd/run"
+if [[ "$CMD" == "init" ]]; then OUT="$OUT_DIR/init-$SCOPE.md"; else OUT="$OUT_DIR/$CMD-$FEATURE-$SCOPE.md"; fi
+mkdir -p "$OUT_DIR" && cp "$RENDERED" "$OUT.tmp" && mv -f "$OUT.tmp" "$OUT" \
+  || { rm -f "$OUT.tmp"; printf 'ERROR=could not write %s\n' "$OUT" >&2; exit 1; }
+printf 'PROMPT=%s\nPASS=Your assignment is in %s. Read it whole and follow it.\n' "$OUT" "$OUT"
 exit 0

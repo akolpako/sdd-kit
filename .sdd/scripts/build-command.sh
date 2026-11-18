@@ -34,9 +34,10 @@
 # The file only; no environment variable stands in for it, or the same project
 # would verify differently from one shell to the next.
 #
-# `SDD_BUILD_ROOT` stands in for the stack of a project that has one stack, and
-# for a project whose build no detection knows — a Makefile, a script. It does
-# NOT stand in for a missing stack key when the project has two: a role working
+# `SDD_BUILD_ROOT` stands in for every unanswered stack of a project that has
+# at most one stack detected — the stack it has, and one detection does not
+# see: a Go or Python backend beside a package.json, a Makefile, a script. It
+# does NOT stand in for a missing stack key when the project has two: a role working
 # one stack is handed that stack's command, and there is no way to cut a root
 # command down to one of them.
 #
@@ -62,7 +63,8 @@
 #             becomes a verdict.
 
 set -uo pipefail
-[[ -r "$(dirname "$0")/lib/log.sh" ]] && . "$(dirname "$0")/lib/log.sh"
+SDD_HERE="${0%/*}"; [[ "$SDD_HERE" == "$0" ]] && SDD_HERE="."
+[[ -r "$SDD_HERE/lib/log.sh" ]] && . "$SDD_HERE/lib/log.sh"
 
 ROOT_DIR="${1:-.}"
 if [[ ! -d "$ROOT_DIR" ]]; then
@@ -78,31 +80,13 @@ note() { NOTES+=("$1"); }
 N_DETECTED=0
 
 # ── The config ────────────────────────────────────────────────────
-# Parsed the way `lib/log.sh` parses the same file, and for the same reason:
-# `. .sdd/sdd.conf` is one line shorter and would execute whatever the file
-# holds on every run of every script. A strict read over a fixed set of keys —
-# quotes stripped, comments and blank lines skipped, everything else ignored
-# without a word.
-conf_read() {
-  awk '
-    { sub(/\r$/, "") }
-    /^[[:space:]]*#/ { next }
-    {
-      line = $0
-      sub(/^[[:space:]]+/, "", line)
-      sub(/[[:space:]]+$/, "", line)
-      p = index(line, "=")
-      if (p < 2) next
-      key = substr(line, 1, p - 1)
-      val = substr(line, p + 1)
-      sub(/[[:space:]]+$/, "", key)
-      sub(/^[[:space:]]+/, "", val)
-      if (key !~ /^SDD_BUILD_(ROOT|BACKEND|FRONTEND)$/) next
-      gsub(/^["\047]|["\047]$/, "", val)
-      print key "=" val
-    }
-  ' "$1" 2>/dev/null
-}
+# Read by lib/conf.sh, the one parser of this file — never sourced: it may hold
+# a token. A key set twice: the last line wins.
+if [[ ! -r "$SDD_HERE/lib/conf.sh" ]]; then
+  printf 'ERROR=missing: %s/lib/conf.sh\n' "$SDD_HERE" >&2
+  exit 1
+fi
+. "$SDD_HERE/lib/conf.sh"
 
 CONF="$ROOT_DIR/.sdd/sdd.conf"
 CFG_ROOT=""; CFG_BACKEND=""; CFG_FRONTEND=""
@@ -115,7 +99,7 @@ if [[ -r "$CONF" ]]; then
       SDD_BUILD_FRONTEND) CFG_FRONTEND="$val" ;;
     esac
   done <<EOF
-$(conf_read "$CONF")
+$(sdd_conf_read "$CONF" '^SDD_BUILD_(ROOT|BACKEND|FRONTEND)$')
 EOF
 fi
 
@@ -144,7 +128,15 @@ detect_in() {
   fi
 
   if [[ -f "$dir/package.json" ]]; then
-    cmd="npm run build && npm test"
+    # Only the scripts the file names: `npm run build` on a package with no
+    # build script fails before a test runs, and the proposal is what the human
+    # is most likely to accept unread. Neither named — the usual pair stands,
+    # as a proposal the human corrects.
+    local pkg; pkg="$(< "$dir/package.json")"
+    cmd=""
+    [[ "$pkg" =~ \"build\"[[:space:]]*: ]] && cmd="npm run build"
+    [[ "$pkg" =~ \"test\"[[:space:]]*: ]] && cmd="${cmd:+$cmd && }npm test"
+    [[ -n "$cmd" ]] || cmd="npm run build && npm test"
     [[ "$rel" != "." ]] && cmd="cd $rel && $cmd"
     DETECTED+=("$rel|package.json|$cmd|frontend"); N_DETECTED=$(( N_DETECTED + 1 ))
     HAS_FRONTEND=1
@@ -166,8 +158,11 @@ done < <(find "$ROOT_DIR" -mindepth 1 -maxdepth 1 -type d \
 ROOT_CMD="$CFG_ROOT"; BACKEND="$CFG_BACKEND"; FRONTEND="$CFG_FRONTEND"
 
 if [[ $HAS_BACKEND -eq 0 || $HAS_FRONTEND -eq 0 ]]; then
-  [[ -z "$BACKEND"  && $HAS_FRONTEND -eq 0 ]] && BACKEND="$CFG_ROOT"
-  [[ -z "$FRONTEND" && $HAS_BACKEND  -eq 0 ]] && FRONTEND="$CFG_ROOT"
+  # Both keys, not only the detected stack's: a lone package.json reads as a
+  # frontend, and a feature whose tasks build a backend beside it is handed the
+  # root command rather than none.
+  [[ -z "$BACKEND"  ]] && BACKEND="$CFG_ROOT"
+  [[ -z "$FRONTEND" ]] && FRONTEND="$CFG_ROOT"
   # The other way round too: a one-stack project whose only answer is that
   # stack's key has that command as its whole-project verification.
   if [[ -z "$ROOT_CMD" ]]; then

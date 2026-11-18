@@ -13,17 +13,17 @@ Each path below holds exactly this, and a fact lives in one of them (see *Where 
 
 | Path | Holds |
 |------|-------|
-| `AGENTS.md` | Only what *every* role needs — loaded into the orchestrator and all five roles. |
+| `AGENTS.md` | Only what *every* role needs — loaded into the orchestrator and all five roles; every spawn prompt opens by naming it, for a host that does not load it into a sub-agent. |
 | `commands/*.md` | The nine `/sdd-*` steps: step order and the points where the human decides. What every command does alike is in `protocols/orchestration.md`. |
 | `agents/*.md` | The five roles — what tells each apart (see *Agent files*). |
 | `protocols/*.md` | The procedures, each naming its addressee in its first line. |
 | `prompts/*.md` | One assignment per scope of the gate's `SPAWN:` table: this run's data, the scope, what the role returns. |
-| `scripts/*.sh` | A rule that reads project state and returns a fact; `lib/format.sh` reads the `_docs/` formats, `lib/log.sh` records each run. |
+| `scripts/*.sh` | A rule that reads project state and returns a fact; `lib/format.sh` reads the `_docs/` formats, `lib/conf.sh` reads `.sdd/sdd.conf`, `lib/log.sh` records each run. |
 | `skills/*/SKILL.md` | The craft of a discipline, as rules with links into `references/`. |
 | `templates/*.md` | The structure of every generated file. Not a channel for instructions. |
 | `rules/*.md` | Text needed from the first token (see *Adapters* for who inherits it). None shipped. |
 | `_gitignore.<host>`, `_claude/settings.json` | Host packaging: the `.gitignore` block; Claude Code session settings that turn off bundled skills, claude.ai connectors and `claude-in-chrome`. |
-| `log/`, `sdd.conf`, `.sdd-manifest` | Not shipped — written in the project at run or install time. |
+| `log/`, `build/`, `sdd.conf`, `.sdd-manifest` | Not shipped — written in the project at run or install time. |
 
 `tests/` holds fixtures, goldens and `run.sh` (`install/` for the installer).
 
@@ -44,17 +44,19 @@ other's files — one agent with two definitions, one command defined twice.
 | `.agents/skills/<name>/` in the clone | — | `.github/skills/<name>/` |
 | `.sdd/_claude/settings.json` | `.claude/settings.json` | — |
 | `.sdd/_gitignore.<host>` | block in `.gitignore` | block in `.gitignore` |
-| `.sdd/AGENTS.md` | block in `CLAUDE.md` | block in `.github/copilot-instructions.md` |
+| `.sdd/AGENTS.md` | block in `CLAUDE.md` **and** the same path | block in `.github/copilot-instructions.md` **and** the same path |
 
 - Every file is a **real copy**, not a link, and **nothing is generated per host** — one file
   per role and per command serves both; what that costs is under *Adapters*. The two blocks are
   merged between markers (`merge_md`, `remove_block`); the files they land in belong to the
   project.
-- **`rules/` is the only entry that adds a destination instead of replacing one.** Roles are told
-  the `.sdd/rules/` path, valid on every host; the second copy makes it always-on for the main
-  session. Copilot recognises `.github/instructions/` files only by the `.instructions.md` suffix.
+- **`rules/` and `AGENTS.md` are the entries that add a destination instead of replacing one.**
+  Every spawn prompt names `.sdd/AGENTS.md` and the `.sdd/rules/` files, paths valid on every
+  host; the second copy makes them always-on for the main session. Copilot recognises
+  `.github/instructions/` files only by the `.instructions.md` suffix.
 - The core is merged **once**. Copilot CLI reads both `AGENTS.md` and `CLAUDE.md`, so writing
-  both would load it twice. A host that reads only `AGENTS.md` (Codex…) sees no engine.
+  both would load it twice; `.sdd/AGENTS.md` sits where neither host loads it on its own. A host
+  that reads only a root `AGENTS.md` (Codex…) sees no engine.
 - **`.sdd/.sdd-manifest`** — the host, then `path<TAB>checksum` per copied file, sorted.
   Directories and merged files are not listed. Every mode works from it:
 
@@ -81,15 +83,15 @@ other's files — one agent with two definitions, one command defined twice.
 | the human | Runs every command. Nothing chains; every decision is put to them. |
 | the command `.sdd/commands/*.md` | The step order of this step. |
 | `gate.sh` | Every precondition, the wording of every stop, and the `SPAWN:` table (`role \| protocols \| scope`) — one edit in one file to add a role or rename a protocol. |
-| `spawn-prompt.sh` | Renders `.sdd/prompts/<command>-<scope>.md` into one assignment, taking values from `gate.sh --prompt-data` outside the orchestrator's context. Opens every prompt with the working directory — the root of every relative path in it. |
+| `spawn-prompt.sh` | Renders `.sdd/prompts/<command>-<scope>.md` into one assignment, taking values from `gate.sh --prompt-data` outside the orchestrator's context. Opens every prompt with the working directory — the root of every relative path in it. Writes it to `.sdd/run/<command>-<Feature>-<scope>.md` and prints `PASS=`, the line the spawn call carries; `--print` shows the text instead. |
 | the protocol `.sdd/protocols/*.md` | The procedure the role performs. Reaches the role only inside the prompt; the only protocol a command names is `orchestration.md`. |
 | the agent `.sdd/agents/*.md` | Does the assignment and writes its files. Never reads a command file, never learns the flow. |
-| `spec-edit.sh` | Writes whose format, place and date are fixed. The command supplies only the words. |
+| `spec-edit.sh` | Writes whose format, place and date are fixed. The command supplies only the words — on stdin, through a quoted here-document, never inside double quotes on a command line. Also the build answers into `.sdd/sdd.conf` (`conf-set`), a file the orchestrator never opens: it may hold a token. |
 | `jira-import.sh` | The Jira issue as `raw.md`: runs the `jira` skill's fetch script, which owns everything about Jira (config keys, REST call, wiki-markup → Markdown, attachments), then appends the two sections the flow reads by name. The only script that touches the network or needs `curl`/`jq`. |
 
 **A command does five things and nothing else:** run `gate.sh` (a `stop` or `ask` ends the run
-there, in the gate's words); spawn each role its `SPAWN:` records name, with the prompt
-`spawn-prompt.sh` renders, word for word; write what only it can write, through `spec-edit.sh`;
+there, in the gate's words); spawn each role its `SPAWN:` records name, passing the one `PASS=` line
+`spawn-prompt.sh` prints — the prompt itself is a file the role reads; write what only it can write, through `spec-edit.sh`;
 check with `gate.sh --verify` plus the build; report and name the next command. How each is done
 is `orchestration.md`.
 
@@ -99,14 +101,14 @@ is `orchestration.md`.
 
 | Command | Role · scope | Protocols | Orchestrator writes (via `spec-edit.sh` unless noted) |
 |---|---|---|---|
-| `/sdd-init` | architect · baseline-from-codebase — brownfield only | project-baseline, docs-format | `scaffold init` (both branches, before spawn); `arch-index` after; `.sdd/sdd.conf` — its only write outside `_docs/` |
+| `/sdd-init` | architect · baseline-from-codebase — brownfield only | project-baseline, docs-format | `scaffold init` (both branches, before spawn); `arch-index` after; `.sdd/sdd.conf` via `conf-set` — its only write outside `_docs/` |
 | `/sdd-next-story` | — | — | `scaffold feature`, then `section` or `jira-import.sh --out` (rewrites `raw.md` whole) |
 | `/sdd-specify` | requirements-engineer · requirements<br>architect · design+tasks | spec-modes, requirements-writing, docs-format<br>spec-modes, architecture-design, task-breakdown, docs-format | `backup`, then `scaffold spec` over the files this run writes |
-| `/sdd-spec-review` | same two roles and scopes | as for specify, plus spec-checklist, interview | `status` markers; answers into `## Open Questions` via `section` |
-| `/sdd-implement` | backend-developer · backend<br>frontend-developer · frontend | developer, task-loop | nothing |
-| `/sdd-code-review` | code-reviewer · review-set | code-review, docs-format | `backup`, `scaffold review` with the header (before spawn); the markers `section` after. The findings, coverage and verdict are the role's |
-| `/sdd-code-fix` | backend/frontend-developer · findings-backend/-frontend | developer | `marker` (`TODO Code Review:`), `verdict-stale` |
-| `/sdd-actualize` | architect · baseline-from-feature | project-baseline, docs-format | `backup`; after the spawn `arch-index`, then `compile-entry` into `requirements.md` per `DECLARED:` record — the last write |
+| `/sdd-spec-review` | same two roles and scopes; `fold-requirements` / `fold-design+tasks` for a file with answered questions | as for specify, plus spec-checklist; a fold as for specify | `backup`, then `status … draft` on every `ready` file (before spawn); `status` markers after the verdict; answers onto their lines of `## Open Questions` via `answer` |
+| `/sdd-implement` | backend-developer · backend<br>frontend-developer · frontend | developer, task-loop | `start` before the baseline — the feature's starting point, written once, read by `review-set.sh` |
+| `/sdd-code-review` | code-reviewer · review-set | code-review, docs-format | `backup`, `scaffold review` with the header and the marker sweep (before spawn). The findings, coverage and verdict are the role's |
+| `/sdd-code-fix` | backend/frontend-developer · findings-backend/-frontend | developer | `marker -` (`TODO Code Review:`, every marker in one call) before the spawn; `verdict-stale` |
+| `/sdd-actualize` | architect · baseline-from-feature | project-baseline, docs-format | `backup`; after the spawn `arch-index`, then `promote` — every `DECLARED:` record into `requirements.md` in one write, or the `actualized:` mark when there is none — the last write |
 | `/sdd-status` | — | — | nothing — the report goes to chat |
 
 - **Scaffold before spawn**: a role opens a file already on disk rather than looking for the
@@ -118,8 +120,9 @@ is `orchestration.md`.
 - **One protocol set per role per kind of assignment**, and it is the whole of what the agent
   does under it.
 - **The write that marks a step as done is its last one**: `status` in `/sdd-spec-review`,
-  `verdict-stale` in `/sdd-code-fix`, `compile-entry` in `/sdd-actualize`. A run cut short leaves
-  the feature at the stage it was on, never one ahead.
+  `verdict-stale` in `/sdd-code-fix`, `promote` in `/sdd-actualize` (the `actualized:` mark
+  for a feature that declares no requirement). A run cut short leaves the feature at the stage it was
+  on, never one ahead.
 - **A relation between requirements is a line on the page**: `**Refines:**` / `**Supersedes:**`
   under the heading in `new-requirements.md`, written by the role, read by `lib/format.sh`,
   handed to `/sdd-actualize` as `DECLARED:`. A refinement leaves `refined by <Feature>` on the
@@ -133,15 +136,19 @@ is `orchestration.md`.
 flowchart LR
     s["spawn the scope"] --> q["role writes<br>## Open Questions"]
     q --> a["orchestrator asks,<br>one question per message"]
-    a --> w["answer written back<br>spec-edit.sh section"]
-    w --> s
+    a --> w["answer appended to its line<br>spec-edit.sh answer"]
+    w --> g["gate: answered lines<br>→ fold scope"]
+    g --> s
     q -->|"section empty"| d["file done"]
 ```
 
-The prompt is the same every round — one idempotent instruction: run the checklist, settle what
-you can, ask the rest, fold in questions that already have an answer. The difference between
-rounds is on disk. At most three rounds per spec file per session; an interrupted review starts
-the count again.
+The difference between rounds is on disk, and the gate reads it there: a file whose
+`## Open Questions` holds an answered line gets the fold — write the answers in, re-check only
+what they touched, no checklist — and any other the full review: run the checklist, settle what
+you can, ask the rest. So `READY` means the checklist came back clean or everything it raised was
+answered and folded in, not that every pass ran clean on the final text. The design re-spawned
+after the requirements changed has no answered line, so it is reviewed in full. At most three
+rounds per spec file per session, of either kind; an interrupted review starts the count again.
 
 **State is a file in the working tree, never the chat.** Commands never chain (`/sdd-code-review`
 writes `review.md`, `/sdd-code-fix` reads it); such a file names its writer and scope in its
@@ -150,9 +157,12 @@ page too (`## Open Questions`).
 
 Behaviour worth knowing:
 
-- A task whose build keeps failing is marked `BLOCKED`; the loop moves on.
+- A task whose build keeps failing is marked `BLOCKED`; the loop moves on. A re-run retries it
+  only when the human names it — the gate asks, and the rest are held back.
 - A task of a stack no developer covers stops `/sdd-implement`.
-- Before an overwrite, all of `_docs/` is copied to `_docs/.backup/<timestamp>/`.
+- Before an overwrite, the feature's folder and the project's files of `_docs/` are copied to
+  `_docs/.backup/<timestamp>/`; the last `SDD_BACKUP_KEEP` (20) are kept, and `.gitignore` covers
+  them.
 - `REQ-###` are numbered at `/sdd-specify`, reach `requirements.md` only at `/sdd-actualize`.
 - `_docs/architecture.md` (`scaffold init --mono`) may replace `architecture/` — never both.
 
@@ -175,7 +185,7 @@ lives here only — a copy in `AGENTS.md` would tell every role that commands an
 
 | | Command | Agent | Protocol |
 |---|---|---|---|
-| **May name** | commands, protocols, scripts, templates, roles, `_docs/` paths | its skills, frameworks, tools of its trade | to the agent: protocols, scripts, templates, `_docs/` paths, formats. To the command (`orchestration.md` only): commands, protocols, scripts |
+| **May name** | commands, `orchestration.md` (no other protocol — it would be read), scripts, templates, roles, `_docs/` paths | its skills, frameworks, tools of its trade | to the agent: protocols, scripts, templates, `_docs/` paths, formats. To the command (`orchestration.md` only): commands, protocols, scripts |
 | **May not** | hold a role's procedure; name a tool | name a command, protocol, script, template, `_docs/` path, SDD, or an engine format (`REQ-###`, `TASK-###`, `A-##`, `status:`, `## Out of Scope`) | name an agent |
 
 Under Copilot a command is *packaged* as a skill (`.github/skills/sdd-X/SKILL.md`) because the
@@ -201,7 +211,7 @@ violate does not pay for itself.
 | **Expertise** | rules that can be broken | it lists topics |
 | **Edge Cases** | *when X, do Y instead of the obvious* | it lists things "to consider" |
 | **Self-Check** | stack/discipline checks the protocol cannot know | it repeats a protocol's checklist |
-| **Skills** | load the installed skills whose description matches the work; the Obsidian skill before writing `.md` | it names a skill or explains delivery |
+| **Skills** | load the installed skills whose description matches the work | it names a skill or explains delivery |
 
 No agent file names a stack or addresses the engine's editor: roles are split by layer
 (backend, frontend), and a stack is swapped by installing its skills, not by editing a role. A condition on a skill is a
@@ -227,6 +237,8 @@ flowchart LR
     SPN -->|"--prompt-data"| GATE
     GATE --> FS
     GATE --> BC["build-command.sh"]
+    CMD --> BR["build-run.sh"]
+    BR --> BC
     GATE --> NR["next-req.sh"]
     GATE --> RS["review-set.sh"]
     FS --> FMT["lib/format.sh"]
@@ -238,15 +250,34 @@ flowchart LR
 - **Output**: `KEY=value` lines, then `SECTION:` blocks, one record per line; print what was read
   next to what was resolved.
 - **The orchestrator does not read what it does not decide from.** A spawn passes spec file
-  *paths*, not contents. `TASKS:` is the exception — the coverage matrix is the orchestrator's.
-- **A format is read in one place** — `lib/format.sh`, sourced by readers and writers.
+  *paths*, not contents. The coverage matrix comes computed as `COVERAGE:`, its stops as
+  `UNCOVERED:` and `UNDECLARED:`; the place and stack of each review finding as `FINDINGS:`.
+- **A format is read in one place** — `lib/format.sh` for `_docs/`, `lib/conf.sh` for `.sdd/sdd.conf`, sourced by readers and writers.
 - **Nothing tool-specific**: both hosts run the same scripts. `review-set.sh` excludes `_docs/`,
   `.sdd/`, `.claude/` but not `.github/` — the `.gitignore` block already hides the engine there,
   and excluding it would drop the project's workflows.
-- **bash 3.2 is the floor** (macOS): no `mapfile`, no `${#array[@]}` under `set -u`, no GNU BRE.
+  Lock files are left out of the diff by name and listed apart; the reviewer gets each file's
+  line counts and reads the diff file by file.
+- **A review set is one feature's**: nobody commits, so features share a working tree. The
+  diff is taken from the commit `/sdd-implement` started on (`spec-edit.sh start`, a file under
+  `_docs/<Feature>/`, never a git ref), and files already dirty then are named as possibly
+  someone else's. An explicit base wins; a starting commit a rebase dropped falls back with a
+  `WARN:`.
+- **bash 3.2 is the floor** (macOS): no `mapfile`, no `${#array[@]}` under `set -u`, no GNU BRE. `tests/run.sh --bash=/bin/bash`
+  runs every script under test on it; the installer alone asks for bash 4+, and says so.
 - **Only the human's build command is run.** `build-command.sh` reads `SDD_BUILD_*` from
   `.sdd/sdd.conf`; detection is a proposal carried in the gate's `ASK:`, never run. Resolved once
   per command run and passed in every prompt.
+  The orchestrator and every role run it through `build-run.sh` — the prompt gives the line —
+  which keeps the output in `.sdd/build/` and answers green or red with the tail of a red one:
+  a role that builds once per attempt per task would otherwise carry every log in its context.
+- **The feedback log** (`feedback.sh` → `.sdd/log/feedback.log`) is the same contract: written,
+  never read. With `SDD_FEEDBACK=1` in `.sdd/sdd.conf` (by hand; `conf-set` does not take it) the
+  gate prints `FEEDBACK=on` and every prompt closes with the call for its role: a closed list of
+  kinds — `script`, `conflict`, `missing`, `unused`, `skill` — each record naming an engine file.
+  The role writes it itself, never through its reply. Off, no prompt or output changes, and the
+  script drains its stdin and exits 0. `feedback-collect.sh` in this clone reads the logs of
+  `installed-repos.txt`; it is not installed.
 - **The log (`lib/log.sh`) is written, never read** — no script, prompt or command branches on
   it. It wraps each script by re-exec; stdout, stderr and exit code stay byte-identical, and the
   goldens assert it.
@@ -276,7 +307,7 @@ How the hosts differ where it matters (*measured* = checked by a run, not taken 
 
 | Mechanism | Claude Code | Copilot CLI | VS Code Copilot |
 |---|---|---|---|
-| Core (`CLAUDE.md` / `copilot-instructions.md`) in a sub-agent | yes — `AGENTS.md` is paid for in six contexts | no channel at all (measured) | yes |
+| Core (`CLAUDE.md` / `copilot-instructions.md`) in a sub-agent | yes — `AGENTS.md` is paid for in six contexts | no channel (measured) — the prompt names `.sdd/AGENTS.md` and the role reads it | yes |
 | `.sdd/rules/` in a sub-agent | inherited | not inherited (measured) — the prompt names the path | yes |
 | `disable-model-invocation` on commands | hidden from the model | hidden interactively (measured); under `-p` the command is gone | not measured |
 | `disallowed-tools` on `sdd-status` | enforced | inert | inert |

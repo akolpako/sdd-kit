@@ -34,6 +34,9 @@
 #   FOLDER=<name>          the folder it resolved to on disk — every path and
 #                          every later step follows this, not the argument
 #   STAGE=<stage>
+#   FEEDBACK=on            only when SDD_FEEDBACK=1 is in .sdd/sdd.conf: the
+#                          orchestrator writes its own remarks on the engine
+#                          with feedback.sh. Not printed otherwise
 #   SPAWN:        one assignment per line, `<role>|<protocol,...>|<scope>`. The
 #                 command relays a record as printed — it adds no protocol and
 #                 drops none. Which role follows which protocols is decided here
@@ -51,27 +54,59 @@
 #
 # Under --prompt-data, and only there:
 #   SPEC_FILES:   the paths of this run, one per line — every command
+#   REQ_DOMAINS:  specify, review — next-req.sh's DOMAINS:, for the
+#                 requirements prompt; also printed beside a GATE=stop
+#   REQUIREMENTS_FILES:   specify, review — the paths of the requirements scope,
+#                 which reads neither design.md nor tasks.md
+#   SPEC_REFERENCE:       code-fix — the spec, opened only for a finding that
+#                 names it; SPEC_FILES: is then the report and the yardsticks
 #   COMPILATION_ENTRIES:  review
-#   UNTRACKED:, BLOCKED:  code-review
+#   DIFF_FILE, FILES:, EXCLUDED:, UNTRACKED:, PREEXISTING:, BLOCKED:, BUILD:
+#                 code-review — DIFF_FILE, FILES: (`<added>|<deleted>|<path>`)
+#                 and EXCLUDED: (the lock files left out of the diff) are
+#                 review-set.sh's, so the reviewer sizes the set and reads it
+#                 file by file before any diff; PREEXISTING: is
+#                 the files of the set already dirty when the feature's
+#                 implementation started (review-set.sh); BUILD: is the human's
+#                 build command, one `<stack>: <command>` line per answer, so the
+#                 reviewer runs the tests with it and with nothing of its own
 #   TODO:                 implement
+#   the keys marked "prompt data" in the list below — values a template
+#                 renders and the command decides nothing from. Init's
+#                 BUILD_* are not among them: its closing report names them
 #
 # A key the command does not decide from is not printed. At GATE=stop and
 # GATE=done no record section is — no role is spawned from them. Per command,
 # on top of the common part:
-#   init         PROJECT=greenfield|brownfield, TEMPLATES=ok|missing:<file,...>,
-#                EXISTING=<file,...>, BUILD_ROOT, BUILD_BACKEND, BUILD_FRONTEND,
-#                DETECTED:
-#   new          NAME_OK=yes|no, NAME_WARN=<text>, RAW=..., FEATURES:
-#   specify      RAW, REQUIREMENTS, DESIGN, TASKS, STATUS_*, COMPILATION,
-#                NEXT_REQ=REQ-###, MODE=draft, REQ_DOMAINS:, REQ_DUPLICATES:
-#   review       the same, plus TASKS:
-#   implement    TASKS_DONE, TASKS_TOTAL, TASKS_BLOCKED, ROLE_ORDER, BUILD_ROOT,
-#                BUILD_BACKEND, BUILD_FRONTEND, BASELINE, BUILD_FILES
-#   code-review  BASE, ROOT, DIFF, CHANGED, REVIEW_PATH, REVIEW_PREVIOUS
-#   code-fix     REVIEW, REVIEW_PATH, REVIEW_DATE, REVIEW_ROOT, REVIEW_VERDICT,
-#                ROOT, BUILD_ROOT, BUILD_BACKEND, BUILD_FRONTEND
-#   actualize    REQUIREMENTS, DESIGN, COMPILATION, NEXT_REQ, REQ_DOMAINS:,
-#                COMPILATION_ENTRIES:, and DECLARED: — one record per
+#   init         PROJECT=greenfield|brownfield, EXISTING=<file,...> (prompt
+#                data), BUILD_ROOT, BUILD_BACKEND, BUILD_FRONTEND
+#                (on brownfield, an ASK: per stack with no build command)
+#   new          nothing: the name, the folders and raw.md are judged here,
+#                and what is wrong with them is a STOP:, ASK: or WARN: line
+#   specify      STATUS_*, and as prompt data NEXT_REQ=REQ-###, MODE=draft
+#   review       the same, plus COVERAGE:, UNCOVERED:, UNDECLARED: (from
+#                feature-state.sh — the stops of the coverage matrix). The
+#                scope of each SPAWN: record is read off its file: one whose
+#                `## Open Questions` holds an answered line is a fold
+#                (fold-requirements, fold-design+tasks), without the checklist
+#   implement    TASKS_DONE, TASKS_TOTAL, ROLE_ORDER, OPEN_STACKS (the stacks
+#                with an open task, blocked ones aside), BUILD_BACKEND and
+#                BUILD_FRONTEND (prompt data), BASELINE, and RETRY:
+#                — `<TASK>|<type>` per blocked task, the ones the ASK: asks
+#                to retry by name; its answer is a list of them, or all, or
+#                none, never a yes
+#   code-review  BASE, ROOT, DIFF (prompt data), REVIEW_PATH, REVIEW_PREVIOUS
+#   code-fix     REVIEW_PATH, REVIEW_DATE, REVIEW_ROOT, REVIEW_VERDICT,
+#                ROOT, BUILD_BACKEND and BUILD_FRONTEND (prompt data), and
+#                FINDINGS:
+#                — one record per finding of the report, in its order,
+#                `F-##|severity|category|file|line|stack`. The line is the first
+#                of a range; `-` is a part the finding does not give. The stack
+#                is the feature's when its breakdown carries one, else the one
+#                of the build file nearest above the file, else the type of
+#                the tasks that name the file; `-` when that does not settle
+#                it — the human names the role
+#   actualize    REQ_DOMAINS:, COMPILATION_ENTRIES:, and DECLARED: — one record per
 #                requirement the feature declares, `<REQ-…>|new|`,
 #                `<REQ-…>|refines|<REQ-…>` or `<REQ-…>|supersedes|<REQ-…>`:
 #                what each of them is to the compilation, read off the
@@ -79,7 +114,17 @@
 #
 # Prints under --verify, and nothing else:
 #   VERIFY=ok|fail
+#   TASKS_DONE, TASKS_TOTAL   implement only: the counts of the whole feature,
+#                 not of the scope, for the closing report — read off the same
+#                 run, so the command runs no gate after its last role
 #   FAIL:         one reason per line, worded as the human is told it
+#   ANOMALIES:    implement only, from feature-state.sh, unchanged — what the
+#                 roles' marks left in tasks.md that a reader cannot settle
+#   ACCEPTED:     implement and actualize only: the ASK: lines of the gate
+#                 that say the feature is not finished and still hold — what
+#                 the human said yes to, worded as they were asked, for the
+#                 closing report. Never the build-command ASK:, which a yes
+#                 does not answer
 #
 # What each step is checked to have left behind:
 #   init         the three files of _docs/ exist and hold something
@@ -94,7 +139,8 @@
 #   actualize    every requirement the feature declares is in the compilation
 #                as what DECLARED: says it is, no entry this feature sourced is
 #                still `draft`, and the compilation counter stands past every
-#                number handed out
+#                number handed out. A feature that declares none carries the
+#                `actualized:` property in its new-requirements.md
 #   review, code-fix have no --verify: what they leave behind is the human's
 #   yes and the writes of spec-edit.sh, and both are mechanical already.
 #   Whether the text is any good is not checked here at all — that is the work
@@ -107,7 +153,8 @@
 #             holds for the check as it does for everything else.
 
 set -uo pipefail
-[[ -r "$(dirname "$0")/lib/log.sh" ]] && . "$(dirname "$0")/lib/log.sh"
+SDD_HERE="${0%/*}"; [[ "$SDD_HERE" == "$0" ]] && SDD_HERE="."
+[[ -r "$SDD_HERE/lib/log.sh" ]] && . "$SDD_HERE/lib/log.sh"
 
 # ── Arguments ─────────────────────────────────────────────────────
 # --prompt-data adds the sections only a spawn prompt is built from. It is for
@@ -192,7 +239,7 @@ else
   fi
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$SDD_HERE" && pwd)"
 TEMPLATE_DIR="$SCRIPT_DIR/../templates"
 SPECS="$ROOT_DIR/_docs"
 
@@ -204,6 +251,19 @@ if [[ ! -r "$SCRIPT_DIR/lib/format.sh" ]]; then
   exit 1
 fi
 . "$SCRIPT_DIR/lib/format.sh"
+[[ -r "$SCRIPT_DIR/lib/conf.sh" ]] && . "$SCRIPT_DIR/lib/conf.sh"
+
+# A name that is not a path segment would send every write of the run outside
+# _docs/<name>/. /sdd-next-story judges the name as a stop of its own, with the
+# rule spelled out; every other command is handed a name that already exists,
+# and one that cannot is an argument wrongly given.
+if [[ "$CMD" != "init" && "$CMD" != "new" ]]; then
+  NAME_PROBLEM="$(md_name_problem "$FEATURE")"
+  if [[ -n "$NAME_PROBLEM" ]]; then
+    printf "ERROR=not a feature name: '%s' — %s. A feature is a folder directly under _docs/\n" "$FEATURE" "$NAME_PROBLEM" >&2
+    exit 1
+  fi
+fi
 
 # Counters, not ${#array[@]}: on bash 3.2 an empty array counts as unset under
 # `set -u` and reading its length aborts the script.
@@ -216,24 +276,45 @@ warn() { WARNS+=("$1"); N_WARN=$(( N_WARN + 1 )); }
 
 RC2=0   # a subordinate script exited 2 and that turned into a stop
 
+# Read in the shell: the gate asks for some thirty keys, and a program per key
+# was a large part of what a gate run cost.
 kv() {
-  printf '%s\n' "$1" | awk -v k="$2" '
-    index($0, k "=") == 1 { sub(/^[^=]*=/, ""); print; exit }
-  '
+  local s=$'\n'"$1" k=$'\n'"$2="
+  [[ "$s" == *"$k"* ]] || return 0
+  s="${s#*"$k"}"
+  printf '%s\n' "${s%%$'\n'*}"
 }
 
 # The lines of one `SECTION:` block. A KEY=value line never matches a header,
 # so the block ends at the next header or at the end of the output.
+SECTION_HEAD_RE='^[A-Z_]+:$'
 section() {
-  printf '%s\n' "$1" | awk -v want="$2:" '
-    /^[A-Z_]+:$/ { inside = ($0 == want); next }
-    inside && NF { print }
-  '
+  local line inside=0
+  while IFS= read -r line; do
+    if [[ "$line" =~ $SECTION_HEAD_RE ]]; then
+      [[ "$line" == "$2:" ]] && inside=1 || inside=0
+      continue
+    fi
+    [[ $inside -eq 1 && "$line" == *[![:space:]]* ]] && printf '%s\n' "$line"
+  done <<< "$1"
+  return 0
 }
 
-list_features() {
-  find "$SPECS" -mindepth 1 -maxdepth 1 -type d ! -name '.*' 2>/dev/null \
-    | sed 's|.*/||' | sort
+# Whether the entry <REQ> of the compilation belongs to another feature: prints
+# that feature's name, or nothing when there is no entry, no source, or the
+# source is this feature (compared as folders are, case aside).
+foreign_source() {
+  local src
+  src="$(md_req_source "$SPECS/requirements.md" "$1")"
+  [[ -n "$src" ]] || return 0
+  [[ "$(printf '%s' "$src" | tr '[:upper:]' '[:lower:]')" == "$(printf '%s' "$FOLDER" | tr '[:upper:]' '[:lower:]')" ]] && return 0
+  printf '%s' "$src"
+}
+
+# The numbers this feature declares that another feature declares too.
+own_collisions() {
+  printf '%s\n' "$REQ_COLLISIONS" | awk -F'|' -v me="$FOLDER" '
+    NF == 2 { n = split($2, w, ","); for (i = 1; i <= n; i++) if (tolower(w[i]) == tolower(me)) { printf "%s%s (%s)", sep, $1, $2; sep = ", " } }'
 }
 
 # ── The architecture baseline ─────────────────────────────────────
@@ -295,7 +376,9 @@ case "$CMD" in
   review)      NEED_NR=1 ;;
   actualize)   NEED_NR=1 ;;
   implement)   NEED_BC=1 ;;
-  code-review) NEED_RS=1 ;;
+  # The build is the reviewer's to run, never the orchestrator's: it is read
+  # for the prompt alone.
+  code-review) NEED_RS=1; [[ $PROMPT_DATA -eq 1 ]] && NEED_BC=1 ;;
   code-fix)    NEED_RS=1; NEED_BC=1 ;;
 esac
 
@@ -308,30 +391,43 @@ fi
 
 # Every script runs before anything is reported: a violation found in the first
 # one never skips the second, so the human gets every reason in one message.
-FS_ERR="$(mktemp)"; BC_ERR="$(mktemp)"; NR_ERR="$(mktemp)"; RS_ERR="$(mktemp)"
-trap 'rm -f "$FS_ERR" "$BC_ERR" "$NR_ERR" "$RS_ERR"' EXIT
+#
+# They run side by side: none reads what another prints, and each spends its
+# time starting programs rather than computing, so the gate waits for the
+# slowest of them instead of for all of them in turn. Each writes its stdout,
+# stderr and exit code into files of its own, read back once all are done.
+GATE_TMP="$(mktemp -d "${TMPDIR:-/tmp}/sdd-gate.XXXXXX")" || exit 1
+trap 'rm -rf "$GATE_TMP"' EXIT
 
 FS_OUT=""; FS_RC=0; FS_ERRLINE=""
 BC_OUT=""; BC_RC=0; BC_ERRLINE=""
 NR_OUT=""; NR_RC=0; NR_ERRLINE=""
 RS_OUT=""; RS_RC=0; RS_ERRLINE=""
 
-if [[ $NEED_FS -eq 1 ]]; then
-  FS_OUT="$("$SCRIPT_DIR/feature-state.sh" "$FEATURE" "$ROOT_DIR" 2>"$FS_ERR")"; FS_RC=$?
-  FS_ERRLINE="$(cat "$FS_ERR")"
-fi
-if [[ $NEED_BC -eq 1 ]]; then
-  BC_OUT="$("$SCRIPT_DIR/build-command.sh" "$ROOT_DIR" 2>"$BC_ERR")"; BC_RC=$?
-  BC_ERRLINE="$(cat "$BC_ERR")"
-fi
-if [[ $NEED_NR -eq 1 ]]; then
-  NR_OUT="$("$SCRIPT_DIR/next-req.sh" "$ROOT_DIR" 2>"$NR_ERR")"; NR_RC=$?
-  NR_ERRLINE="$(cat "$NR_ERR")"
-fi
-if [[ $NEED_RS -eq 1 ]]; then
-  RS_OUT="$(cd "$ROOT_DIR" && "$SCRIPT_DIR/review-set.sh" "$BASE_ARG" 2>"$RS_ERR")"; RS_RC=$?
-  RS_ERRLINE="$(cat "$RS_ERR")"
-fi
+# run_child <tag> <command ...> — in the background, from the gate's own
+# directory; the exit code is written last, so a missing one is a child that
+# never finished.
+run_child() {
+  local tag="$1"; shift
+  { "$@" > "$GATE_TMP/$tag.out" 2> "$GATE_TMP/$tag.err"; printf '%s' "$?" > "$GATE_TMP/$tag.rc"; } &
+}
+[[ $NEED_FS -eq 1 ]] && run_child fs "$SCRIPT_DIR/feature-state.sh" "$FEATURE" "$ROOT_DIR"
+[[ $NEED_BC -eq 1 ]] && run_child bc "$SCRIPT_DIR/build-command.sh" "$ROOT_DIR"
+[[ $NEED_NR -eq 1 ]] && run_child nr "$SCRIPT_DIR/next-req.sh" "$ROOT_DIR"
+# review-set.sh reads the repository of the directory it runs in, so the
+# feature's starting point is named relative to it.
+[[ $NEED_RS -eq 1 ]] && ( cd "$ROOT_DIR" && run_child rs "$SCRIPT_DIR/review-set.sh" "$BASE_ARG" \
+  "--start=_docs/$(md_feature_folder "_docs" "$FEATURE")/$MD_START_FILE"; wait )
+wait
+
+# The value as `$(...)` would have given it — trailing newlines dropped — read
+# by the shell rather than by cat.
+read_child() { [[ -f "$GATE_TMP/$1" ]] && printf '%s' "$(< "$GATE_TMP/$1")"; return 0; }
+child_rc()   { local rc; rc="$(read_child "$1.rc")"; printf '%s' "${rc:-1}"; }
+if [[ $NEED_FS -eq 1 ]]; then FS_OUT="$(read_child fs.out)"; FS_RC="$(child_rc fs)"; FS_ERRLINE="$(read_child fs.err)"; fi
+if [[ $NEED_BC -eq 1 ]]; then BC_OUT="$(read_child bc.out)"; BC_RC="$(child_rc bc)"; BC_ERRLINE="$(read_child bc.err)"; fi
+if [[ $NEED_NR -eq 1 ]]; then NR_OUT="$(read_child nr.out)"; NR_RC="$(child_rc nr)"; NR_ERRLINE="$(read_child nr.err)"; fi
+if [[ $NEED_RS -eq 1 ]]; then RS_OUT="$(read_child rs.out)"; RS_RC="$(child_rc rs)"; RS_ERRLINE="$(read_child rs.err)"; fi
 
 # Exit 1 is the environment, never the project: it is relayed and nothing else
 # is decided from a run that could not read its own inputs.
@@ -374,6 +470,64 @@ if [[ $NEED_FS -eq 1 && $FS_RC -eq 0 ]]; then
   TASK_RECS="$(section "$FS_OUT" TASKS)"
   COMP_RECS="$(section "$FS_OUT" COMPILATION_ENTRIES)"
 fi
+
+# The status markers of the three files, as one list: ", new-requirements.md
+# (draft), tasks.md (no status)" — of the files on disk. Empty when every one
+# of them is ready.
+draft_list() {
+  local pair marker file out=""
+  for pair in "$ST_REQ:$S_REQ:new-requirements.md" "$ST_DES:$S_DES:design.md" "$ST_TSK:$S_TSK:tasks.md"; do
+    # A file that is not there is not a draft: it is the stop of its own.
+    [[ "${pair%%:*}" == "present" ]] || continue
+    marker="${pair#*:}"; file="${marker#*:}"; marker="${marker%%:*}"
+    [[ "$marker" == "ready" ]] && continue
+    [[ "$marker" == "absent" ]] && marker="no status"
+    out="$out, $file ($marker)"
+  done
+  printf '%s' "${out#, }"
+}
+
+# What says the feature is not finished, as ASK: lines: a command goes on over
+# them only on the human's yes. The same lines are printed again under --verify
+# as ACCEPTED: — nothing the run does settles any of them, so a condition that
+# still holds after the step is one the human said yes to, and the closing
+# report reads it off the disk instead of out of the session's memory.
+unfinished_implement() {
+  local draft
+  draft="$(draft_list)"
+  [[ -n "$draft" ]] && \
+    ask "Not reviewed: $draft. /sdd-spec-review $FEATURE is what promotes a spec to ready. Implementing anyway needs the human to say so in as many words, and the final report then says the work was built from an unreviewed spec."
+  return 0
+}
+
+# Promotion is the one step nothing later reviews: an entry written here is
+# what every next feature is specified against. So whatever says the feature
+# is not finished goes to the human before a line of it is written.
+unfinished_actualize() {
+  local draft
+  draft="$(draft_list)"
+  [[ -n "$draft" ]] && \
+    ask "Not reviewed: $draft. /sdd-spec-review $FEATURE is what promotes a spec to ready. Promoting anyway writes requirements nobody approved into _docs/requirements.md as final — it needs the human to say so in as many words, and the final report then says the baseline was written from an unreviewed spec."
+
+  if [[ "$ST_TSK" != "present" ]]; then
+    ask "_docs/$FOLDER/tasks.md is $ST_TSK — nothing on disk says this feature was implemented. Promoting anyway records its requirements as what the project does; it needs the human to say so in as many words."
+  elif [[ "$T_TOTAL" == "0" || "$T_DONE" != "$T_TOTAL" ]]; then
+    ask "Not implemented: $T_DONE of $T_TOTAL task(s) are [x], $T_BLOCKED blocked. /sdd-implement $FEATURE is what finishes them. Promoting anyway records requirements the code does not meet as what the project does — it needs the human to say so in as many words, and the final report names the tasks left open."
+  fi
+
+  case "$(printf '%s' "$R_VERDICT" | tr '[:upper:]' '[:lower:]')" in
+    blocked*)
+      ask "The code review of $R_DATE says '$R_VERDICT' — the code was judged not mergeable as it stands. /sdd-code-fix $FEATURE acts on that report. Promoting anyway needs the human to say so in as many words." ;;
+    "approved with"*)
+      warn "The code review of $R_DATE says '$R_VERDICT' — it lists Major findings, and /sdd-code-fix $FEATURE is what acts on them." ;;
+    # A fix run invalidates whatever verdict it acted on, BLOCKED included: what
+    # the code is now, no review has said. Promoting over that is the human's
+    # call, as it is over a BLOCKED one.
+    stale*)
+      ask "The code review report says '$R_VERDICT' — fixes were applied after it, and no review has seen the code as it now stands. /sdd-code-review $FEATURE reaches a verdict on it. Promoting anyway needs the human to say so in as many words." ;;
+  esac
+  return 0
+}
 
 # ══ --verify: what the step left behind ═══════════════════════════
 # Only what is mechanical: a file on disk, a marker in it, a task no longer
@@ -494,29 +648,34 @@ verify_actualize() {
     return 0
   fi
   # Every requirement the feature declares, against what the compilation now
-  # holds. A draft entry is only one way a promotion stays unfinished: an entry
-  # never written and a refinement never applied leave no draft behind at all.
-  local d_id d_rel d_target t_line
-  while IFS='|' read -r d_id d_rel d_target; do
+  # holds — read by lib/format.sh, as feature-state.sh reads it for the stage.
+  # A draft entry is only one way a promotion stays unfinished: an entry never
+  # written and a refinement never applied leave no draft behind at all.
+  local d_id d_why d_what
+  while IFS='|' read -r d_id d_why d_what; do
     [[ -n "$d_id" ]] || continue
-    case "$d_rel" in
-      new)
-        [[ -n "$(md_req_lines "$SPECS/requirements.md" "$d_id")" ]] || \
-          fail "$d_id is declared by _docs/$FOLDER/new-requirements.md and _docs/requirements.md holds no entry for it — it was not promoted." ;;
-      supersedes)
-        [[ -n "$(md_req_lines "$SPECS/requirements.md" "$d_id")" ]] || \
-          fail "$d_id is declared by _docs/$FOLDER/new-requirements.md and _docs/requirements.md holds no entry for it — it was not promoted."
-        t_line="$(md_req_lines "$SPECS/requirements.md" "$d_target" | head -n 1)"
-        if [[ -n "$t_line" ]] && ! sed -n "${t_line}p" "$SPECS/requirements.md" | grep -q "superseded by $d_id"; then
-          fail "$d_id supersedes $d_target, and the entry of $d_target in _docs/requirements.md does not say so — it still reads as a requirement in force."
-        fi ;;
-      refines)
-        printf '%s\n' "$COMP_RECS" | grep -q "^$d_target|" || \
-          fail "$d_id refines $d_target, and the entry of $d_target in _docs/requirements.md carries no trace of this feature — the new wording was not written into it." ;;
+    case "$d_why" in
+      missing)
+        fail "$d_id is declared by _docs/$FOLDER/new-requirements.md and _docs/requirements.md holds no entry for it — it was not promoted." ;;
+      foreign)
+        fail "$d_id in _docs/requirements.md is an entry of $d_what, not of $FOLDER — this feature's requirement of that number was never promoted, or was written over another feature's." ;;
+      no-target)
+        fail "$d_id supersedes ${d_what:-a requirement it does not name}, and _docs/requirements.md holds no entry of it — nothing on file says what $d_id replaced." ;;
+      unmarked)
+        fail "$d_id supersedes $d_what, and the entry of $d_what in _docs/requirements.md does not say so — it still reads as a requirement in force." ;;
+      unrefined)
+        fail "$d_id refines $d_what, and the entry of $d_what in _docs/requirements.md carries no trace of this feature — the new wording was not written into it." ;;
     esac
   done <<EOF
-$(md_req_relations "$SPECS/$FOLDER/new-requirements.md")
+$(md_unpromoted "$SPECS/requirements.md" "$SPECS/$FOLDER/new-requirements.md" "$FOLDER")
 EOF
+  # A feature that declares nothing has no entry to be found by: the mark is
+  # what takes it to actualized, and a run that did not write it left the
+  # feature at implemented.
+  if [[ -f "$SPECS/$FOLDER/new-requirements.md" && -z "$(md_req_relations "$SPECS/$FOLDER/new-requirements.md")" \
+        && -z "$(md_field "$SPECS/$FOLDER/new-requirements.md" actualized)" ]]; then
+    fail "_docs/$FOLDER/new-requirements.md declares no requirement and carries no 'actualized:' property — nothing marks the feature as promoted, and it stays at implemented."
+  fi
 
   local drafts counter highest
   drafts="$(printf '%s\n' "$COMP_RECS" | awk -F'|' '
@@ -559,8 +718,23 @@ if [[ $VERIFY -eq 1 ]]; then
     actualize)   verify_actualize ;;
   esac
   if [[ $N_FAIL -gt 0 ]]; then printf 'VERIFY=fail\n'; else printf 'VERIFY=ok\n'; fi
+  if [[ "$CMD" == "implement" ]]; then
+    printf 'TASKS_DONE=%s\n' "$T_DONE"
+    printf 'TASKS_TOTAL=%s\n' "$T_TOTAL"
+  fi
   printf '\nFAIL:\n'
   for f in ${FAILS[@]+"${FAILS[@]}"}; do printf '%s\n' "$f"; done
+  if [[ "$CMD" == "implement" ]]; then
+    printf '\nANOMALIES:\n'
+    [[ -n "$ANOMALIES" ]] && printf '%s\n' "$ANOMALIES"
+  fi
+  if [[ "$CMD" == "implement" || "$CMD" == "actualize" ]]; then
+    if [[ $FS_FOUND -eq 1 ]]; then
+      unfinished_$CMD
+    fi
+    printf '\nACCEPTED:\n'
+    for a in ${ASKS[@]+"${ASKS[@]}"}; do printf '%s\n' "$a"; done
+  fi
   [[ $N_FAIL -gt 0 ]] && exit 2
   exit 0
 fi
@@ -596,25 +770,12 @@ require_specs() {
   done
 }
 
-# The status markers of the three files, as one list: ", new-requirements.md
-# (draft), tasks.md (no status)". Empty when all three are ready.
-draft_list() {
-  local pair marker file out=""
-  for pair in "$S_REQ:new-requirements.md" "$S_DES:design.md" "$S_TSK:tasks.md"; do
-    marker="${pair%%:*}"; file="${pair#*:}"
-    [[ "$marker" == "ready" ]] && continue
-    [[ "$marker" == "absent" ]] && marker="no status"
-    out="$out, $file ($marker)"
-  done
-  printf '%s' "${out#, }"
-}
-
 # ── The build command ─────────────────────────────────────────────
 # The values are the human's answer in `.sdd/sdd.conf`, and nothing else: the
 # DETECTED: rows are a proposal the script never substitutes for a missing one.
 # What the rows do decide here is the SHAPE of the project — which stacks it
 # has — and the shape is what says which answers it needs.
-BUILD_ROOT=""; BUILD_BACKEND=""; BUILD_FRONTEND=""; BUILD_FILES=0; BASELINE=""
+BUILD_ROOT=""; BUILD_BACKEND=""; BUILD_FRONTEND=""; BASELINE=""
 BUILD_DETECTED=""; HAS_BACKEND=0; HAS_FRONTEND=0
 PROPOSE_BACKEND=""; PROPOSE_FRONTEND=""
 PROPOSE_BACKEND_FILE=""; PROPOSE_FRONTEND_FILE=""
@@ -623,7 +784,6 @@ if [[ $NEED_BC -eq 1 && $BC_RC -eq 0 ]]; then
   BUILD_BACKEND="$(kv "$BC_OUT" BACKEND)"
   BUILD_FRONTEND="$(kv "$BC_OUT" FRONTEND)"
   BUILD_DETECTED="$(section "$BC_OUT" DETECTED)"
-  BUILD_FILES="$(printf '%s\n' "$BUILD_DETECTED" | grep -c . || true)"
   while IFS='|' read -r d_dir d_file d_cmd d_stack; do
     [[ -n "$d_stack" ]] || continue
     [[ "$d_dir" == "." ]] && d_path="$d_file" || d_path="$d_dir/$d_file"
@@ -661,47 +821,80 @@ BASELINE="$BUILD_ROOT"
 ask_build() {
   local key="$1" what="$2" proposal="$3" file="$4"
   if [[ -n "$proposal" ]]; then
-    ask "No build command for $what: .sdd/sdd.conf holds no $key, and $file says this project has that stack. Detection proposes \`$proposal\` — accept it or name another, and write the line into .sdd/sdd.conf as $key=<command>. A command is one line run from the project root; nothing is built until it is there, because a proposal is not an answer."
+    ask "No build command for $what: .sdd/sdd.conf holds no $key, and $file says this project has that stack. Detection proposes \`$proposal\` — accept it or name another; the answer is written with \`spec-edit.sh conf-set $key\`. A command is one line run from the project root; nothing is built until it is there, because a proposal is not an answer."
   else
-    ask "No build command for $what: .sdd/sdd.conf holds no $key, and no pom.xml, build.gradle or package.json was found to propose one from. Write the command that verifies this project into .sdd/sdd.conf as $key=<command> — one line, run from the project root. Nothing is built until it is there."
+    ask "No build command for $what: .sdd/sdd.conf holds no $key, and no pom.xml, build.gradle or package.json was found to propose one from. Name the command that verifies this project — one line, run from the project root; the answer is written with \`spec-edit.sh conf-set $key\`. Nothing is built until it is there."
   fi
 }
 
+# BUILD_STACKS, when set, narrows the check to the stacks a run builds —
+# `backend`, `frontend` or both, comma-separated. Empty is every stack the
+# project has.
+BUILD_STACKS=""
+needs_stack() { [[ -z "$BUILD_STACKS" || ",$BUILD_STACKS," == *",$1,"* ]]; }
+
+# A stack the run builds and detection did not see — backend tasks beside a
+# lone package.json. No build file proposes a command for it, and the key that
+# answers it is that stack's own or the root one, which stands in here.
+ask_undetected() {
+  local stack="$1" key="$2"
+  ask "No build command for the $stack stack: the tasks of this feature build it, .sdd/sdd.conf holds neither $key nor SDD_BUILD_ROOT, and no build file of that stack was found to propose one from. Name the command that verifies it — one line, run from the project root; the answer is written with \`spec-edit.sh conf-set $key\`. Nothing is built until it is there."
+}
+
+# Every developer the run spawns is handed a command: the check is per stack the
+# run builds, never only per stack detection found.
 check_build_config() {
+  local asked=""
   if [[ $HAS_BACKEND -eq 1 && $HAS_FRONTEND -eq 1 ]]; then
-    [[ -n "$BUILD_BACKEND"  ]] || ask_build SDD_BUILD_BACKEND  "the backend stack"  "$PROPOSE_BACKEND"  "$PROPOSE_BACKEND_FILE"
-    [[ -n "$BUILD_FRONTEND" ]] || ask_build SDD_BUILD_FRONTEND "the frontend stack" "$PROPOSE_FRONTEND" "$PROPOSE_FRONTEND_FILE"
+    needs_stack backend && [[ -z "$BUILD_BACKEND" ]] && ask_build SDD_BUILD_BACKEND  "the backend stack"  "$PROPOSE_BACKEND"  "$PROPOSE_BACKEND_FILE"
+    needs_stack frontend && [[ -z "$BUILD_FRONTEND" ]] && ask_build SDD_BUILD_FRONTEND "the frontend stack" "$PROPOSE_FRONTEND" "$PROPOSE_FRONTEND_FILE"
+    return 0
   elif [[ $HAS_BACKEND -eq 1 ]]; then
-    [[ -n "$BUILD_BACKEND"  ]] || ask_build SDD_BUILD_BACKEND  "the backend stack"  "$PROPOSE_BACKEND"  "$PROPOSE_BACKEND_FILE"
+    [[ -n "$BUILD_BACKEND"  ]] || { ask_build SDD_BUILD_BACKEND  "the backend stack"  "$PROPOSE_BACKEND"  "$PROPOSE_BACKEND_FILE"; asked="backend"; }
   elif [[ $HAS_FRONTEND -eq 1 ]]; then
-    [[ -n "$BUILD_FRONTEND" ]] || ask_build SDD_BUILD_FRONTEND "the frontend stack" "$PROPOSE_FRONTEND" "$PROPOSE_FRONTEND_FILE"
+    [[ -n "$BUILD_FRONTEND" ]] || { ask_build SDD_BUILD_FRONTEND "the frontend stack" "$PROPOSE_FRONTEND" "$PROPOSE_FRONTEND_FILE"; asked="frontend"; }
   else
+    # One answer covers every stack here: build-command.sh hands the root
+    # command to each of them.
     [[ -n "$BUILD_ROOT" ]] || ask_build SDD_BUILD_ROOT "this project" "" ""
+    return 0
   fi
+  [[ -n "$BUILD_STACKS" ]] || return 0
+  needs_stack backend  && [[ "$asked" != "backend"  && -z "$BUILD_BACKEND"  ]] && ask_undetected backend  SDD_BUILD_BACKEND
+  needs_stack frontend && [[ "$asked" != "frontend" && -z "$BUILD_FRONTEND" ]] && ask_undetected frontend SDD_BUILD_FRONTEND
+  return 0
 }
 
 # ── The review set ────────────────────────────────────────────────
-RS_BASE=""; RS_ROOT=""; RS_DIFF=""; RS_UNTRACKED=""; RS_NOTES=""; CHANGED=0
+RS_BASE=""; RS_ROOT=""; RS_DIFF=""; RS_DIFF_FILE=""; RS_UNTRACKED=""; RS_PRE=""; RS_NOTES=""
+RS_FILES=""; RS_EXCLUDED=""; CHANGED=0
 if [[ $NEED_RS -eq 1 && $RS_RC -eq 0 ]]; then
   RS_BASE="$(kv "$RS_OUT" BASE)"
   RS_ROOT="$(kv "$RS_OUT" ROOT)"
   RS_DIFF="$(kv "$RS_OUT" DIFF)"
+  RS_DIFF_FILE="$(kv "$RS_OUT" DIFF_FILE)"
+  RS_FILES="$(section "$RS_OUT" FILES)"
+  RS_EXCLUDED="$(section "$RS_OUT" EXCLUDED)"
   RS_NOTES="$(section "$RS_OUT" NOTES)"
   RS_UNTRACKED="$(section "$RS_OUT" UNTRACKED)"
-  # A stat row carries ' | '; the trailing "N files changed" summary does not.
-  n_diff=$(section "$RS_OUT" DIFFSTAT | grep -c ' | ' || true)
-  n_untracked=$(printf '%s\n' "$RS_UNTRACKED" | grep -c . || true)
-  CHANGED=$(( n_diff + n_untracked ))
+  RS_PRE="$(section "$RS_OUT" PREEXISTING)"
+  # One file per line in every list: one the diff changes, one git does not
+  # track yet, or a lock file left out of both — a set of lock files alone is
+  # still not empty.
+  while IFS= read -r p; do
+    [[ -n "$p" ]] && CHANGED=$(( CHANGED + 1 ))
+  done <<< "$RS_FILES"$'\n'"$RS_UNTRACKED"$'\n'"$RS_EXCLUDED"
 fi
 
 # ── The next free REQ number ──────────────────────────────────────
-NEXT_REQ=""; REQ_DUPLICATES=""; REQ_DOMAINS=""
+NEXT_REQ=""; REQ_DUPLICATES=""; REQ_DOMAINS=""; REQ_COLLISIONS=""
 # Exit 3 is a printed report too: the domains, the duplicates and the notes are
 # all there, and NEXT is empty because the scan found no free number to give.
 # Reading it as a failure would drop the table that says why.
 if [[ $NEED_NR -eq 1 && ( $NR_RC -eq 0 || $NR_RC -eq 3 ) ]]; then
   NEXT_REQ="$(kv "$NR_OUT" NEXT)"
   REQ_DUPLICATES="$(section "$NR_OUT" DUPLICATES)"
+  REQ_COLLISIONS="$(section "$NR_OUT" COLLISIONS)"
   # The whole table, because the domain a feature's requirements belong to is
   # the session's decision and not this script's: NEXT_REQ answers for the
   # undomained sequence, and REQ_DOMAINS: is where the answer for `ACC` is when
@@ -731,9 +924,7 @@ check_init() {
   [[ -n "$(find "$TEMPLATE_DIR/architecture" -maxdepth 1 -name '*.md' -type f 2>/dev/null)" ]] \
     || missing="${missing:+$missing,}architecture/"
   arch_written && existing="${existing:+$existing,}${ARCH_ENTRY#_docs/}"
-  TEMPLATES="ok"
   if [[ -n "$missing" ]]; then
-    TEMPLATES="missing:$missing"
     stop "Templates the setup writes from are not there: $missing. The engine is installed incompletely — report it instead of inventing a structure for those files."
   fi
   EXISTING="$existing"
@@ -752,34 +943,29 @@ check_init() {
          -o -name '*.js' -o -name '*.py' -o -name '*.go' -o -name '*.rs' \
          -o -name '*.rb' -o -name '*.php' -o -name '*.cs' \) -print 2>/dev/null | head -1)"
   if [[ -n "$hits" ]]; then PROJECT="brownfield"; else PROJECT="greenfield"; fi
+
+  # The build question, asked here and before the long spawn rather than after
+  # it: a brownfield project has a build to name. A greenfield one has none yet
+  # — its first /sdd-implement asks.
+  [[ "$PROJECT" == "brownfield" ]] && check_build_config
+  return 0
 }
 
 check_new() {
-  local bad reason="" lc other exact=0
+  local reason lc other exact=0
   # The name alone, before anything on disk is read.
-  NAME_OK="yes"; NAME_WARN=""
-  case "$FEATURE" in
-    */*|*\\*) reason="it carries a path separator" ;;
-    .|..)     reason="it is '$FEATURE'" ;;
-    .*)       reason="it starts with a dot" ;;
-  esac
-  if [[ -z "$reason" ]]; then
-    bad="$(printf '%s' "$FEATURE" | LC_ALL=C tr -d 'A-Za-z0-9._-')"
-    [[ -n "$bad" ]] && reason="it holds '$bad'"
-  fi
+  reason="$(md_name_problem "$FEATURE")"
   if [[ -n "$reason" ]]; then
-    NAME_OK="no"
     stop "'$FEATURE' is not a usable folder name: $reason. A usable name holds only letters, digits, '-', '_' and '.', carries no path separator, is not '.' or '..', and does not start with '.'."
   # Two shapes are expected, not one: a PascalCase name a human chose, and a
   # Jira issue key, which carries a hyphen and is never PascalCase. An imported
   # feature is named after its issue, so warning about the key would mean a
   # warning on every import and nothing for the human to do about it.
   elif ! printf '%s' "$FEATURE" | LC_ALL=C grep -qE '^([A-Z][A-Za-z0-9]*|[A-Z][A-Z0-9]*-[0-9]+)$'; then
-    NAME_WARN="'$FEATURE' is neither PascalCase nor a Jira issue key. The name is used on disk exactly as given — never renamed, capitalized, or otherwise 'fixed'."
-    warn "$NAME_WARN"
+    warn "'$FEATURE' is neither PascalCase nor a Jira issue key. The name is used on disk exactly as given — never renamed, capitalized, or otherwise 'fixed'."
   fi
 
-  FEATURES="$(list_features)"
+  FEATURES="$(md_features "$SPECS")"
 
   # A name differing only in case is the same folder on a case-insensitive
   # filesystem — the human picks one of the two spellings before anything is
@@ -795,10 +981,12 @@ check_new() {
   done <<< "$FEATURES"
 
   if [[ $FS_FOUND -eq 1 && $exact -eq 1 ]]; then
-    case "$ST_RAW" in
-      present) stop "_docs/$FOLDER/raw.md already holds a description, and this command never overwrites one — delete the file to start over. Edit it, or run /sdd-specify $FEATURE." ;;
-      *) ;;
-    esac
+    # A raw.md that is still the template is a run cut short — the scaffold
+    # made it and the import or the interview never wrote into it. Running
+    # again is how that finishes, so it is not a description to protect.
+    if [[ "$ST_RAW" == "present" ]] && ! md_untouched "$SPECS/$FOLDER/raw.md" "$TEMPLATE_DIR/raw.md"; then
+      stop "_docs/$FOLDER/raw.md already holds a description, and this command never overwrites one — delete the file to start over. Edit it, or run /sdd-specify $FEATURE."
+    fi
   else
     ST_RAW="missing"
   fi
@@ -818,8 +1006,11 @@ check_specify() {
     no_feature_stop "there is nothing to specify."
     return 0
   fi
-  [[ "$ST_RAW" == "present" ]] || \
+  if [[ "$ST_RAW" != "present" ]]; then
     stop "_docs/$FOLDER/raw.md is $ST_RAW — the description this spec is written from is not on disk. /sdd-next-story $FEATURE creates it."
+  elif md_untouched "$SPECS/$FOLDER/raw.md" "$TEMPLATE_DIR/raw.md"; then
+    stop "_docs/$FOLDER/raw.md holds nothing but the template it was copied from — there is no description to write a spec from. Fill it in, or run /sdd-next-story $FEATURE again."
+  fi
 
   # A file that is present is not a stop: it sends the run to the human, who
   # decides before anything is generated. An `empty` one is overwritten silently.
@@ -846,6 +1037,10 @@ check_specify() {
 
   arch_present || \
     warn "$ARCH_ENTRY is not there — the spec is written without the architecture context, and /sdd-init is what creates it."
+  local mine
+  mine="$(own_collisions)"
+  [[ -n "$mine" ]] && \
+    warn "Declared by more than one feature: $mine. Renumber the requirement here or in the other feature before either is promoted — /sdd-actualize stops on it."
 
   if [[ $NR_RC -eq 2 ]]; then
     NEXT_REQ="REQ-001"
@@ -876,7 +1071,13 @@ check_review() {
     warn "_docs/requirements.md is not there — the requirements of this feature cannot be compared against the ones the project already has."
   arch_present || \
     warn "$ARCH_ENTRY is not there — the design is reviewed without the architecture context, and /sdd-init is what creates it."
-  [[ $NR_RC -eq 2 ]] && NEXT_REQ=""
+  local mine
+  mine="$(own_collisions)"
+  [[ -n "$mine" ]] && \
+    warn "Declared by more than one feature: $mine. Renumber the requirement here or in the other feature before either is promoted — /sdd-actualize stops on it."
+  # The same answer /sdd-specify gets: with no compilation, numbering starts
+  # where its template's counter does.
+  [[ $NR_RC -eq 2 ]] && NEXT_REQ="REQ-001"
   [[ -n "$REQ_DUPLICATES" ]] && \
     warn "The compilation carries the same number more than once: $(printf '%s' "$REQ_DUPLICATES" | tr '\n' ' ') — repair it before this session issues a new number."
 }
@@ -887,10 +1088,7 @@ check_implement() {
   else
     require_specs "."
 
-    local draft
-    draft="$(draft_list)"
-    [[ -n "$draft" ]] && \
-      ask "Not reviewed: $draft. /sdd-spec-review $FEATURE is what promotes a spec to ready. Implementing anyway needs the human to say so in as many words, and the final report then says the work was built from an unreviewed spec."
+    unfinished_implement
 
     # Only when the file is there: a missing tasks.md already has its own line,
     # and one problem never reaches the human as two.
@@ -908,7 +1106,23 @@ check_implement() {
     fi
   fi
 
-  check_build_config
+  # The stacks this run still has work in — open or blocked tasks, never done
+  # ones: a role whose tasks are all [x] is not spawned, and its build is not
+  # asked for. A project with both stacks needs the answer only for those:
+  # asking for the frontend command of a backend-only feature holds the run on
+  # a question nothing in it would ever run. A feature with no parsable task
+  # asks as before; one with every task done asks nothing — the verdict is done.
+  ROLE_ORDER="$(printf '%s\n' "$TASK_RECS" | awk -F'|' '
+    $2 == "open" || $2 == "blocked" { want[$3] = 1 }
+    END {
+      if ("backend" in want) { printf "backend"; sep = "," }
+      if ("frontend" in want) printf "%sfrontend", sep
+    }')"
+  if [[ "$T_TOTAL" == "0" || "$T_DONE" != "$T_TOTAL" ]]; then
+    BUILD_STACKS="$ROLE_ORDER"
+    check_build_config
+    BUILD_STACKS=""
+  fi
 
   # `[x]` is the only mark that takes a task out: a blocked one is unchecked,
   # and a re-run retries it with fresh attempts.
@@ -916,17 +1130,32 @@ check_implement() {
     $2 == "open" || $2 == "blocked" { printf "%s|%s|%s|%s|%s\n", $1, $2, $3, $5, $6 }
   ')"
 
-  ROLE_ORDER=""
-  case "$(kv "$FS_OUT" TASK_TYPES)" in *backend*) ROLE_ORDER="backend" ;; esac
-  case "$(kv "$FS_OUT" TASK_TYPES)" in *frontend*) ROLE_ORDER="${ROLE_ORDER:+$ROLE_ORDER,}frontend" ;; esac
-
   # What a baseline is measured with is BASELINE, not the build files: a project
   # built by make or a script carries no file this engine detects, and its
   # command is SDD_BUILD_ROOT like any other. A project that named none is the
   # ASK above, so there is nothing left to ask about here.
 
-  [[ "$T_BLOCKED" != "0" ]] && \
-    warn "$T_BLOCKED task(s) carry BLOCKED: from an earlier run. They are unchecked, so this run retries them with fresh attempts — their TODO: records carry the reason they failed last time."
+  # A blocked task is retried only when the human names it: one blocked on a
+  # question or on the environment would spend three builds on the same cause.
+  # The answer lives in the chat between this gate and the spawn, as KEPT=
+  # does under /sdd-specify, and is asked again on the next run.
+  RETRY_RECS="$(printf '%s\n' "$TASK_RECS" | awk -F'|' '$2 == "blocked" { print $1 "|" $3 }')"
+  OPEN_STACKS="$(printf '%s\n' "$TASK_RECS" | awk -F'|' '
+    $2 == "open" { want[$3] = 1 }
+    END {
+      if ("backend" in want) { printf "backend"; sep = "," }
+      if ("frontend" in want) printf "%sfrontend", sep
+    }')"
+  if [[ -n "$RETRY_RECS" ]]; then
+    local list n
+    list="$(printf '%s\n' "$TASK_RECS" | awk -F'|' '
+      $2 == "blocked" {
+        r = $6; for (i = 7; i <= NF; i++) r = r "|" $i
+        printf "%s%s (%s) — %s", sep, $1, $3, r; sep = "; "
+      }')"
+    n="$(printf '%s\n' "$RETRY_RECS" | awk 'END { print NR }')"
+    ask "$n task(s) carry BLOCKED: from an earlier run. Which of them does this run retry with fresh attempts — name them, or all, or none? One not named stays blocked as it stands, and so does a task that cannot start without it; one retried on a reason nothing has changed spends its attempts on the same failure. The tasks: $list"
+  fi
 }
 
 check_code_review() {
@@ -941,8 +1170,11 @@ check_code_review() {
     [[ -n "$draft" ]] && \
       warn "Not reviewed: $draft. The yardstick of this review is an unreviewed spec, and the report says so. /sdd-spec-review $FEATURE is what promotes a spec to ready."
 
+    # Only what is still unchecked: a task marked [x] that kept its old
+    # BLOCKED: reason has code behind it, and the anomaly says so — handing it
+    # to the reviewer as unfinished would excuse its missing parts.
     BLOCKED_RECS="$(printf '%s\n' "$TASK_RECS" | awk -F'|' '
-      $2 == "blocked" || $2 == "done+blocked" { printf "%s|%s|%s\n", $1, $5, $6 }
+      $2 == "blocked" { printf "%s|%s|%s\n", $1, $5, $6 }
     ')"
     [[ "$T_BLOCKED" != "0" ]] && \
       warn "$T_BLOCKED task(s) are blocked. Their code is reviewed like the rest of the set — the report names them as unfinished by design, never as work that went missing."
@@ -980,7 +1212,7 @@ check_code_fix() {
     esac
 
     case "$(printf '%s' "$R_VERDICT" | tr '[:upper:]' '[:lower:]')" in
-      stale*) warn "The report says '> Verdict: $R_VERDICT' — it was already applied on the date it names, and its findings may be fixed already. A fresh /sdd-code-review $FEATURE is the reliable list." ;;
+      stale*) warn "The report's verdict is '$R_VERDICT' — it was already applied on the date it names, and its findings may be fixed already. A fresh /sdd-code-review $FEATURE is the reliable list." ;;
     esac
   fi
 
@@ -992,7 +1224,67 @@ check_code_fix() {
     warn "The report was taken against $R_ROOT and the code now sits on $RS_ROOT — it describes a different commit range. A fix applied to a moved line is never reported as a finding closed."
   fi
 
+  # A finding is about this feature's code, so the stacks it can need a build
+  # for are the ones its breakdown carries — done tasks included.
+  BUILD_STACKS="$(kv "$FS_OUT" TASK_TYPES | tr ',' '\n' | grep -xE 'backend|frontend' | paste -sd, -)"
   check_build_config
+  [[ $FS_RC -eq 0 && "$ST_REVIEW" == "present" ]] && FINDING_RECS="$(code_fix_findings "$BUILD_STACKS")"
+  BUILD_STACKS=""
+}
+
+# The findings of the report, each with the stack whose role fixes it:
+# `F-##|severity|category|file|line|stack`. A feature whose breakdown carries
+# one stack has all of its findings there. Otherwise the stack is the one of the
+# build file whose directory holds the finding's file most closely — a
+# `web/package.json` claims `web/...` over a root `pom.xml` — and `-` where no
+# build file claims it, or two of different stacks claim it equally: which role
+# fixes that finding is the human's call, never this gate's guess. A file no
+# build file settles — a stack detection does not know, a Python backend beside
+# a package.json — goes to the type of the tasks that name it: the breakdown
+# said which role writes that file, and a finding on it is that role's to fix.
+# Tasks of two types naming it leave `-`.
+code_fix_findings() {
+  local only="$1" rec file stack best len d_dir d_file d_cmd d_stack n
+  [[ "$only" == "backend" || "$only" == "frontend" ]] || only=""
+  while IFS= read -r rec; do
+    [[ -n "$rec" ]] || continue
+    IFS='|' read -r _ _ _ file _ <<< "$rec"
+    stack="$only"
+    if [[ -z "$stack" && "$file" != "-" ]]; then
+      stack="-"; best=-1
+      while IFS='|' read -r d_dir d_file d_cmd d_stack; do
+        [[ -n "$d_stack" ]] || continue
+        if [[ "$d_dir" == "." ]]; then n=0
+        elif [[ "$file" == "$d_dir/"* ]]; then n=${#d_dir}
+        else continue
+        fi
+        if   (( n > best )); then best=$n; stack="$d_stack"
+        elif (( n == best )) && [[ "$stack" != "$d_stack" ]]; then stack="-"
+        fi
+      done <<EOF
+$BUILD_DETECTED
+EOF
+      [[ "$stack" == "-" ]] && stack="$(task_stack_of "$SPECS/$FOLDER/tasks.md" "$file")"
+    fi
+    printf '%s|%s\n' "$rec" "${stack:--}"
+  done <<EOF
+$(md_findings "$SPECS/$FOLDER/review.md")
+EOF
+}
+
+# The one type of the tasks whose block names <file>, or nothing when none does
+# or two types do. A block is a task line and the lines under it, up to the next
+# task or heading.
+task_stack_of() {
+  [[ -r "$1" ]] || return 0
+  SDD_FILE="$2" awk '
+    function close_task() { if (named && (type == "backend" || type == "frontend")) seen[type] = 1 }
+    /^- \[[ xX~!-]\] \*\*TASK-/ { close_task(); in_task = 1; named = 0; type = "" }
+    /^#/ { close_task(); in_task = 0; named = 0; type = "" }
+    in_task && /\*\*Type:\*\*/ { t = $0; sub(/.*\*\*Type:\*\*[ \t]*/, "", t); sub(/[ \t].*/, "", t); type = t }
+    in_task && index($0, ENVIRON["SDD_FILE"]) { named = 1 }
+    END { close_task(); n = 0; for (t in seen) { n++; one = t } if (n == 1) print one }
+  ' "$1"
 }
 
 check_actualize() {
@@ -1022,56 +1314,53 @@ check_actualize() {
   # What each declared requirement is to the compilation. The relation is read
   # here, off the line the role wrote under the heading, so that the step that
   # edits requirements.md acts on a record and not on its own reading of prose.
-  local d_id d_rel d_target
+  local d_id d_rel d_target other by
   [[ "$ST_REQ" == "present" ]] && DECLARED_RECS="$(md_req_relations "$SPECS/$FOLDER/new-requirements.md")"
   while IFS='|' read -r d_id d_rel d_target; do
-    [[ -n "$d_id" && "$d_rel" != "new" ]] || continue
+    [[ -n "$d_id" ]] || continue
+    # A number this feature promotes as its own that the compilation already
+    # gives to another feature: two branches were handed one number. Writing it
+    # would reword that feature's requirement and call it this one's.
+    if [[ "$d_rel" != "refines" && "$COMPILATION" == "present" ]]; then
+      other="$(foreign_source "$d_id")"
+      [[ -n "$other" ]] && \
+        stop "$d_id is declared by _docs/$FOLDER/new-requirements.md as a requirement of its own, and _docs/requirements.md already holds $d_id as an entry of $other — two features were handed one number. Renumber it in _docs/$FOLDER/new-requirements.md (with its Requires: in tasks.md and its links in design.md), or, if it rewords that entry, give it a **Refines:** line instead."
+    fi
+    [[ "$d_rel" != "new" ]] || continue
     if [[ -z "$d_target" ]]; then
       stop "$d_id says it $d_rel a requirement and names none — the line under its heading in _docs/$FOLDER/new-requirements.md carries no REQ id. Which entry it is about is not guessed."
     elif [[ "$d_target" == "$d_id" ]]; then
       stop "$d_id says it $d_rel itself — the line under its heading in _docs/$FOLDER/new-requirements.md names its own number where an entry of _docs/requirements.md belongs."
     elif [[ "$COMPILATION" == "present" && -z "$(md_req_lines "$SPECS/requirements.md" "$d_target")" ]]; then
       stop "$d_id $d_rel $d_target, and _docs/requirements.md holds no entry $d_target — there is nothing to ${d_rel%s} there. Fix the line in _docs/$FOLDER/new-requirements.md."
+    elif [[ "$COMPILATION" == "present" ]]; then
+      # A retired entry is not one to reword, and one already replaced is not
+      # replaced a second time — except by the same requirement, which is a
+      # re-run finishing what it started.
+      by="$(sed -n "$(md_req_lines "$SPECS/requirements.md" "$d_target" | head -n 1)p" "$SPECS/requirements.md" \
+        | sed -n 's/.*superseded by \(REQ-[A-Z0-9-]*[0-9]\).*/\1/p')"
+      if [[ -n "$by" && "$d_rel" == "refines" ]]; then
+        stop "$d_id refines $d_target, and _docs/requirements.md says $d_target is superseded by $by — a retired requirement is not reworded. Refine $by instead, or make $d_id a requirement of its own."
+      elif [[ -n "$by" && "$by" != "$d_id" ]]; then
+        stop "$d_id supersedes $d_target, and _docs/requirements.md says $d_target is already superseded by $by — one requirement is replaced once. Supersede $by instead, or drop the line."
+      fi
     fi
   done <<EOF
 $DECLARED_RECS
 EOF
+  local mine
+  mine="$(own_collisions)"
+  [[ -n "$mine" ]] && \
+    stop "Declared by more than one feature: $mine. One number cannot become two entries — renumber the requirement in one of the features before either is promoted."
   [[ "$ST_REQ" == "present" && -z "$DECLARED_RECS" ]] && \
-    warn "_docs/$FOLDER/new-requirements.md declares no requirement — nothing of it reaches _docs/requirements.md, and only the architecture baseline is promoted."
+    warn "_docs/$FOLDER/new-requirements.md declares no requirement — nothing of it reaches _docs/requirements.md, only the architecture baseline is promoted, and the 'actualized:' property of new-requirements.md is what marks it done."
 
-  # Promotion is the one step nothing later reviews: an entry written here is
-  # what every next feature is specified against. So whatever says the feature
-  # is not finished goes to the human before a line of it is written.
-  local pair marker file draft=""
-  for pair in "$ST_REQ:$S_REQ:new-requirements.md" "$ST_DES:$S_DES:design.md" "$ST_TSK:$S_TSK:tasks.md"; do
-    [[ "${pair%%:*}" == "present" ]] || continue
-    marker="${pair#*:}"; file="${marker#*:}"; marker="${marker%%:*}"
-    [[ "$marker" == "ready" ]] && continue
-    [[ "$marker" == "absent" ]] && marker="no status"
-    draft="$draft, $file ($marker)"
-  done
-  [[ -n "$draft" ]] && \
-    ask "Not reviewed: ${draft#, }. /sdd-spec-review $FEATURE is what promotes a spec to ready. Promoting anyway writes requirements nobody approved into _docs/requirements.md as final — it needs the human to say so in as many words, and the final report then says the baseline was written from an unreviewed spec."
-
-  if [[ "$ST_TSK" != "present" ]]; then
-    ask "_docs/$FOLDER/tasks.md is $ST_TSK — nothing on disk says this feature was implemented. Promoting anyway records its requirements as what the project does; it needs the human to say so in as many words."
-  elif [[ "$T_TOTAL" == "0" || "$T_DONE" != "$T_TOTAL" ]]; then
-    ask "Not implemented: $T_DONE of $T_TOTAL task(s) are [x], $T_BLOCKED blocked. /sdd-implement $FEATURE is what finishes them. Promoting anyway records requirements the code does not meet as what the project does — it needs the human to say so in as many words, and the final report names the tasks left open."
-  fi
-
-  case "$(printf '%s' "$R_VERDICT" | tr '[:upper:]' '[:lower:]')" in
-    blocked*)
-      ask "The code review of $R_DATE says '$R_VERDICT' — the code was judged not mergeable as it stands. /sdd-code-fix $FEATURE acts on that report. Promoting anyway needs the human to say so in as many words." ;;
-    "approved with"*)
-      warn "The code review of $R_DATE says '$R_VERDICT' — it lists Major findings, and /sdd-code-fix $FEATURE is what acts on them." ;;
-    stale*)
-      warn "The code review report says '$R_VERDICT' — fixes were applied after it, and no review has seen the code as it now stands." ;;
-  esac
+  unfinished_actualize
 }
 
-PROJECT=""; TEMPLATES=""; EXISTING=""
-NAME_OK=""; NAME_WARN=""; FEATURES=""
-TODO_RECS=""; ROLE_ORDER=""; BLOCKED_RECS=""; DECLARED_RECS=""
+PROJECT=""; EXISTING=""; FEATURES=""
+TODO_RECS=""; ROLE_ORDER=""; BLOCKED_RECS=""; DECLARED_RECS=""; FINDING_RECS=""
+RETRY_RECS=""; OPEN_STACKS=""
 
 # Two shapes of the same baseline on disk at once is the one state no reader
 # resolves, and it holds for every command — so it is raised here rather than
@@ -1109,54 +1398,53 @@ if [[ "$CMD" != "init" ]]; then
   printf 'FOLDER=%s\n' "$FOLDER"
   printf 'STAGE=%s\n' "$STAGE"
 fi
+# The orchestrator never reads .sdd/sdd.conf, so it learns here that the
+# feedback log is on. Printed only then: off, no output changes.
+[[ $VERIFY -eq 0 ]] && declare -F sdd_feedback_on >/dev/null && sdd_feedback_on "$ROOT_DIR/.sdd/sdd.conf" && printf 'FEEDBACK=on\n'
+
+# The build commands go into a developer's prompt; under implement and code-fix
+# the orchestrator decides nothing from them — what it asks about them is an ASK:.
+prompt_builds() {
+  [[ $PROMPT_DATA -eq 1 ]] || return 0
+  printf 'BUILD_BACKEND=%s\n' "$BUILD_BACKEND"
+  printf 'BUILD_FRONTEND=%s\n' "$BUILD_FRONTEND"
+}
 
 case "$CMD" in
   init)
     printf 'PROJECT=%s\n' "$PROJECT"
-    printf 'TEMPLATES=%s\n' "$TEMPLATES"
-    printf 'EXISTING=%s\n' "$EXISTING"
+    [[ $PROMPT_DATA -eq 1 ]] && printf 'EXISTING=%s\n' "$EXISTING"
     printf 'BUILD_ROOT=%s\n' "$BUILD_ROOT"
     printf 'BUILD_BACKEND=%s\n' "$BUILD_BACKEND"
     printf 'BUILD_FRONTEND=%s\n' "$BUILD_FRONTEND"
     ;;
-  new)
-    printf 'NAME_OK=%s\n' "$NAME_OK"
-    printf 'NAME_WARN=%s\n' "$NAME_WARN"
-    printf 'RAW=%s\n' "$ST_RAW"
-    ;;
   specify|review)
-    printf 'RAW=%s\n' "$ST_RAW"
-    printf 'REQUIREMENTS=%s\n' "$ST_REQ"
-    printf 'DESIGN=%s\n' "$ST_DES"
-    printf 'TASKS=%s\n' "$ST_TSK"
     printf 'STATUS_REQUIREMENTS=%s\n' "$S_REQ"
     printf 'STATUS_DESIGN=%s\n' "$S_DES"
     printf 'STATUS_TASKS=%s\n' "$S_TSK"
-    printf 'COMPILATION=%s\n' "$COMPILATION"
-    printf 'NEXT_REQ=%s\n' "$NEXT_REQ"
-    if [[ "$CMD" == "specify" ]]; then printf 'MODE=draft\n'; else printf 'MODE=review\n'; fi
+    if [[ $PROMPT_DATA -eq 1 ]]; then
+      printf 'NEXT_REQ=%s\n' "$NEXT_REQ"
+      if [[ "$CMD" == "specify" ]]; then printf 'MODE=draft\n'; else printf 'MODE=review\n'; fi
+    fi
     ;;
   implement)
     printf 'TASKS_DONE=%s\n' "$T_DONE"
     printf 'TASKS_TOTAL=%s\n' "$T_TOTAL"
-    printf 'TASKS_BLOCKED=%s\n' "$T_BLOCKED"
     printf 'ROLE_ORDER=%s\n' "$ROLE_ORDER"
-    printf 'BUILD_ROOT=%s\n' "$BUILD_ROOT"
-    printf 'BUILD_BACKEND=%s\n' "$BUILD_BACKEND"
-    printf 'BUILD_FRONTEND=%s\n' "$BUILD_FRONTEND"
+    printf 'OPEN_STACKS=%s\n' "$OPEN_STACKS"
+    prompt_builds
     printf 'BASELINE=%s\n' "$BASELINE"
-    printf 'BUILD_FILES=%s\n' "$BUILD_FILES"
     ;;
   code-review)
     printf 'BASE=%s\n' "$RS_BASE"
     printf 'ROOT=%s\n' "$RS_ROOT"
-    printf 'DIFF=%s\n' "$RS_DIFF"
-    printf 'CHANGED=%s\n' "$CHANGED"
+    [[ $PROMPT_DATA -eq 1 ]] && printf 'DIFF=%s\n' "$RS_DIFF"
+    # The renderer's alone, like the sections: it is the prompt's way to one file.
+    [[ ( "$GATE" == "ok" || "$GATE" == "ask" ) && $PROMPT_DATA -eq 1 ]] && printf 'DIFF_FILE=%s\n' "$RS_DIFF_FILE"
     printf 'REVIEW_PATH=_docs/%s/review.md\n' "$FOLDER"
     printf 'REVIEW_PREVIOUS=%s\n' "$R_DATE"
     ;;
   code-fix)
-    printf 'REVIEW=%s\n' "$ST_REVIEW"
     # The report is read here, by the orchestrator, for the triage — so its path
     # is a key of its own and not a line of the prompt-only SPEC_FILES:.
     printf 'REVIEW_PATH=_docs/%s/review.md\n' "$FOLDER"
@@ -1164,15 +1452,7 @@ case "$CMD" in
     printf 'REVIEW_ROOT=%s\n' "$R_ROOT"
     printf 'REVIEW_VERDICT=%s\n' "$R_VERDICT"
     printf 'ROOT=%s\n' "$RS_ROOT"
-    printf 'BUILD_ROOT=%s\n' "$BUILD_ROOT"
-    printf 'BUILD_BACKEND=%s\n' "$BUILD_BACKEND"
-    printf 'BUILD_FRONTEND=%s\n' "$BUILD_FRONTEND"
-    ;;
-  actualize)
-    printf 'REQUIREMENTS=%s\n' "$ST_REQ"
-    printf 'DESIGN=%s\n' "$ST_DES"
-    printf 'COMPILATION=%s\n' "$COMPILATION"
-    printf 'NEXT_REQ=%s\n' "$NEXT_REQ"
+    prompt_builds
     ;;
 esac
 
@@ -1198,6 +1478,13 @@ if [[ $PROMPT_ONLY -eq 1 ]]; then
       printf '_docs/%s/new-requirements.md\n' "$FOLDER"
       printf '_docs/%s/design.md\n' "$FOLDER"
       printf '_docs/%s/tasks.md\n' "$FOLDER"
+      printf '%s\n_docs/requirements.md\n' "$ARCH_ENTRY"
+      # The requirements are written before the design and the breakdown, and
+      # checked without them: those two files are a template or another
+      # role's work there, and nothing in them is read.
+      printf '\nREQUIREMENTS_FILES:\n'
+      printf '_docs/%s/raw.md\n' "$FOLDER"
+      printf '_docs/%s/new-requirements.md\n' "$FOLDER"
       printf '%s\n_docs/requirements.md\n' "$ARCH_ENTRY" ;;
     implement|code-review)
       printf '\nSPEC_FILES:\n'
@@ -1206,12 +1493,14 @@ if [[ $PROMPT_ONLY -eq 1 ]]; then
       printf '_docs/%s/tasks.md\n' "$FOLDER"
       printf '_docs/code-style.md\n%s\n' "$ARCH_ENTRY" ;;
     code-fix)
+      # A fix works from its finding: the spec is opened for the one that names
+      # it, and tasks.md is not this run's to read or write.
       printf '\nSPEC_FILES:\n'
       printf '_docs/%s/review.md\n' "$FOLDER"
+      printf '_docs/code-style.md\n%s\n' "$ARCH_ENTRY"
+      printf '\nSPEC_REFERENCE:\n'
       printf '_docs/%s/new-requirements.md\n' "$FOLDER"
-      printf '_docs/%s/design.md\n' "$FOLDER"
-      printf '_docs/%s/tasks.md\n' "$FOLDER"
-      printf '_docs/code-style.md\n%s\n' "$ARCH_ENTRY" ;;
+      printf '_docs/%s/design.md\n' "$FOLDER" ;;
     actualize)
       printf '\nSPEC_FILES:\n'
       printf '_docs/%s/new-requirements.md\n' "$FOLDER"
@@ -1237,8 +1526,21 @@ if [[ $SPAWNING -eq 1 ]]; then
       printf 'requirements-engineer|%s/spec-modes.md,%s/requirements-writing.md,%s/docs-format.md|requirements\n' "$P" "$P" "$P"
       printf 'architect|%s/spec-modes.md,%s/architecture-design.md,%s/task-breakdown.md,%s/docs-format.md|design+tasks\n' "$P" "$P" "$P" "$P" ;;
     review)
-      printf 'requirements-engineer|%s/spec-modes.md,%s/spec-checklist.md,%s/interview.md,%s/requirements-writing.md,%s/docs-format.md|requirements\n' "$P" "$P" "$P" "$P" "$P"
-      printf 'architect|%s/spec-modes.md,%s/spec-checklist.md,%s/interview.md,%s/architecture-design.md,%s/task-breakdown.md,%s/docs-format.md|design+tasks\n' "$P" "$P" "$P" "$P" "$P" "$P" ;;
+      # Per file, off the disk: a file whose `## Open Questions` holds an
+      # answered line gets the fold — the answers written in, what they touch
+      # re-checked — without the checklist; any other gets the full review.
+      # The design re-spawned after the requirements changed has no answered
+      # line of its own, so it is reviewed in full against the new text.
+      if [[ "$(md_answered "$SPECS/$FOLDER/new-requirements.md")" != "0" ]]; then
+        printf 'requirements-engineer|%s/spec-modes.md,%s/requirements-writing.md,%s/docs-format.md|fold-requirements\n' "$P" "$P" "$P"
+      else
+        printf 'requirements-engineer|%s/spec-modes.md,%s/spec-checklist.md,%s/requirements-writing.md,%s/docs-format.md|requirements\n' "$P" "$P" "$P" "$P"
+      fi
+      if [[ "$(md_answered "$SPECS/$FOLDER/design.md")" != "0" ]]; then
+        printf 'architect|%s/spec-modes.md,%s/architecture-design.md,%s/task-breakdown.md,%s/docs-format.md|fold-design+tasks\n' "$P" "$P" "$P" "$P"
+      else
+        printf 'architect|%s/spec-modes.md,%s/spec-checklist.md,%s/architecture-design.md,%s/task-breakdown.md,%s/docs-format.md|design+tasks\n' "$P" "$P" "$P" "$P" "$P"
+      fi ;;
     implement)
       # Only the stacks the breakdown actually carries, in ROLE_ORDER: backend
       # before frontend, because the frontend spawn is handed what the backend
@@ -1250,9 +1552,9 @@ if [[ $SPAWNING -eq 1 ]]; then
     code-review)
       printf 'code-reviewer|%s/code-review.md,%s/docs-format.md|review-set\n' "$P" "$P" ;;
     code-fix)
-      # Which stacks have findings is in the report's prose and in the triage
-      # the human settled — both candidates are printed, and the command drops
-      # the record for a stack this run has no work in.
+      # Which stacks have work is in the triage the human settled: FINDINGS:
+      # says where each finding is, not whether it is fixed — both candidates
+      # are printed, and the command drops the record for a stack with no fix.
       printf 'backend-developer|%s/developer.md|findings-backend\n' "$P"
       printf 'frontend-developer|%s/developer.md|findings-frontend\n' "$P" ;;
     actualize)
@@ -1261,32 +1563,28 @@ if [[ $SPAWNING -eq 1 ]]; then
 fi
 
 case "$CMD" in
-  init)
-    # The stacks this project has, and the command each is usually verified
-    # with. /sdd-init puts them to the human one at a time and writes the
-    # answers into .sdd/sdd.conf; nothing else here reads them.
-    printf '\nDETECTED:\n'
-    [[ -n "$BUILD_DETECTED" ]] && printf '%s\n' "$BUILD_DETECTED"
+  specify|review)
+    # The domains feed the requirements prompt, where the role decides its
+    # sequence from them. The command sees them only beside a stop, where a
+    # sequence with no free number is what the human repairs.
+    if [[ $PROMPT_ONLY -eq 1 || "$GATE" == "stop" ]]; then
+      printf '\nREQ_DOMAINS:\n'
+      [[ -n "$REQ_DOMAINS" ]] && printf '%s\n' "$REQ_DOMAINS"
+    fi
     ;;
-  new)
-    printf '\nFEATURES:\n'
-    [[ -n "$FEATURES" ]] && printf '%s\n' "$FEATURES"
-    ;;
-  specify)
-    printf '\nREQ_DOMAINS:\n'
-    [[ -n "$REQ_DOMAINS" ]] && printf '%s\n' "$REQ_DOMAINS"
-    printf '\nREQ_DUPLICATES:\n'
-    [[ -n "$REQ_DUPLICATES" ]] && printf '%s\n' "$REQ_DUPLICATES"
-    ;;
+esac
+case "$CMD" in
   review)
-    printf '\nREQ_DOMAINS:\n'
-    [[ -n "$REQ_DOMAINS" ]] && printf '%s\n' "$REQ_DOMAINS"
-    printf '\nREQ_DUPLICATES:\n'
-    [[ -n "$REQ_DUPLICATES" ]] && printf '%s\n' "$REQ_DUPLICATES"
-    # TASKS: stays: the coverage matrix is the orchestrator's own work.
+    # The coverage matrix, computed: the orchestrator prints COVERAGE: as it
+    # stands and asks about UNCOVERED: and UNDECLARED:, reading neither the
+    # task list nor the requirement headings for it.
     if [[ $SPAWNING -eq 1 ]]; then
-      printf '\nTASKS:\n'
-      [[ -n "$TASK_RECS" ]] && printf '%s\n' "$TASK_RECS"
+      printf '\nCOVERAGE:\n'
+      section "$FS_OUT" COVERAGE
+      printf '\nUNCOVERED:\n'
+      section "$FS_OUT" UNCOVERED
+      printf '\nUNDECLARED:\n'
+      section "$FS_OUT" UNDECLARED
     fi
     if [[ $PROMPT_ONLY -eq 1 ]]; then
       printf '\nCOMPILATION_ENTRIES:\n'
@@ -1294,6 +1592,13 @@ case "$CMD" in
     fi
     ;;
   implement)
+    # The tasks the retry ASK: is about, <TASK>|<type>: the answer to it is a
+    # list of these, never a yes, and the command drops the record of a stack
+    # whose every task is held back and none of OPEN_STACKS.
+    if [[ $SPAWNING -eq 1 ]]; then
+      printf '\nRETRY:\n'
+      [[ -n "$RETRY_RECS" ]] && printf '%s\n' "$RETRY_RECS"
+    fi
     # The task list feeds the prompt and nothing else: what a role left undone
     # is read back by --verify --scope=, not by the orchestrator from TODO:.
     if [[ $PROMPT_ONLY -eq 1 ]]; then
@@ -1303,10 +1608,31 @@ case "$CMD" in
     ;;
   code-review)
     if [[ $PROMPT_ONLY -eq 1 ]]; then
+      printf '\nFILES:\n'
+      [[ -n "$RS_FILES" ]] && printf '%s\n' "$RS_FILES"
+      printf '\nEXCLUDED:\n'
+      [[ -n "$RS_EXCLUDED" ]] && printf '%s\n' "$RS_EXCLUDED"
       printf '\nUNTRACKED:\n'
       [[ -n "$RS_UNTRACKED" ]] && printf '%s\n' "$RS_UNTRACKED"
+      printf '\nPREEXISTING:\n'
+      [[ -n "$RS_PRE" ]] && printf '%s\n' "$RS_PRE"
       printf '\nBLOCKED:\n'
       [[ -n "$BLOCKED_RECS" ]] && printf '%s\n' "$BLOCKED_RECS"
+      # The answers as build-command.sh resolved them. A stack command standing
+      # in for nothing but the root one is the same line said twice.
+      printf '\nBUILD:\n'
+      [[ -n "$BUILD_ROOT" ]] && printf 'root: %s\n' "$BUILD_ROOT"
+      [[ -n "$BUILD_BACKEND" && "$BUILD_BACKEND" != "$BUILD_ROOT" ]] && printf 'backend: %s\n' "$BUILD_BACKEND"
+      [[ -n "$BUILD_FRONTEND" && "$BUILD_FRONTEND" != "$BUILD_ROOT" ]] && printf 'frontend: %s\n' "$BUILD_FRONTEND"
+    fi
+    ;;
+  code-fix)
+    # What the triage, the markers and the dropped SPAWN: records are decided
+    # from: the place and the stack of each finding, read off the report here
+    # rather than out of its prose by the orchestrator.
+    if [[ $SPAWNING -eq 1 ]]; then
+      printf '\nFINDINGS:\n'
+      [[ -n "$FINDING_RECS" ]] && printf '%s\n' "$FINDING_RECS"
     fi
     ;;
   actualize)

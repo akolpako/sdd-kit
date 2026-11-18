@@ -2,7 +2,7 @@
 
 *Addressed to any role that writes a file under `_docs/`. It names no command and no agent.*
 
-Every file under `_docs/` is Obsidian Flavored Markdown. This protocol says which of its syntax the specs use, and where. An Obsidian Markdown skill installed in the project carries the rest; where the two differ, this protocol wins — it is written against a repository that is read in Obsidian, in an editor, and on a repository page, and the skill is written for a vault alone.
+Every file under `_docs/` is Obsidian Flavored Markdown. This protocol says which of its syntax the specs use, and where, and a spec uses none it does not name: it is written against a repository that is read in Obsidian, in an editor, and on a repository page, not against a vault alone.
 
 ## Links: Markdown, never wikilinks
 
@@ -25,7 +25,7 @@ Every file opens with YAML frontmatter. What each type carries is fixed by its t
 | File | Properties |
 |------|-----------|
 | `raw.md` | `type: raw`, `feature`, `tags` |
-| `new-requirements.md` | `type: requirements`, `feature`, `status`, `tags` |
+| `new-requirements.md` | `type: requirements`, `feature`, `status`, `tags`; `actualized` once a feature that declares no requirement is promoted |
 | `design.md` | `type: design`, `feature`, `status`, `tags` |
 | `tasks.md` | `type: tasks`, `feature`, `status`, `tags` |
 | `review.md` | `type: review`, `feature`, `reviewed`, `base`, `root`, `verdict`, `tags` |
@@ -36,7 +36,7 @@ Every file opens with YAML frontmatter. What each type carries is fixed by its t
 
 Three rules hold for every one of them:
 
-- **`status` and `verdict` are the engine's fields.** The engine reads them, and `spec-edit.sh` writes them. A role writes `status: draft` when it creates a file and never promotes one to `ready` — that is `/sdd-spec-review`'s, through the script.
+- **`status`, `verdict` and `actualized` are the engine's fields.** The engine reads them, and `spec-edit.sh` writes them. A role writes `status: draft` when it creates a file and never promotes one to `ready` — that is the verdict of a review, written through the script by whoever led it.
 - **A value carrying a colon is quoted.** `verdict: "BLOCKED: no tests"` — unquoted, YAML reads the first colon as the end of the key and the property is lost.
 - **A property is never invented.** A fact worth recording that no property holds belongs in the body of the document, where a reader will find it.
 

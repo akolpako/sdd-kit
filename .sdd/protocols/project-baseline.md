@@ -8,14 +8,14 @@ The files in `_docs/` that belong to the whole project rather than to one featur
 
 The architecture of the project has two shapes, and a project holds one of them:
 
-- **Sections** — one file per topic under `_docs/architecture/`, entered through `_docs/architecture.index.md`, a table of topic and path that `spec-edit.sh arch-index` writes whole from whatever the folder holds. This is what `/sdd-init` creates.
+- **Sections** — one file per topic under `_docs/architecture/`, entered through `_docs/architecture.index.md`, a table of topic and path that `spec-edit.sh arch-index` writes whole from whatever the folder holds. This is the shape a fresh setup creates.
 - **A single file** — `_docs/architecture.md`, holding the same topics as `## ` sections. A small project may keep this instead.
 
 Both on disk at once is an error the gate stops on: nothing can say which of the two a role is meant to read.
 
 Every assignment names the entry point, and that is what is read first: in the sections shape it is the index, and the section files a piece of work needs are read from there. All sixteen are never read at once.
 
-**Which sections a project keeps is the project's answer.** The templates `/sdd-init` lays down are a starting set, not a required one. A section this project has nothing to say about — the API of a project that exposes none, the data model of one that persists nothing — is **deleted**, not left standing as an empty template; a topic the starting set has no file for gets a new file of its own. The index is rebuilt by the command once this assignment returns — do not write it by hand. Nothing in the engine checks which sections exist, so the set being honest is this role's responsibility and no script's.
+**Which sections a project keeps is the project's answer.** The templates the setup lays down are a starting set, not a required one. A section this project has nothing to say about — the API of a project that exposes none, the data model of one that persists nothing — is **deleted**, not left standing as an empty template; a topic the starting set has no file for gets a new file of its own. The index is rebuilt by the command once this assignment returns — do not write it by hand. Nothing in the engine checks which sections exist, so the set being honest is this role's responsibility and no script's.
 
 **Human-written content is never discarded.** Every rule below is a rule about what may be added or corrected; nothing here authorizes deleting what a human put on the page.
 

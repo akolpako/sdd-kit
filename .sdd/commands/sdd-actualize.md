@@ -17,7 +17,7 @@ Promotes what a finished feature decided into the project-level files. Safe to r
   - the prompt `.sdd/scripts/spawn-prompt.sh` renders
   - `_docs/<FeatureName>/new-requirements.md`, for the final wording of the entries — the wording only: which entry a requirement becomes is the gate's `DECLARED:`
 - **Writes,** and nothing else:
-  - `_docs/requirements.md`
+  - `_docs/requirements.md`, or — for a feature that declares no requirement — the `actualized:` mark in `_docs/<FeatureName>/new-requirements.md`
   - the snapshot that precedes it
   - `_docs/architecture.index.md`, rebuilt from `_docs/architecture/`
   - the architecture baseline itself is the role's
@@ -26,9 +26,9 @@ Promotes what a finished feature decided into the project-level files. Safe to r
 
 1. **Gate:** run `.sdd/scripts/gate.sh actualize <FeatureName>`.
    - `ok` promotes.
-   - `ask` says the feature is not finished — a spec nobody reviewed, tasks left open, a review that blocked. It promotes only on an explicit yes to each line, and what was accepted this way is named again in the final report, in those words.
+   - `ask` says the feature is not finished — a spec nobody reviewed, tasks left open, a review that blocked, a review that fixes have since outdated. It promotes only on an explicit yes to each line, and what was accepted this way is named again in the final report, in those words — read off `ACCEPTED:` of the verify in step 6.
 
-2. **Back up:** run `.sdd/scripts/spec-edit.sh backup`. If it exits non-zero, stop.
+2. **Back up:** run `.sdd/scripts/spec-edit.sh backup <FeatureName>`. If it exits non-zero, stop.
 
 3. **Spawn** the `SPAWN:` record: run `.sdd/scripts/spawn-prompt.sh actualize <FeatureName> baseline-from-feature`.
 
@@ -36,16 +36,18 @@ Promotes what a finished feature decided into the project-level files. Safe to r
 
 5. **Update the requirements compilation** — the orchestrator's own, and **the last write of the run**: the entries are what marks the feature as promoted, so they are written only once the architecture baseline is. A spawn that failed stops the run here, with `requirements.md` untouched.
 
-   One record of the gate's `DECLARED:` is one requirement, `<REQ-###>|<relation>|<REQ-NNN>`. The relation is taken from the record, never re-read out of the spec:
+   One call: `.sdd/scripts/spec-edit.sh promote <FeatureName> -`, with one line per record of the gate's `DECLARED:` on stdin, through a quoted here-document as `orchestration.md` says:
 
-   | Relation | Calls |
-   |---|---|
-   | `new` | `spec-edit.sh compile-entry <FeatureName> <REQ-###> final "<short title>. <one-sentence description>."` |
-   | `refines` | the same `final` call with the new wording, but on `REQ-NNN`, not on the new number. The entry keeps its number and its source and gains `refined by <FeatureName>`; the new number gets no entry of its own. |
-   | `supersedes` | the `new` call for `<REQ-###>`, then `spec-edit.sh compile-entry <FeatureName> REQ-NNN superseded-by:<REQ-###>` |
+   ```
+   <REQ-###>|<short title>. <one-sentence description>.
+   ```
 
-   `COMPILATION_ENTRIES:` from the gate lists the entries this feature already has in the file — `refined` marks one it reworded. On a re-run, that is what a half-finished run left behind.
+   keyed by the number the feature declares — the first field of the record. The wording is the only thing passed: which entry it becomes — a new one, the rewording of `REQ-NNN` it refines, a new one that supersedes `REQ-NNN` — the script reads off the page, as the gate does. A refined entry keeps its number and its source and gains `refined by <FeatureName>`. A stop writes nothing; it names every line it could not use.
 
-6. **Verify:** run `.sdd/scripts/gate.sh actualize <FeatureName> --verify` — a declared requirement that did not arrive, an entry left `draft`, or a counter standing on a number already handed out, is what the next feature collides with.
+   No `DECLARED:` record — the feature declares no requirement, and nothing of it reaches the compilation: the same call without `-` and without stdin sets the mark that takes the feature to actualized.
 
-7. **Report the next step:** what changed in the architecture baseline and in `requirements.md`, and every `ASK:` line of step 1 that was accepted. The feature is done.
+   `COMPILATION_ENTRIES:` from the gate lists the entries this feature already has in the file — `refined` marks one it reworded. A re-run makes the same call: an entry already there is rewritten, never doubled.
+
+6. **Verify:** run `.sdd/scripts/gate.sh actualize <FeatureName> --verify` — a declared requirement that did not arrive, an entry left `draft`, or a counter standing on a number already handed out, or the mark missing on a feature with no requirement, is what the next feature collides with.
+
+7. **Report the next step:** what changed in the architecture baseline and in `requirements.md`, and every `ACCEPTED:` line of the verify in step 6. The feature is done.

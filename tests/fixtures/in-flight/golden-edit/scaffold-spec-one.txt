@@ -8,26 +8,12 @@ _docs/Wishlist/design.md
 diff -ru -x .git <tmp>/in-flight/_docs/Wishlist/design.md <tmp>/edit/_docs/Wishlist/design.md
 --- <tmp>/in-flight/_docs/Wishlist/design.md
 +++ <tmp>/edit/_docs/Wishlist/design.md
-@@ -8,6 +8,100 @@
+@@ -8,6 +8,86 @@
  
  # Design — Wishlist
  
 +<!-- The `status` property above is `draft` or `ready` — the only record on
 +disk of whether the spec was reviewed. -->
-+
-+<!-- A section this feature does not touch is deleted, not filled with an
-+example or a placeholder. A section the feature is bound by but does not
-+change is one line pointing at the architecture baseline — the section file, or
-+the `## ` section, that holds it — never a retelling of it. -->
-+
-+<!-- Budget — the size of this file follows the size of the feature, counted
-+in the tasks of `tasks.md`:
-+  * 5 tasks or fewer — about 150 lines, one diagram;
-+  * 6 to 15 tasks — about 300 lines;
-+  * more — no ceiling, but every diagram earns its place.
-+A diagram, a section, or an assumption written only to fill the template is
-+waste: the file is read again by every role that implements or reviews the
-+feature. -->
 +
  ## Overview
  

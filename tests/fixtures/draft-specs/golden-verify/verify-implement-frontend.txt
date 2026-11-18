@@ -1,4 +1,11 @@
 VERIFY=ok
+TASKS_DONE=0
+TASKS_TOTAL=3
 
 FAIL:
+
+ANOMALIES:
+
+ACCEPTED:
+Not reviewed: new-requirements.md (draft), design.md (draft), tasks.md (draft). /sdd-spec-review Cart is what promotes a spec to ready. Implementing anyway needs the human to say so in as many words, and the final report then says the work was built from an unreviewed spec.
 ### exit=0

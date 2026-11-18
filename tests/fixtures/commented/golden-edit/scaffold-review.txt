@@ -4,12 +4,13 @@ REVIEW=_docs/Cart/review.md
 REVIEWED=<today>
 BASE=none — uncommitted changes only
 ROOT=none — nothing is committed yet
+MARKERS=0
 ### exit=0
 ### tree
 diff -ru -x .git <tmp>/commented/_docs/Cart/review.md <tmp>/edit/_docs/Cart/review.md
 --- <tmp>/commented/_docs/Cart/review.md
 +++ <tmp>/edit/_docs/Cart/review.md
-@@ -1,32 +1,74 @@
+@@ -1,32 +1,73 @@
 +---
 +type: review
 +feature: Cart
@@ -30,11 +31,11 @@ diff -ru -x .git <tmp>/commented/_docs/Cart/review.md <tmp>/edit/_docs/Cart/revi
 -> Verdict: BLOCKED
 +<!-- The report of one code review: a snapshot of the working tree as it was on
 +the `reviewed` date above, never a ledger of what has since been fixed.
- 
++
 +The four header fields are the properties above, in that order. `verdict` also
 +takes `stale — fixes applied <YYYY-MM-DD>`. A value carrying a colon is quoted,
 +or YAML reads the colon as the end of the key. -->
-+
+ 
  ## Review set
  
 -The committed diff against `deadbeef`, no untracked files.
@@ -52,7 +53,7 @@ diff -ru -x .git <tmp>/commented/_docs/Cart/review.md <tmp>/edit/_docs/Cart/revi
 -- **Where:** `src/main/java/com/example/CartService.java:12`
 -- **What:** The item count is read from the request and never bounded.
 -- **Recommendation:** Bound it at the service edge.
- 
++
 +> [!danger] Where: `src/main/java/.../CartController.java:42`
 +> **What:** <the defect, one or two sentences>
 +>
@@ -71,7 +72,7 @@ diff -ru -x .git <tmp>/commented/_docs/Cart/review.md <tmp>/edit/_docs/Cart/revi
 +
 +When the review found more than the report holds, the section ends with the one
 +line saying how many are below the threshold. -->
-+
+ 
  ## Requirement coverage
  
 +<!--
@@ -80,9 +81,9 @@ diff -ru -x .git <tmp>/commented/_docs/Cart/review.md <tmp>/edit/_docs/Cart/revi
 -| `REQ-002` | `CartService.java` | — | 0/1 |
 +| `REQ-001` | `CartService.java` | `CartServiceTest.java` | 3/3 |
 +| `REQ-002` | `PromoCodeValidator.java` | — | 0/2 |
- 
-+A dash is an answer; an unrelated file stretched into a cell is not. -->
 +
++A dash is an answer; an unrelated file stretched into a cell is not. -->
+ 
  ### Gaps
  
 -`REQ-002` has no test.
@@ -93,6 +94,5 @@ diff -ru -x .git <tmp>/commented/_docs/Cart/review.md <tmp>/edit/_docs/Cart/revi
  ## Older TODO Code Review markers
  
 -None.
-+<!-- The `TODO Code Review:` markers already in the code, with their file, line
-+and date — what earlier reviews decided to defer. Reported, never removed, and
-+never raised again as new findings. -->
++No `TODO Code Review:` marker in the tree.
++
