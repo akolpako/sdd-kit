@@ -196,7 +196,10 @@ if [[ $GATE_RC -eq 1 ]]; then
   exit 1
 fi
 
-VERDICT="$(printf '%s\n' "$GATE_OUT" | awk 'index($0, "GATE=") == 1 { sub(/^[^=]*=/, ""); print; exit }')"
+# A here-string, not `printf | awk`: awk exits at the first match, and a printf
+# still writing into the pipe then fails with "Broken pipe" on stderr wherever
+# SIGPIPE is ignored (a CI runner is one such place).
+VERDICT="$(awk 'index($0, "GATE=") == 1 { sub(/^[^=]*=/, ""); print; exit }' <<<"$GATE_OUT")"
 if [[ "$VERDICT" != "ok" && "$VERDICT" != "ask" ]]; then
   printf 'ERROR=the gate says GATE=%s for /sdd-%s: nothing is spawned from this run, so no prompt is rendered\n' "$VERDICT" "$SLASH" >&2
   exit 2
