@@ -24,8 +24,8 @@
 #   -            the remark itself, on stdin, through a quoted here-document
 #
 # Writes: <log dir>/feedback.log, appended, never rotated — the log dir is
-# SDD_LOG_DIR as lib/log.sh resolves it (`.sdd/log/` by default); SDD_LOG=0 does
-# not turn this off. One record per call:
+# SDD_LOG_DIR as lib/log.sh resolves it (`.sdd/log/` by default); SDD_LOG does
+# not switch this on or off. One record per call:
 #   ## <YYYY-MM-DDTHH:MM:SS> | <kind> | <by> | <command> | <FeatureName or ->
 #   <the remark, as given>
 #   (an empty line)
