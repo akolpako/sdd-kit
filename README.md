@@ -67,7 +67,7 @@ CONFLUENCE_TOKEN=<token>            # Confluence → Settings → Personal Acces
 
 # .sdd/sdd.conf — per project, overrides global; created by /sdd-init
 SDD_BUILD_ROOT=mvn clean verify     # build + test command; or SDD_BUILD_BACKEND / SDD_BUILD_FRONTEND
-SDD_LOG=0                           # optional: log to .sdd/log/ is on by default, 0 turns it off
+SDD_LOG=1                           # optional: log to .sdd/log/ is off by default, 1 turns it on
 ```
 
 ---

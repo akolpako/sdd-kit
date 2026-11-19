@@ -43,7 +43,9 @@ cd "$ROOT_DIR" || exit 1
 
 BC_OUT="$("$SCRIPT_DIR/build-command.sh" .)" || exit 1
 KEY="$(printf '%s' "$STACK" | tr '[:lower:]' '[:upper:]')"
-CMD="$(printf '%s\n' "$BC_OUT" | awk -v k="$KEY" 'index($0, k "=") == 1 { sub(/^[^=]*=/, ""); print; exit }')"
+# A here-string, not `printf | awk`: awk exits at the first match, and a printf
+# still writing into the pipe would fail with "Broken pipe" on stderr.
+CMD="$(awk -v k="$KEY" 'index($0, k "=") == 1 { sub(/^[^=]*=/, ""); print; exit }' <<<"$BC_OUT")"
 if [[ -z "$CMD" ]]; then
   printf 'ERROR=no build command for %s: .sdd/sdd.conf answers none — it is written with `spec-edit.sh conf-set`, never guessed\n' "$STACK" >&2
   exit 2

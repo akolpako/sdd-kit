@@ -11,7 +11,8 @@
 # The scripts are run by the agent, inside a host session. Their output goes
 # into a context the human never sees and which dies with the session, so a run
 # that went wrong leaves nothing to look at afterwards — no argv, no exit code,
-# no ERROR= line. This module gives every run a record under `.sdd/log/`.
+# no ERROR= line. This module gives every run a record under `.sdd/log/` —
+# when it is switched on: it is off by default, and SDD_LOG=1 turns it on.
 #
 # The log is written and never read. No script, prompt or command may branch on
 # its contents: the moment something reads it, it becomes state carried between
@@ -60,7 +61,7 @@
 # human. The engine's built-in values below are the defaults and no file is
 # shipped. Precedence: the environment, then the file, then these defaults.
 #
-#   SDD_LOG        0 turns logging off entirely           (default: on)
+#   SDD_LOG        1 turns logging on, 0 keeps it off     (default: off)
 #   SDD_LOG_DIR    where records are written              (default: <cwd>/.sdd/log)
 #   SDD_LOG_MAX    size at which sdd.log rotates to sdd.log.1  (default: 1 MB)
 #   SDD_LOG_HEAD   leading lines kept per stream          (default: 40)
@@ -218,7 +219,7 @@ $(sdd_conf_read "$PWD/.sdd/sdd.conf" '^SDD_LOG(_DIR|_MAX|_HEAD|_TAIL)?$')
 EOF
   fi
 
-  [[ "${SDD_LOG:-${c_log:-1}}" == "0" ]] && return 1
+  [[ "${SDD_LOG:-${c_log:-0}}" == "1" ]] || return 1
 
   dir="${SDD_LOG_DIR:-${c_dir:-}}"
   if [[ -z "$dir" ]]; then

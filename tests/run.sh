@@ -589,26 +589,28 @@ check_log() {
   # One record, carrying the code the run exited with. next-req.sh in a tree
   # with no compilation file exits 2, and a refusal is as ordinary an outcome
   # here as a success — the log carries either one the same way.
-  ( cd "$work/tree" && SDD_LOG_DIR="$work/one" "$next" ) >/dev/null 2>&1
+  ( cd "$work/tree" && SDD_LOG=1 SDD_LOG_DIR="$work/one" "$next" ) >/dev/null 2>&1
   n="$(grep -c '^== ' "$work/one/sdd.log" 2>/dev/null)"
   ok=0
   [[ "${n:-0}" == "1" ]] && grep -q '^== .*exit=2 .*next-req\.sh' "$work/one/sdd.log" || ok=1
   prop_check log "one record" "$ok" \
     "expected one record carrying exit=2 in $work/one/sdd.log, found ${n:-0}"
 
-  # Off is off: no file, and no directory to hold one.
+  # Off is off: no file, and no directory to hold one — under SDD_LOG=0, and
+  # with SDD_LOG unset, which is the default.
   ( cd "$work/tree" && SDD_LOG=0 SDD_LOG_DIR="$work/off" "$next" ) >/dev/null 2>&1
+  ( cd "$work/tree" && env -u SDD_LOG SDD_LOG_DIR="$work/unset" "$next" ) >/dev/null 2>&1
   ok=0
-  [[ -e "$work/off" ]] && ok=1
-  prop_check log "SDD_LOG=0" "$ok" "SDD_LOG=0 created $work/off"
+  [[ -e "$work/off" || -e "$work/unset" ]] && ok=1
+  prop_check log "off by default" "$ok" "a log was created under $work/off or $work/unset"
 
   # Words handed over on stdin are in the record when `-` says the run reads
   # them, and only then: without `-` stdin is left alone, the record carries
   # no block, and the child still gets what was sent.
   ( cd "$work/tree" && printf 'nofile.txt|1|sdd-stdin-words\n' \
-      | SDD_LOG_DIR="$work/in" "$SCRIPTS/spec-edit.sh" marker - ) >/dev/null 2>&1
+      | SDD_LOG=1 SDD_LOG_DIR="$work/in" "$SCRIPTS/spec-edit.sh" marker - ) >/dev/null 2>&1
   ( cd "$work/tree" && printf 'sdd-unread-words\n' \
-      | SDD_LOG_DIR="$work/in" "$next" ) >/dev/null 2>&1
+      | SDD_LOG=1 SDD_LOG_DIR="$work/in" "$next" ) >/dev/null 2>&1
   ok=0
   grep -q '^stdin:$' "$work/in/sdd.log" 2>/dev/null \
     && grep -qx '| nofile.txt|1|sdd-stdin-words' "$work/in/sdd.log" \
@@ -620,7 +622,7 @@ check_log() {
   # A gate run and the scripts it fans out to are one run: the same id, and the
   # nested records ahead of the gate's own, which is written after its child
   # exits.
-  ( cd "$work/tree" && SDD_LOG_DIR="$work/gate" "$GATE" specify Cart ) >/dev/null 2>&1
+  ( cd "$work/tree" && SDD_LOG=1 SDD_LOG_DIR="$work/gate" "$GATE" specify Cart ) >/dev/null 2>&1
   ids="$(awk '/^== / { print $3 }' "$work/gate/sdd.log" 2>/dev/null | sort -u | wc -l | tr -d ' ')"
   names="$(awk '/^== / { print $6 }' "$work/gate/sdd.log" 2>/dev/null)"
   last="$(printf '%s\n' "$names" | sed -n '$p')"
@@ -1643,7 +1645,7 @@ run_fixture() {
   local FEATURE="" EXTRA="" GIT="no" cmd
 
   case " $LOGGED_FIXTURES " in
-    *" all "*|*" $fixture "*) ;;
+    *" all "*|*" $fixture "*) export SDD_LOG=1 ;;
     *) export SDD_LOG=0 ;;
   esac
 

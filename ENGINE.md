@@ -282,7 +282,7 @@ flowchart LR
   script drains its stdin and exits 0. `feedback-collect.sh` in this clone reads the logs of
   `installed-repos.txt`; it is not installed.
 - **The log (`lib/log.sh`) is written, never read** — no script, prompt or command branches on
-  it. It wraps each script by re-exec; stdout, stderr and exit code stay byte-identical, and the
+  it. Off by default; `SDD_LOG=1` turns it on. It wraps each script by re-exec; stdout, stderr and exit code stay byte-identical, and the
   goldens assert it.
 - **Tests**: `tests/run.sh` diffs each fixture against `golden/` (verdicts), `golden-prompt/`
   (prompts, refusals), `golden-verify/` (postconditions), `golden-edit/` (ops). Wording counts.
