@@ -18,7 +18,7 @@ For each task **of your type** that is not marked `[x]` and not held back by the
    - [ ] **TASK-007** — <title> — BLOCKED: <one-line reason>
    ```
 
-Tasks of any other type are not yours — leave them and their marks untouched. **A task the assignment holds back** is left the same way: its line, its mark and its reason stay as they are, and so does a task already blocked with `requires TASK-NNN (blocked)` on it. An open task that cannot start without a held one is cascaded as below.
+Tasks of any other type are not yours — leave them and their marks untouched. **A task the assignment holds back** — open or blocked — is left the same way: its line, its mark and its reason stay as they are, and so does a task already blocked with `requires TASK-NNN (blocked)` on it. An open task that cannot start without a held *blocked* one is cascaded as below. One that cannot start without a held *open* one is not blocked — nothing failed — it is left as it stands too and named in your return as waiting on that task.
 
 After a blocked task, continue with the next task of your type that does not build on it. Tasks are listed in dependency order, and `Requires:` links requirements, not tasks — so cascade a block only to a task that cannot start without the blocked one, in the same format with the reason `requires TASK-NNN (blocked)`. A task that consumes a blocked task of another type is cascaded the same way.
 
@@ -30,5 +30,5 @@ The verification run is green, or every remaining failure traces to a task marke
 
 **Self-Check additions:**
 
-- [ ] Every task of my type is either `[x]` or `BLOCKED` with a reason — a held-back one left exactly as it was
+- [ ] Every task of my type is either `[x]` or `BLOCKED` with a reason — a held-back one, and one waiting on a held open task, left exactly as it was
 - [ ] The remaining red, if any, belongs to `BLOCKED` tasks and is in the Blocker Report

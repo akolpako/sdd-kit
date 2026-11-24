@@ -33,6 +33,8 @@ What goes on the page as a question:
 
 `**Answer:**` on the line is the whole discriminator. A line carrying it is settled: fold it into the requirement or design it belongs to, confirm the `A-##` it names — kept under its number as `(confirmed <YYYY-MM-DD>)`, its text rewritten to the answer where the two differ — and delete the line. A line without it is still open and stays exactly as it is — its wording is the role's, and a question reworded on the way through is a question that silently changed.
 
+An answer can contradict an assumption other than the one its line names — one already confirmed included. The later answer is the human's word on the same point, so it wins: that assumption is rewritten to match it too, kept under its number, and its date moved to today's `(confirmed <YYYY-MM-DD>)`. An answer that contradicts a confirmed one and leaves unclear which of the two the human meant is not settled by choosing: it becomes a new line of `## Open Questions` naming both numbers.
+
 One exception: a line the code answers with a fact — its premise disproved included — was never a question. Review deletes it and writes the fact into the requirement or the `A-##` it belongs to, naming the file or class the fact was found in. Every other line without an answer stays word for word.
 
 ## Gaps

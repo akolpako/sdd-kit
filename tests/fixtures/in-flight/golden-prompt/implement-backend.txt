@@ -36,7 +36,7 @@ The open tasks of this feature:
 TASK-001|open|backend|Wishlist table and entity|
 TASK-002|open|backend|Move an item into the cart|
 
-Blocked tasks the human holds back from this run — not retried:
+Tasks the human holds back from this run — open or blocked, left as they stand:
 
 none
 

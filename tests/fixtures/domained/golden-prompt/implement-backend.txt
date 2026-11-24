@@ -37,7 +37,7 @@ TASK-001|open|backend|Cart table and entity|
 TASK-002|open|backend|Add and remove items|
 TASK-003|open|backend|Cart totals|
 
-Blocked tasks the human holds back from this run — not retried:
+Tasks the human holds back from this run — open or blocked, left as they stand:
 
 none
 

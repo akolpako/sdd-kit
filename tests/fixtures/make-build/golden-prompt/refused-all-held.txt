@@ -1,0 +1,3 @@
+### exit=2
+### stderr
+ERROR=every backend task of this run is held back: the role has nothing to do — drop its record and spawn nobody for it

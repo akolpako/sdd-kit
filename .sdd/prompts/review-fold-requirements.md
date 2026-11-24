@@ -12,7 +12,10 @@ FEATURE={{FEATURE}}
 
 Files of this run:
 
-{{SECTION:REQUIREMENTS_FILES}}
+{{SECTION:FOLD_REQUIREMENTS_FILES}}
+
+`design.md` is there for the `A-##` of the design an answer cites — read those
+lines, and write nothing into it.
 
 Entries of the compilation this feature sourced:
 
@@ -38,8 +41,9 @@ answer that raises a new question puts it on the page, as a line of
 `## Open Questions`, like any other.
 
 Return only what the answers left unsettled, one line per point, or that none
-is, and last a line `CHANGED: <REQ-###, …>` — every requirement this fold
-changed, added or moved to `## Out of Scope`, a moved one followed by
-`(moved out of scope)` — or `CHANGED: none`. That list is what the design is
+is, and last a line `CHANGED: <REQ-### (what changed), …>` — every requirement
+this fold changed, added or moved to `## Out of Scope`, each followed by what
+changed in it in a few words (`REQ-007 (also sets LAST_MODIFICATION)`), a moved
+one by `(moved out of scope)` — or `CHANGED: none`. That list is what the design is
 brought in line with; what you folded in is read from the file, never from your
 reply.

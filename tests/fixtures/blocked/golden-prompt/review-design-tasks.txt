@@ -42,6 +42,11 @@ What only the human can settle goes into `## Open Questions` of
 
 `tasks.md` is yours to bring in line with the revised requirements and design.
 
+`new-requirements.md` is not yours to write. A decision of the design that
+changes what a requirement says — a field it must name, a condition it must
+carry — is returned as a line `REQUIREMENT: <REQ-###> — <the change>, per design
+A-##`, and reaches that file through whoever led the review.
+
 Return only the `FAIL` items you did not close, worst first, one line each, or
 that none is left, and a done task the revision made pointless — what you fixed
 is read from the files, never from your reply.
