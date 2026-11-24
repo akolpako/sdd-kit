@@ -236,6 +236,20 @@ if [[ -z "$RECORD" ]]; then
   exit 2
 fi
 
+# A role whose every task the human held back has nothing to do. The command
+# cannot tell from OPEN_STACKS which stack an open task it was told to hold
+# belongs to; the task list is here, so the empty assignment is refused here.
+if [[ "$CMD" == "implement" && -f "$ARGS/HELD" && -s "$SECS/TODO" ]]; then
+  left="$(awk -F'|' -v s="$SCOPE" -v held="$(cat "$ARGS/HELD")" '
+    BEGIN { n = split(held, h, ","); for (i = 1; i <= n; i++) { gsub(/ /, "", h[i]); skip[h[i]] = 1 } }
+    $3 == s && !($1 in skip) { c++ }
+    END { print c + 0 }' "$SECS/TODO")"
+  if [[ "$left" == "0" ]]; then
+    printf 'ERROR=every %s task of this run is held back: the role has nothing to do — drop its record and spawn nobody for it\n' "$SCOPE" >&2
+    exit 2
+  fi
+fi
+
 # An argument wins over a key of the same name: it is what the human or the role
 # said, and the gate could only have guessed at it. `BASE` is not among them —
 # it was taken out above, because there the gate resolves rather than guesses.

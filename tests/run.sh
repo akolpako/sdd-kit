@@ -114,9 +114,10 @@ COMMANDS="init new specify review implement code-review code-fix actualize"
 
 # One line per render: <case>|<command>|<scope>|<KEY=value;KEY=value>. `\n` in a
 # value is a real newline — a multi-line value is what the block form of a
-# placeholder exists for. The last four cases are refusals: no template for the
+# placeholder exists for. The last five cases are refusals: no template for the
 # scope, no value for a placeholder, a multi-line value where the template has
-# the placeholder inline, and a base ref that shares no commit with HEAD.
+# the placeholder inline, a role whose every task is held back, and a base ref
+# that shares no commit with HEAD.
 PROMPT_CASES='init-baseline|init|baseline-from-codebase|
 specify-requirements|specify|requirements|KEPT=none
 specify-design-tasks|specify|design+tasks|KEPT=new-requirements.md
@@ -133,10 +134,12 @@ actualize-baseline|actualize|baseline-from-feature|
 refused-no-template|implement|no-such-scope|
 refused-no-value|code-fix|findings-backend|TRIAGE=Fix everything.
 refused-multiline-inline|implement|backend|HELD=none;FEATURE=Cart\nBasket
+refused-all-held|implement|backend|HELD=TASK-001,TASK-002,TASK-003,TASK-004,TASK-005,TASK-006,TASK-007,TASK-008
 refused-alien-base|code-review|review-set|BASE=no-such-ref'
 
-# One line per postcondition check: <case>|<command>|<option;option>. The last
-# four are refusals: a scope that was not named, files that were not named, a
+# One line per postcondition check: <case>|<command>|<option;option>. The held
+# cases are the backend one with tasks the human held back — a held task left
+# open is no failure, and `none` holds nothing. The last four are refusals: a scope that was not named, files that were not named, a
 # file --files does not know, and a command that has no --verify at all.
 VERIFY_CASES='verify-init|init|
 verify-new|new|
@@ -144,6 +147,8 @@ verify-specify-all|specify|--files=new-requirements.md,design.md,tasks.md
 verify-specify-one|specify|--files=design.md
 verify-implement-backend|implement|--scope=backend
 verify-implement-frontend|implement|--scope=frontend
+verify-implement-held|implement|--scope=backend;--held=TASK-001,TASK-003
+verify-implement-held-none|implement|--scope=backend;--held=none
 verify-code-review|code-review|
 verify-actualize|actualize|
 refused-no-scope|implement|
@@ -712,6 +717,14 @@ check_format() {
   ok=0; [[ "$out" == "BLOCKED: no tests" ]] || ok=1
   prop_check format "quoted value is unquoted" "$ok" \
     "md_field reads '$out'"
+
+  # A requirement relates to one entry. A second relation line under one
+  # heading is reported as such, not dropped behind the first one read.
+  printf '# Requirements\n\n## Requirements\n\n### REQ-031 — Guest checkout\n- **Refines:** [REQ-012](../requirements.md#^req-012)\n- **Refines:** [REQ-013](../requirements.md#^req-013)\n\n### REQ-032 — Wishlist\n- **Supersedes:** REQ-014\n' > "$work/rel.md"
+  out="$(md_req_relations "$work/rel.md" | paste -sd ' ' -)"
+  ok=0; [[ "$out" == "REQ-031|many|REQ-012 REQ-032|supersedes|REQ-014" ]] || ok=1
+  prop_check format "a second relation line is reported" "$ok" \
+    "md_req_relations reads '$out'"
 
   # `---` opens a property block on the first line and nowhere else. Further
   # down it is a horizontal rule, and what follows it is body.

@@ -1,0 +1,12 @@
+VERIFY=fail
+TASKS_DONE=0
+TASKS_TOTAL=2
+
+FAIL:
+Still open after the backend role returned: TASK-002 Move an item into the cart. A task is marked by the role that owns the loop — one left open is reported by name, never marked here on its behalf.
+
+ANOMALIES:
+
+ACCEPTED:
+Not reviewed: new-requirements.md (draft), design.md (draft), tasks.md (draft). /sdd-spec-review Wishlist is what promotes a spec to ready. Implementing anyway needs the human to say so in as many words, and the final report then says the work was built from an unreviewed spec.
+### exit=2

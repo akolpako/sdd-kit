@@ -19,6 +19,7 @@ How code is written on this project. **What** is to be built arrives with the as
 - Do not "improve" adjacent code, comments, or formatting, and do not refactor what is not broken.
 - Dead code that is not yours is mentioned in the report, never deleted.
 - Remove only the imports, variables, and functions your own changes left unused.
+- A draft the task says moves into the code — a file under `_docs/<feature>/` written ahead by the design, such as a `*.draft.sql` — is deleted once its content is in place in the code, in the same task. It is the one file under `_docs/` a developer deletes; the task's own record still names where it went.
 
 ## 4. Before Returning
 

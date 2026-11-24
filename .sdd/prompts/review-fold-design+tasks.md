@@ -24,7 +24,8 @@ spec-modes protocol fixes it: the answer written in, the `A-##` it names
 confirmed — kept under its number as `(confirmed <YYYY-MM-DD>)`, its text
 rewritten to the answer where the two differ — the line deleted. A line without an answer stays exactly as it is.
 A line naming requirements that changed in `new-requirements.md` after this
-design was reviewed is folded by reading those requirements as they stand now:
+design was reviewed says beside each what changed in it; it is folded by
+reading those requirements as they stand now:
 the design and the tasks that build them brought in line, the tasks of a
 requirement moved to `## Out of Scope` dropped.
 
@@ -33,6 +34,11 @@ changed, and the tasks of `_docs/{{FOLDER}}/tasks.md` that build them, brought
 in line. The rest is not re-checked in this run: it was checked before these
 questions were asked. An answer that raises a new question puts it on the page,
 as a line of `## Open Questions` in `design.md`, like any other.
+
+`new-requirements.md` is not yours to write. A decision of the design that
+changes what a requirement says is returned as a line `REQUIREMENT: <REQ-###> —
+<the change>, per design A-##`, and reaches that file through whoever led the
+review.
 
 Return only what the answers left unsettled, and a done task the revision made
 pointless, one line per point, or that none is — what you folded in is read

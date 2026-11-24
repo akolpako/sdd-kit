@@ -8,7 +8,7 @@
 # so it comes out the same every time and no command re-derives it from the files.
 #
 # Usage: gate.sh <command> <FeatureName> [<base-ref>] [<project-root>] [--prompt-data]
-#        gate.sh <command> <FeatureName> --verify [--files=<f,...>] [--scope=<s>]
+#        gate.sh <command> <FeatureName> --verify [--files=<f,...>] [--scope=<s>] [--held=<TASK,...>|none]
 #   <command>       init | new | specify | review | implement | code-review |
 #                   code-fix | actualize
 #   init            takes no feature name: gate.sh init [<project-root>]
@@ -58,6 +58,9 @@
 #                 holds an entry
 #   REQ_DOMAINS:  specify, review — next-req.sh's DOMAINS:, for the
 #                 requirements prompt; also printed beside a GATE=stop
+#   FOLD_REQUIREMENTS_FILES:  review — the paths of fold-requirements: no
+#                 architecture baseline, and design.md to read the A-## an
+#                 answer cites, never to write
 #   REQUIREMENTS_FILES:   specify, review — the paths of the requirements scope,
 #                 which reads neither design.md nor tasks.md
 #   SPEC_REFERENCE:       code-fix — the spec, opened only for a finding that
@@ -135,7 +138,9 @@
 #                each is on disk and carries `> Status: draft`. The files the
 #                human kept were not written by this run and are not named
 #   implement    --scope=backend|frontend: no task of that type is left `open`;
-#                the ones that are are named
+#                the ones that are are named. --held= names the tasks the human
+#                held back from the run — the HELD= the roles were given — and a
+#                held task left open is not one the role failed to do
 #   code-review  review.md exists, holds something, and carries a verdict
 #                somebody reached — not the template's placeholder
 #   actualize    every requirement the feature declares is in the compilation
@@ -162,7 +167,7 @@ SDD_HERE="${0%/*}"; [[ "$SDD_HERE" == "$0" ]] && SDD_HERE="."
 # --prompt-data adds the sections only a spawn prompt is built from. It is for
 # spawn-prompt.sh, whose gate run never reaches the orchestrator's context.
 PROMPT_DATA=0
-VERIFY=0; V_FILES=""; V_SCOPE=""
+VERIFY=0; V_FILES=""; V_SCOPE=""; V_HELD=""
 GATE_ARGS=()
 for arg in ${1+"$@"}; do
   case "$arg" in
@@ -170,6 +175,7 @@ for arg in ${1+"$@"}; do
     --verify)      VERIFY=1 ;;
     --files=*)     V_FILES="${arg#--files=}" ;;
     --scope=*)     V_SCOPE="${arg#--scope=}" ;;
+    --held=*)      V_HELD="${arg#--held=}" ;;
     *)             GATE_ARGS+=("$arg") ;;
   esac
 done
@@ -234,9 +240,14 @@ if [[ $VERIFY -eq 1 ]]; then
       "$CMD" "$([[ -n "${V_FILES_BAD:-}" ]] && printf -- '--files' || printf -- '--scope')" >&2
     exit 1
   fi
+  if [[ -n "$V_HELD" && "$CMD" != "implement" ]]; then
+    printf 'ERROR=%s takes no --held: it names the tasks the human held back from /sdd-implement\n' "$CMD" >&2
+    exit 1
+  fi
+  [[ "$V_HELD" == "none" ]] && V_HELD=""
 else
-  if [[ -n "$V_FILES" || -n "$V_SCOPE" ]]; then
-    printf 'ERROR=--files and --scope belong to --verify: they name what a finished step is checked against\n' >&2
+  if [[ -n "$V_FILES" || -n "$V_SCOPE" || -n "$V_HELD" ]]; then
+    printf 'ERROR=--files, --scope and --held belong to --verify: they name what a finished step is checked against\n' >&2
     exit 1
   fi
 fi
@@ -616,8 +627,11 @@ verify_specify() {
 verify_implement() {
   if [[ $FS_RC -eq 2 ]]; then no_feature_fail; return 0; fi
   local left
-  left="$(printf '%s\n' "$TASK_RECS" | awk -F'|' -v s="$V_SCOPE" '
-    $2 == "open" && $3 == s { printf "%s%s %s", sep, $1, $5; sep = ", " }
+  # A held task is left as it stands by the role, so one still open is the
+  # human's choice and not a step that did not happen.
+  left="$(printf '%s\n' "$TASK_RECS" | awk -F'|' -v s="$V_SCOPE" -v held="$V_HELD" '
+    BEGIN { n = split(held, h, ","); for (i = 1; i <= n; i++) { gsub(/ /, "", h[i]); skip[h[i]] = 1 } }
+    $2 == "open" && $3 == s && !($1 in skip) { printf "%s%s %s", sep, $1, $5; sep = ", " }
   ')"
   [[ -n "$left" ]] && \
     fail "Still open after the $V_SCOPE role returned: $left. A task is marked by the role that owns the loop — one left open is reported by name, never marked here on its behalf."
@@ -1329,6 +1343,10 @@ check_actualize() {
         stop "$d_id is declared by _docs/$FOLDER/new-requirements.md as a requirement of its own, and _docs/requirements.md already holds $d_id as an entry of $other — two features were handed one number. Renumber it in _docs/$FOLDER/new-requirements.md (with its Requires: in tasks.md and its links in design.md), or, if it rewords that entry, give it a **Refines:** line instead."
     fi
     [[ "$d_rel" != "new" ]] || continue
+    if [[ "$d_rel" == "many" ]]; then
+      stop "$d_id carries more than one Refines:/Supersedes: line under its heading in _docs/$FOLDER/new-requirements.md — a requirement relates to one entry of _docs/requirements.md at most. Split it into one requirement per entry it touches."
+      continue
+    fi
     if [[ -z "$d_target" ]]; then
       stop "$d_id says it $d_rel a requirement and names none — the line under its heading in _docs/$FOLDER/new-requirements.md carries no REQ id. Which entry it is about is not guessed."
     elif [[ "$d_target" == "$d_id" ]]; then
@@ -1493,7 +1511,18 @@ if [[ $PROMPT_ONLY -eq 1 ]]; then
       printf '\nREQUIREMENTS_FILES:\n'
       printf '_docs/%s/raw.md\n' "$FOLDER"
       printf '_docs/%s/new-requirements.md\n' "$FOLDER"
-      printf '%s\n_docs/requirements.md\n' "$ARCH_ENTRY" ;;
+      printf '%s\n_docs/requirements.md\n' "$ARCH_ENTRY"
+      # A fold of the requirements writes answers in and touches no
+      # architecture, so the baseline is not among its files; the design is,
+      # read only for the A-## an answer cites — the answers are asked off both
+      # files, and a design decision is what some of them carry.
+      if [[ "$CMD" == "review" ]]; then
+        printf '\nFOLD_REQUIREMENTS_FILES:\n'
+        printf '_docs/%s/raw.md\n' "$FOLDER"
+        printf '_docs/%s/new-requirements.md\n' "$FOLDER"
+        [[ -f "$SPECS/$FOLDER/design.md" ]] && printf '_docs/%s/design.md (read only)\n' "$FOLDER"
+        printf '_docs/requirements.md\n'
+      fi ;;
     implement|code-review)
       printf '\nSPEC_FILES:\n'
       printf '_docs/%s/new-requirements.md\n' "$FOLDER"

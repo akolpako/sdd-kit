@@ -23,7 +23,7 @@ The open tasks of this feature:
 
 {{SECTION:TODO}}
 
-Blocked tasks the human holds back from this run — not retried:
+Tasks the human holds back from this run — open or blocked, left as they stand:
 
 {{HELD}}
 

@@ -36,7 +36,7 @@ The open tasks of this feature:
 TASK-002|blocked|backend|Add and remove items|the stock service has no endpoint for reservations.
 TASK-003|open|backend|Cart totals|
 
-Blocked tasks the human holds back from this run — not retried:
+Tasks the human holds back from this run — open or blocked, left as they stand:
 
 none
 

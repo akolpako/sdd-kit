@@ -24,7 +24,7 @@ The `jira` and `confluence` skills' scripts take their tokens from the files pas
 
 Whatever communication style the session is set to, anything written to `_docs/**` is normal prose.
 
-**A file under `_docs/` is changed by editing the file itself** or by a script the assignment names — never by a program of your own run in a shell (`python3`, `sed -i`, a redirect): in a session nobody watches, such a call waits for a permission nobody grants.
+**A file under `_docs/` is changed by editing the file itself** or by a script the assignment names — never by a program of your own run in a shell (`python3`, `sed -i`, a redirect): in a session nobody watches, such a call waits for a permission nobody grants. The one file removed there is a draft a task moved into the code, as `.sdd/protocols/developer.md` fixes it.
 
 ## Instructions conflicts
 

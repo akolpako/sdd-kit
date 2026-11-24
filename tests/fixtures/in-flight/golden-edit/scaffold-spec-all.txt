@@ -10,7 +10,7 @@ _docs/Wishlist/tasks.md
 diff -ru -x .git <tmp>/in-flight/_docs/Wishlist/design.md <tmp>/edit/_docs/Wishlist/design.md
 --- <tmp>/in-flight/_docs/Wishlist/design.md
 +++ <tmp>/edit/_docs/Wishlist/design.md
-@@ -8,6 +8,99 @@
+@@ -8,6 +8,101 @@
  
  # Design — Wishlist
  
@@ -91,9 +91,11 @@ diff -ru -x .git <tmp>/in-flight/_docs/Wishlist/design.md <tmp>/edit/_docs/Wishl
 +
 +## Risks
 +
-+<!-- The risk pass of `.sdd/protocols/spec-checklist.md`, one line per axis and
-+all five present, in architectural terms. A risk whose measure is written in a
-+section above names that section rather than repeating it:
++<!-- What the design risks, in architectural terms: one line per axis, all five
++present. Each names the risk and its consequence, or closes the axis with
++"no risk: <reason>" as a deliberate statement — an axis left out is not an
++implicit "fine". A risk whose measure is written in a section above names that
++section rather than repeating it:
 +
 +- Breaking changes: <the risk and its consequence> | no risk: <reason>
 +- External dependencies: …
@@ -114,7 +116,7 @@ diff -ru -x .git <tmp>/in-flight/_docs/Wishlist/design.md <tmp>/edit/_docs/Wishl
 diff -ru -x .git <tmp>/in-flight/_docs/Wishlist/new-requirements.md <tmp>/edit/_docs/Wishlist/new-requirements.md
 --- <tmp>/in-flight/_docs/Wishlist/new-requirements.md
 +++ <tmp>/edit/_docs/Wishlist/new-requirements.md
-@@ -8,18 +8,62 @@
+@@ -8,18 +8,64 @@
  
  # Requirements — Wishlist
  
@@ -157,8 +159,10 @@ diff -ru -x .git <tmp>/in-flight/_docs/Wishlist/new-requirements.md <tmp>/edit/_
 +
 +## Risks
 +
-+<!-- The risk pass of `.sdd/protocols/spec-checklist.md`, one line per axis and
-+all five present — what the feature risks for the business and its users:
++<!-- What the feature risks for the business and its users: one line per axis,
++all five present. Each names the risk and its consequence, or closes the axis
++with "no risk: <reason>" as a deliberate statement — an axis left out is not an
++implicit "fine":
  
 -A shopper keeps items on a list without buying them.
 +- Breaking changes: <the risk and its consequence> | no risk: <reason>

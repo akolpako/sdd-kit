@@ -10,7 +10,7 @@ _docs/Cart/tasks.md
 diff -ru -x .git <tmp>/blocked/_docs/Cart/design.md <tmp>/edit/_docs/Cart/design.md
 --- <tmp>/blocked/_docs/Cart/design.md
 +++ <tmp>/edit/_docs/Cart/design.md
-@@ -1,7 +1,106 @@
+@@ -1,7 +1,108 @@
 +---
 +type: design
 +feature: Cart
@@ -99,9 +99,11 @@ diff -ru -x .git <tmp>/blocked/_docs/Cart/design.md <tmp>/edit/_docs/Cart/design
 +
 +## Risks
 +
-+<!-- The risk pass of `.sdd/protocols/spec-checklist.md`, one line per axis and
-+all five present, in architectural terms. A risk whose measure is written in a
-+section above names that section rather than repeating it:
++<!-- What the design risks, in architectural terms: one line per axis, all five
++present. Each names the risk and its consequence, or closes the axis with
++"no risk: <reason>" as a deliberate statement — an axis left out is not an
++implicit "fine". A risk whose measure is written in a section above names that
++section rather than repeating it:
 +
 +- Breaking changes: <the risk and its consequence> | no risk: <reason>
 +- External dependencies: …
@@ -122,7 +124,7 @@ diff -ru -x .git <tmp>/blocked/_docs/Cart/design.md <tmp>/edit/_docs/Cart/design
 diff -ru -x .git <tmp>/blocked/_docs/Cart/new-requirements.md <tmp>/edit/_docs/Cart/new-requirements.md
 --- <tmp>/blocked/_docs/Cart/new-requirements.md
 +++ <tmp>/edit/_docs/Cart/new-requirements.md
-@@ -1,15 +1,69 @@
+@@ -1,15 +1,71 @@
 +---
 +type: requirements
 +feature: Cart
@@ -173,8 +175,10 @@ diff -ru -x .git <tmp>/blocked/_docs/Cart/new-requirements.md <tmp>/edit/_docs/C
 +
 +## Risks
 +
-+<!-- The risk pass of `.sdd/protocols/spec-checklist.md`, one line per axis and
-+all five present — what the feature risks for the business and its users:
++<!-- What the feature risks for the business and its users: one line per axis,
++all five present. Each names the risk and its consequence, or closes the axis
++with "no risk: <reason>" as a deliberate statement — an axis left out is not an
++implicit "fine":
 +
 +- Breaking changes: <the risk and its consequence> | no risk: <reason>
 +- External dependencies: …

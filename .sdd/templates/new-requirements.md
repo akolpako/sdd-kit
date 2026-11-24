@@ -46,8 +46,10 @@ place under its own number.
 
 ## Risks
 
-<!-- The risk pass of `.sdd/protocols/spec-checklist.md`, one line per axis and
-all five present — what the feature risks for the business and its users:
+<!-- What the feature risks for the business and its users: one line per axis,
+all five present. Each names the risk and its consequence, or closes the axis
+with "no risk: <reason>" as a deliberate statement — an axis left out is not an
+implicit "fine":
 
 - Breaking changes: <the risk and its consequence> | no risk: <reason>
 - External dependencies: …

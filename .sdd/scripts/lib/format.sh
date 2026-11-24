@@ -37,7 +37,8 @@
 #                                  new-requirements.md declares, in file order
 #   md_req_relations <file>       one record per requirement it declares:
 #                                  `<REQ-…>|new|`, `<REQ-…>|refines|<REQ-…>`
-#                                  or `<REQ-…>|supersedes|<REQ-…>`
+#                                  or `<REQ-…>|supersedes|<REQ-…>`; one
+#                                  with a second such line `<REQ-…>|many|<REQ-…>`
 #   md_unpromoted <compilation> <new-requirements> <feature>
 #                                  one record per requirement the feature
 #                                  declares that the compilation does not hold
@@ -552,7 +553,10 @@ md_req_declared() {
 # and a requirement carrying neither line is `new`. The target is the first id
 # after the key, so the link text and a bare `REQ-012` read the same. A key with
 # no id behind it comes back with an empty target — the caller says so rather
-# than this reader guessing which of the two the line meant to be.
+# than this reader guessing which of the two the line meant to be. A requirement
+# relates to one entry at most: a second relation line under one heading comes
+# back as `many`, the first target kept, so the caller stops on it rather than
+# promote one relation and drop the other unseen.
 #
 # A requirement moved under `## Out of Scope` is not among them: its heading
 # still holds the number, which is `md_req_declared`'s business, and nothing of
@@ -567,7 +571,8 @@ md_req_relations() {
       next
     }
     /^#+[[:space:]]/ { flush(); next }
-    id != "" && rel == "new" && match($0, /\*\*(Refines|Supersedes):\*\*/) {
+    id != "" && match($0, /\*\*(Refines|Supersedes):\*\*/) {
+      if (rel != "new") { rel = "many"; next }
       key = substr($0, RSTART, RLENGTH); rest = substr($0, RSTART + RLENGTH)
       rel = (key ~ /Refines/) ? "refines" : "supersedes"
       target = md_id(rest)
